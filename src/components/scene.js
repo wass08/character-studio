@@ -4,7 +4,7 @@ import { Canvas } from "@react-three/fiber";
 
 const Scene = () => {
   return (
-    <Canvas className="w-full h-full">
+    <Canvas>
       <CameraControls />
       <mesh>
         <boxGeometry args={[1, 1, 1]} />
