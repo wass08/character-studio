@@ -4,7 +4,7 @@ import {
   Environment,
   PerspectiveCamera,
 } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import Avatar from "./Avatar";
 import { useRef } from "react";
 
@@ -17,10 +17,10 @@ const Scene = () => {
         ref={camera}
         makeDefault
         fov={35}
-        position={[0, 2.5, -10]}
+        position={[0, 1.2, -5]}
       />
 
-      <CameraControls />
+      <CameraControls setTarget={[0, 3, 0]} />
       <color attach="background" args={["#424242"]} />
       <Environment
         background={false}

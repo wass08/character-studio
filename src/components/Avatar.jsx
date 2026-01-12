@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { useGLTF, useAnimations } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 
 export default function Model(props) {
   const group = useRef();
@@ -7,14 +8,42 @@ export default function Model(props) {
   const { actions } = useAnimations(animations, group);
 
   useEffect(() => {
-    // Log available animations
-    console.log("Available animations:", Object.keys(actions));
-
     const firstAnimationName = Object.keys(actions)[0];
     if (firstAnimationName) {
       actions["Rig|Walk_Loop"]?.reset().fadeIn(0.5).play();
     }
   }, [actions]);
+
+  const blinkTimerRef = useRef(0);
+
+  useFrame((state, delta) => {
+    blinkTimerRef.current += delta;
+
+    if (blinkTimerRef.current > 3 + Math.random() * 2) {
+      blink();
+      blinkTimerRef.current = 0;
+    }
+  });
+
+  const blink = () => {
+    const face = nodes.Female_Base_Mesh;
+    const leftEyeIndex = face.morphTargetDictionary["eyeBlinkLeft"];
+    const rightEyeIndex = face.morphTargetDictionary["eyeBlinkRight"];
+
+    face.morphTargetInfluences[leftEyeIndex] = 1;
+    face.morphTargetInfluences[rightEyeIndex] = 1;
+
+    setTimeout(() => {
+      face.morphTargetInfluences[leftEyeIndex] = 0;
+      face.morphTargetInfluences[rightEyeIndex] = 0;
+    }, 100);
+  };
+
+  const setEyeBlink = (value) => {
+    const face = nodes.Female_Base_Mesh;
+    face.morphTargetInfluences[1] = value;
+    face.morphTargetInfluences[8] = value;
+  };
 
   return (
     <group ref={group} {...props} dispose={null}>
