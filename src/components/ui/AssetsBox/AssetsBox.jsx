@@ -7,11 +7,14 @@ const { useEffect } = require("react");
 import "./AssetsBox.css";
 
 const AssetsBox = () => {
-  const { categories, currentCategory, fetchCategories, setCurrentCategory } =
-    useConfiguratorStore();
-
-  console.log("Current Category State:", currentCategory);
-  console.log("Assets to render:", currentCategory?.assets);
+  const {
+    categories,
+    currentCategory,
+    fetchCategories,
+    setCurrentCategory,
+    customization,
+    changeAsset,
+  } = useConfiguratorStore();
 
   useEffect(() => {
     fetchCategories();
@@ -26,7 +29,6 @@ const AssetsBox = () => {
               className="category-button"
               key={category.id}
               onClick={() => {
-                console.log(category);
                 setCurrentCategory(category);
               }}
             >
@@ -36,7 +38,11 @@ const AssetsBox = () => {
         })}
 
         {currentCategory?.assets.map((asset) => (
-          <button className="asset-button" key={asset.thumbnail}>
+          <button
+            onClick={() => changeAsset(currentCategory.name, asset)}
+            className="asset-button"
+            key={asset.thumbnail}
+          >
             <img src={pb.files.getURL(asset, asset.thumbnail)} alt="asset" />
           </button>
         ))}
