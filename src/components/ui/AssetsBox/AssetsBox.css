@@ -1,0 +1,9 @@
+.assets-box {
+  position: absolute;
+  bottom: 24px;
+  left: 50px;
+  width: 250px;
+  height: 100px;
+  background: white;
+  color: black;
+}
