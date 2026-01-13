@@ -2,8 +2,25 @@
   position: absolute;
   bottom: 24px;
   left: 50px;
-  width: 250px;
+  width: 80%;
   height: 100px;
   background: white;
   color: black;
+  display: flex;
+  justify-content: space-between;
+}
+
+.category-button {
+  color: black;
+}
+
+.category-button:hover {
+  color: gray;
+  cursor: pointer;
+}
+
+.asset-button {
+  height: 100px;
+  width: 50px;
+  background-color: beige;
 }

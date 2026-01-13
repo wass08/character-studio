@@ -8,7 +8,7 @@ if (!pocketBaseUrl) {
   throw new Error("VITE_POCKETBASE_URL is needed");
 }
 
-const pb = new PocketBase(pocketBaseUrl);
+export const pb = new PocketBase(pocketBaseUrl);
 
 export const useConfiguratorStore = create((set, get) => ({
   categories: [],
@@ -24,10 +24,15 @@ export const useConfiguratorStore = create((set, get) => ({
       sort: "-created",
     });
 
-    console.log(categories);
+    console.log(assets);
+
+    categories.forEach((category) => {
+      category.assets = assets.filter((asset) => asset.group === category.id);
+      console.log(category.assets);
+    });
 
     set({ categories, currentCategory: categories[0], assets });
   },
 
-  setCurrentCategory: (category) => ({ currentCategory: category }),
+  setCurrentCategory: (category) => set({ currentCategory: category }),
 }));
