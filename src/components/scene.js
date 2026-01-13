@@ -5,7 +5,7 @@ import {
   PerspectiveCamera,
 } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import Avatar from "./Avatar";
+import Avatar from "./scene/Avatar";
 import { useRef } from "react";
 
 const Scene = () => {
