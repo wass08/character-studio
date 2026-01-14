@@ -15,6 +15,8 @@ export const useConfiguratorStore = create((set, get) => ({
   currentCategory: null,
   assets: [],
   customization: {},
+  download: () => {},
+  setDownload: (download) => set({ download }),
   fetchCategories: async () => {
     const categories = await pb
       .collection("CharacterStudioGroups")

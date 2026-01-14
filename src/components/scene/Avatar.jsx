@@ -2,6 +2,7 @@ import React, { Suspense, useRef, useEffect } from "react";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { Asset } from "./Asset";
+import { GLTFExporter } from "three-stdlib";
 
 export default function Model(props) {
   const group = useRef();
@@ -9,6 +10,7 @@ export default function Model(props) {
   const { actions, names } = useAnimations(animations, group);
 
   const customization = useConfiguratorStore((state) => state.customization);
+  const setDownload = useConfiguratorStore((state) => state.setDownload);
 
   useEffect(() => {
     console.log("Available Animations:", names);
@@ -17,6 +19,45 @@ export default function Model(props) {
       actions["Rig|Walk_Loop"].reset().fadeIn(0.5).play();
     }
   }, [actions, names]);
+
+  useEffect(() => {
+    function download() {
+      if (!group.current) return;
+
+      const exporter = new GLTFExporter();
+
+      exporter.parse(
+        group.current,
+        function (result) {
+          save(
+            new Blob([result], { type: "application/octet-stream" }),
+            `avatar_${+new Date()}.glb`
+          );
+        },
+        function (error) {
+          console.error("An error happened during export:", error);
+        },
+        { binary: true }
+      );
+    }
+
+    const link = document.createElement("a");
+    link.style.display = "none";
+    document.body.appendChild(link);
+
+    function save(blob, filename) {
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    setDownload(download);
+
+    return () => {
+      document.body.removeChild(link);
+    };
+  }, [setDownload]);
 
   return (
     <group ref={group} {...props} dispose={null}>
