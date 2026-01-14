@@ -15,7 +15,7 @@ export const Asset = ({ url, skeleton }) => {
       }
     });
     return items;
-  }, []);
+  }, [scene]);
 
   return attachedItems.map((item, index) => (
     <skinnedMesh

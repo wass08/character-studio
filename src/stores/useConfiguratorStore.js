@@ -31,6 +31,12 @@ export const useConfiguratorStore = create((set, get) => ({
     categories.forEach((category) => {
       category.assets = assets.filter((asset) => asset.group === category.id);
       customization[category.name] = {};
+
+      if (category.startingAsset) {
+        customization[category.name].asset = category.assets.find(
+          (asset) => asset.id === category.startingAsset
+        );
+      }
     });
 
     set({ categories, currentCategory: categories[0], assets, customization });
