@@ -14,8 +14,6 @@ export default function Model(props) {
     console.log("Available Animations:", names);
 
     if (names.length > 0) {
-      // Plays the first animation found.
-      // Replace names[0] with a string like "Idle" if you know the name.
       actions["Rig|Walk_Loop"].reset().fadeIn(0.5).play();
     }
   }, [actions, names]);
