@@ -1,15 +1,27 @@
-import React, { Suspense, useRef } from "react";
-import { useGLTF } from "@react-three/drei";
+import React, { Suspense, useRef, useEffect } from "react";
+import { useAnimations, useGLTF } from "@react-three/drei";
 import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { Asset } from "./Asset";
 
 export default function Model(props) {
-  const { nodes, materials } = useGLTF("/models/Armature.glb");
+  const group = useRef();
+  const { nodes, materials, animations } = useGLTF("/models/Armature.glb");
+  const { actions, names } = useAnimations(animations, group);
 
   const customization = useConfiguratorStore((state) => state.customization);
 
+  useEffect(() => {
+    console.log("Available Animations:", names);
+
+    if (names.length > 0) {
+      // Plays the first animation found.
+      // Replace names[0] with a string like "Idle" if you know the name.
+      actions["Rig|Walk_Loop"].reset().fadeIn(0.5).play();
+    }
+  }, [actions, names]);
+
   return (
-    <group {...props} dispose={null}>
+    <group ref={group} {...props} dispose={null}>
       <group name="Scene">
         <group
           name="Rig"
