@@ -1,8 +1,24 @@
+import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { useGLTF } from "@react-three/drei";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
-export const Asset = ({ url, skeleton }) => {
+export const Asset = ({ url, categoryName, skeleton }) => {
   const { scene } = useGLTF(url);
+
+  const customization = useConfiguratorStore((state) => state.customization);
+  const skin = useConfiguratorStore((state) => state.skin);
+
+  const assetcolor = customization[categoryName].color;
+
+  useEffect(() => {
+    scene.traverse((child) => {
+      if (child.isMesh) {
+        if (child.material?.name.includes("Color_")) {
+          child.material.color.set(assetcolor);
+        }
+      }
+    });
+  }, [assetcolor, scene]);
 
   const attachedItems = useMemo(() => {
     const items = [];
@@ -10,7 +26,9 @@ export const Asset = ({ url, skeleton }) => {
       if (child.isMesh) {
         items.push({
           geometry: child.geometry,
-          material: child.material,
+          material: child.material.name.includes("Skin_")
+            ? skin
+            : child.material,
         });
       }
     });

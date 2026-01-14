@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import PocketBase from "pocketbase";
+import { MeshStandardMaterial } from "three";
 
 const pocketBaseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL;
 
@@ -14,14 +15,37 @@ export const useConfiguratorStore = create((set, get) => ({
   categories: [],
   currentCategory: null,
   assets: [],
+  skin: new MeshStandardMaterial({
+    color: 0xffcc99,
+    roughness: 1,
+  }),
   customization: {},
   download: () => {},
   setDownload: (download) => set({ download }),
+  updateColor: (colorObj) => {
+    set((state) => ({
+      customization: {
+        ...state.customization,
+        [state.currentCategory.name]: {
+          ...state.customization[state.currentCategory.name],
+          color: colorObj.hex,
+          colorData: colorObj.hsl,
+        },
+      },
+    }));
+    if (get().currentCategory.name === "Head") {
+      get().updateSkin(color);
+    }
+  },
+  updateSkin: (color) => {
+    get().skin.color.set(color);
+  },
   fetchCategories: async () => {
     const categories = await pb
       .collection("CharacterStudioGroups")
       .getFullList({
         sort: "+position",
+        expand: "colorPalette",
       });
     const assets = await pb.collection("CharacterStudioAssets").getFullList({
       sort: "-created",
@@ -32,7 +56,9 @@ export const useConfiguratorStore = create((set, get) => ({
     const customization = {};
     categories.forEach((category) => {
       category.assets = assets.filter((asset) => asset.group === category.id);
-      customization[category.name] = {};
+      customization[category.name] = {
+        color: category.expand?.colorPalette?.colors?.[0] || "",
+      };
 
       if (category.startingAsset) {
         customization[category.name].asset = category.assets.find(

@@ -1,0 +1,91 @@
+.color-picker-root {
+  position: absolute;
+  left: 48px;
+  top: 48px;
+
+  z-index: 999;
+}
+.custom-picker-container {
+  width: 240px;
+  height: 200px;
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+div:has(> .saturation-pointer) {
+  overflow: visible !important;
+}
+
+.saturation-wrapper {
+  width: 100% !important;
+  height: 150px !important;
+  position: relative !important;
+  margin-bottom: 10px;
+  overflow: visible !important;
+}
+
+.swatch-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+  max-width: 100%;
+  overflow: scroll;
+}
+
+.swatch-item {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.swatch-item:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hue-wrapper {
+  width: 100% !important;
+  height: 14px !important;
+  position: relative !important;
+  margin-bottom: 15px;
+  overflow: visible !important;
+}
+
+.custom-picker-container {
+  padding: 15px;
+  box-sizing: border-box;
+}
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  background: #f1f1f1;
+  border-radius: 6px;
+  padding: 4px 10px;
+}
+
+.input-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #aaa;
+  margin-right: 8px;
+}
+
+.input-wrapper input {
+  width: 100%;
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  font-family: "Courier New", Courier, monospace;
+  font-weight: bold;
+  color: #333;
+  padding: 4px 0;
+}

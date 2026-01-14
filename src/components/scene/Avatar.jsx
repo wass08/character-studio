@@ -75,6 +75,7 @@ export default function Model(props) {
               customization[key]?.asset?.url && (
                 <Suspense key={customization[key].asset.id}>
                   <Asset
+                    categoryName={key}
                     url={pb.files.getURL(
                       customization[key].asset,
                       customization[key].asset.url
