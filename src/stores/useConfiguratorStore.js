@@ -15,6 +15,8 @@ export const useConfiguratorStore = create((set, get) => ({
   categories: [],
   currentCategory: null,
   assets: [],
+  height: 1,
+  setHeight: (height) => set({ height }),
   skin: new MeshStandardMaterial({
     color: 0xffcc99,
     roughness: 1,

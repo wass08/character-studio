@@ -11,10 +11,9 @@ export default function Model(props) {
 
   const customization = useConfiguratorStore((state) => state.customization);
   const setDownload = useConfiguratorStore((state) => state.setDownload);
+  const height = useConfiguratorStore((state) => state.height);
 
   useEffect(() => {
-    console.log("Available Animations:", names);
-
     if (names.length > 0) {
       actions["Rig|Walk_Loop"].reset().fadeIn(0.5).play();
     }
@@ -66,6 +65,7 @@ export default function Model(props) {
           name="Rig"
           position={[0, 0, 0.098]}
           rotation={[Math.PI, 0, Math.PI]}
+          scale={[height, height, height]}
         >
           <primitive object={nodes.root} />
           <primitive object={nodes["MCH-eyes_parent"]} />
