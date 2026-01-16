@@ -1,6 +1,6 @@
 "use client";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
-import React from "react";
+import React, { useMemo } from "react";
 
 import "./ShapeKeyControls.css";
 
@@ -14,25 +14,83 @@ const ShapeKeyControls = () => {
     ...new Set(Object.values(detectedMorphsByCategory).flat()),
   ];
 
+  const morphAnalysis = useMemo(() => {
+    const counts = {};
+    const categoriesPerMorph = {};
+
+    Object.entries(detectedMorphsByCategory).forEach(([category, keys]) => {
+      keys.forEach((key) => {
+        counts[key] = (counts[key] || 0) + 1;
+        if (!categoriesPerMorph[key]) categoriesPerMorph[key] = [];
+        categoriesPerMorph[key].push(category);
+      });
+    });
+
+    const universal = [];
+    const specific = [];
+
+    Object.keys(counts).forEach((key) => {
+      if (counts[key] > 1) {
+        universal.push(key);
+      } else {
+        specific.push({ key, category: categoriesPerMorph[key][0] });
+      }
+    });
+
+    return { universal, specific };
+  }, [detectedMorphsByCategory]);
+
+  const { universal, specific } = morphAnalysis;
+
   return (
     <>
       <div className="morph-controls-container">
-        {uniqueMorphs.map((key) => (
-          <div key={key}>
-            <label>{key}</label>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={morphValues[key] || 0}
-              onChange={(e) => setMorphValue(key, parseFloat(e.target.value))}
-            />
-          </div>
-        ))}
+        <div className="controls-wrapper">
+          {universal.length > 0 && (
+            <div className="morph-group universal">
+              <h4>Global Adjustments</h4>
+              {universal.map((key) => (
+                <MorphSlider
+                  key={key}
+                  label={key}
+                  value={morphValues[key]}
+                  onChange={(v) => setMorphValue(key, v)}
+                />
+              ))}
+            </div>
+          )}
+
+          {specific.length > 0 && (
+            <div className="morph-group specific">
+              <h4>Item Details</h4>
+              {specific.map(({ key, category }) => (
+                <MorphSlider
+                  key={key}
+                  label={`${key} (${category})`}
+                  value={morphValues[key]}
+                  onChange={(v) => setMorphValue(key, v)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
 };
 
 export default ShapeKeyControls;
+
+const MorphSlider = ({ label, value, onChange }) => (
+  <div className="slider-item">
+    <label>{label}</label>
+    <input
+      type="range"
+      min="0"
+      max="1"
+      step="0.01"
+      value={value || 0}
+      onChange={(e) => onChange(parseFloat(e.target.value))}
+    />
+  </div>
+);
