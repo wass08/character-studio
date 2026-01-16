@@ -10,9 +10,6 @@ const ShapeKeyControls = () => {
   );
   const morphValues = useConfiguratorStore((state) => state.morphValues);
   const setMorphValue = useConfiguratorStore((state) => state.setMorphValue);
-  const uniqueMorphs = [
-    ...new Set(Object.values(detectedMorphsByCategory).flat()),
-  ];
 
   const morphAnalysis = useMemo(() => {
     const counts = {};
