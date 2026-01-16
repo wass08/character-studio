@@ -8,26 +8,21 @@ import DownloadButton from "./DownloadButton/DownloadButton";
 import ColorPicker from "./ColorPicker/ColorPicker";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { HeightSlider } from "./HeightSlider/HeightSlider";
+import ShapeKeyControls from "./ShapeKeyControls/ShapeKeyControls";
 
 const UI = () => {
-  const {
-    categories,
-    currentCategory,
-    fetchCategories,
-    setCurrentCategory,
-    customization,
-    changeAsset,
-  } = useConfiguratorStore();
+  const { currentCategory, customization, detectedMorphs } =
+    useConfiguratorStore();
 
   return (
     <>
       <DownloadButton />
       <AssetsBox />
       <HeightSlider />
-
       {currentCategory?.colorPalette && customization[currentCategory.name] && (
         <ColorPicker />
       )}
+      {detectedMorphs.length > 0 && <ShapeKeyControls />}
     </>
   );
 };

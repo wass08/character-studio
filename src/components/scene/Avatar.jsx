@@ -30,13 +30,13 @@ export default function Model(props) {
         function (result) {
           save(
             new Blob([result], { type: "application/octet-stream" }),
-            `avatar_${+new Date()}.glb`
+            `avatar_${+new Date()}.glb`,
           );
         },
         function (error) {
           console.error("An error happened during export:", error);
         },
-        { binary: true }
+        { binary: true },
       );
     }
 
@@ -68,7 +68,7 @@ export default function Model(props) {
           scale={[height, height, height]}
         >
           <primitive object={nodes.root} />
-          <primitive object={nodes["MCH-eyes_parent"]} />
+          {/* <primitive object={nodes["MCH-eyes_parent"]} /> */}
 
           {Object.keys(customization).map(
             (key) =>
@@ -78,12 +78,12 @@ export default function Model(props) {
                     categoryName={key}
                     url={pb.files.getURL(
                       customization[key].asset,
-                      customization[key].asset.url
+                      customization[key].asset.url,
                     )}
                     skeleton={nodes.Plane.skeleton}
                   />
                 </Suspense>
-              )
+              ),
           )}
         </group>
       </group>

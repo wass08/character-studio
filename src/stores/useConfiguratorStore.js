@@ -21,6 +21,17 @@ export const useConfiguratorStore = create((set, get) => ({
     color: 0xffcc99,
     roughness: 1,
   }),
+  morphValues: {},
+  detectedMorphs: [],
+  setMorphValue: (key, value) =>
+    set((state) => ({
+      morphValues: { ...state.morphValues, [key]: value },
+    })),
+  registerMorphs: (keys) =>
+    set((state) => {
+      const newKeys = [...new Set([...state.detectedMorphs, ...keys])];
+      return { detectedMorphs: newKeys };
+    }),
   customization: {},
   download: () => {},
   setDownload: (download) => set({ download }),
@@ -64,7 +75,7 @@ export const useConfiguratorStore = create((set, get) => ({
 
       if (category.startingAsset) {
         customization[category.name].asset = category.assets.find(
-          (asset) => asset.id === category.startingAsset
+          (asset) => asset.id === category.startingAsset,
         );
       }
     });
