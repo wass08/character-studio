@@ -6,7 +6,7 @@ import { MeshStandardMaterial } from "three";
 const pocketBaseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL;
 
 if (!pocketBaseUrl) {
-  throw new Error("VITE_POCKETBASE_URL is needed");
+  throw new Error("NEXT_PUBLIC_POCKETBASE_URL is needed");
 }
 
 export const pb = new PocketBase(pocketBaseUrl);
