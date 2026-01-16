@@ -11,8 +11,11 @@ import { HeightSlider } from "./HeightSlider/HeightSlider";
 import ShapeKeyControls from "./ShapeKeyControls/ShapeKeyControls";
 
 const UI = () => {
-  const { currentCategory, customization, detectedMorphs } =
-    useConfiguratorStore();
+  const customization = useConfiguratorStore((state) => state.customization);
+  const currentCategory = useConfiguratorStore(
+    (state) => state.currentCategory,
+  );
+  const detectedMorphs = useConfiguratorStore((state) => state.detectedMorphs);
 
   return (
     <>
