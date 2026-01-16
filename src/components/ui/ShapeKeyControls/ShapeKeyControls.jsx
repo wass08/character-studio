@@ -5,17 +5,21 @@ import React from "react";
 import "./ShapeKeyControls.css";
 
 const ShapeKeyControls = () => {
-  const detectedMorphs = useConfiguratorStore((state) => state.detectedMorphs);
+  const detectedMorphsByCategory = useConfiguratorStore(
+    (state) => state.detectedMorphsByCategory,
+  );
   const morphValues = useConfiguratorStore((state) => state.morphValues);
   const setMorphValue = useConfiguratorStore((state) => state.setMorphValue);
+  const uniqueMorphs = [
+    ...new Set(Object.values(detectedMorphsByCategory).flat()),
+  ];
 
   return (
     <>
       <div className="morph-controls-container">
-        <h3>Character Adjustments</h3>
-        {detectedMorphs.map((key) => (
-          <div key={key} className="morph-control">
-            <label>{key.charAt(0).toUpperCase() + key.slice(1)}</label>
+        {uniqueMorphs.map((key) => (
+          <div key={key}>
+            <label>{key}</label>
             <input
               type="range"
               min="0"

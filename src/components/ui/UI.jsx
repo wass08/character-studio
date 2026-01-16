@@ -15,7 +15,11 @@ const UI = () => {
   const currentCategory = useConfiguratorStore(
     (state) => state.currentCategory,
   );
-  const detectedMorphs = useConfiguratorStore((state) => state.detectedMorphs);
+  const detectedMorphsByCategory = useConfiguratorStore(
+    (state) => state.detectedMorphsByCategory,
+  );
+  const activeMorphs = Object.values(detectedMorphsByCategory).flat();
+  const uniqueMorphs = [...new Set(activeMorphs)];
 
   return (
     <>
@@ -25,7 +29,7 @@ const UI = () => {
       {currentCategory?.colorPalette && customization[currentCategory.name] && (
         <ColorPicker />
       )}
-      {detectedMorphs.length > 0 && <ShapeKeyControls />}
+      {uniqueMorphs.length > 0 && <ShapeKeyControls />}
     </>
   );
 };

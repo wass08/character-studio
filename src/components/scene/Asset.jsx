@@ -48,10 +48,10 @@ export const Asset = ({ url, categoryName, skeleton }) => {
       }
     });
 
-    if (allKeys.length > 0) {
-      registerMorphs(allKeys);
-    }
-  }, [scene, registerMorphs]);
+    registerMorphs(categoryName, [...new Set(allKeys)]);
+
+    return () => registerMorphs(categoryName, []);
+  }, [scene, categoryName, registerMorphs]);
 
   useEffect(() => {
     meshRefs.current.forEach((mesh) => {

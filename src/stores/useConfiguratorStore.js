@@ -22,16 +22,18 @@ export const useConfiguratorStore = create((set, get) => ({
     roughness: 1,
   }),
   morphValues: {},
-  detectedMorphs: [],
+  detectedMorphsByCategory: {},
   setMorphValue: (key, value) =>
     set((state) => ({
       morphValues: { ...state.morphValues, [key]: value },
     })),
-  registerMorphs: (keys) =>
-    set((state) => {
-      const newKeys = [...new Set([...state.detectedMorphs, ...keys])];
-      return { detectedMorphs: newKeys };
-    }),
+  registerMorphs: (categoryName, keys) =>
+    set((state) => ({
+      detectedMorphsByCategory: {
+        ...state.detectedMorphsByCategory,
+        [categoryName]: keys,
+      },
+    })),
   customization: {},
   download: () => {},
   setDownload: (download) => set({ download }),
