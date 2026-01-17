@@ -1,6 +1,48 @@
-.morph-controls-container {
+.shape-key-container {
   width: 200px;
   position: absolute;
   top: 50%;
   left: 80px;
+}
+
+.shape-key-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.reset-btn-main {
+  background: #ff4444;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+}
+
+.group-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #888;
+  border-bottom: 1px solid #333;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+}
+
+.group-label button {
+  background: transparent;
+  border: 1px solid #555;
+  color: #aaa;
+  font-size: 0.6rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.group-label button:hover {
+  color: white;
+  border-color: white;
 }

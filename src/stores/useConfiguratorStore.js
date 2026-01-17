@@ -34,6 +34,22 @@ export const useConfiguratorStore = create((set, get) => ({
         [categoryName]: keys,
       },
     })),
+  resetAllMorphs: () => {
+    const currentValues = get().morphValues;
+    const resetValues = {};
+    Object.keys(currentValues).forEach((key) => {
+      resetValues[key] = 0;
+    });
+    set({ morphValues: resetValues });
+  },
+  resetMorphSet: (keys) =>
+    set((state) => {
+      const newValues = { ...state.morphValues };
+      keys.forEach((key) => {
+        newValues[key] = 0;
+      });
+      return { morphValues: newValues };
+    }),
   customization: {},
   download: () => {},
   setDownload: (download) => set({ download }),
