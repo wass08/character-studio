@@ -8,8 +8,10 @@ const pocketBaseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL;
 if (!pocketBaseUrl) {
   throw new Error("NEXT_PUBLIC_POCKETBASE_URL is needed");
 }
-
 export const pb = new PocketBase(pocketBaseUrl);
+
+const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const randFloat = (min, max) => Math.random() * (max - min) + min;
 
 export const useConfiguratorStore = create((set, get) => ({
   categories: [],
@@ -89,8 +91,6 @@ export const useConfiguratorStore = create((set, get) => ({
       sort: "-created",
     });
 
-    console.log(assets);
-
     const customization = {};
     categories.forEach((category) => {
       category.assets = assets.filter((asset) => asset.group === category.id);
@@ -107,7 +107,6 @@ export const useConfiguratorStore = create((set, get) => ({
 
     set({ categories, currentCategory: categories[0], assets, customization });
   },
-
   setCurrentCategory: (category) => set({ currentCategory: category }),
   changeAsset: (category, asset) => {
     set((state) => ({
@@ -119,5 +118,47 @@ export const useConfiguratorStore = create((set, get) => ({
         },
       },
     }));
+  },
+
+  randomize: () => {
+    const customization = {};
+    const morphValues = { ...get().morphValues };
+    const categories = get().categories;
+    const detectedMorphs = get().detectedMorphsByCategory;
+
+    categories.forEach((category) => {
+      let randomAsset = category.assets[randInt(0, category.assets.length - 1)];
+
+      if (category.optional && Math.random() > 0.7) {
+        randomAsset = null;
+      }
+
+      const colors = category.expand?.colorPalette?.colors;
+      const randomColor = colors ? colors[randInt(0, colors.length - 1)] : "";
+
+      customization[category.name] = {
+        asset: randomAsset,
+        color: randomColor,
+      };
+
+      const categoryMorphs = detectedMorphs[category.name];
+      if (categoryMorphs) {
+        categoryMorphs.forEach((morphKey) => {
+          morphValues[morphKey] = randFloat(0, 1);
+        });
+      }
+
+      if (category.name === "skin" && randomColor) {
+        get().updateSkin(randomColor);
+      }
+    });
+
+    const randomHeight = randFloat(0.5, 2);
+
+    set({
+      customization,
+      morphValues,
+      height: randomHeight,
+    });
   },
 }));

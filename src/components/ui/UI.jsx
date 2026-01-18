@@ -9,6 +9,7 @@ import ColorPicker from "./ColorPicker/ColorPicker";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { HeightSlider } from "./HeightSlider/HeightSlider";
 import ShapeKeyControls from "./ShapeKeyControls/ShapeKeyControls";
+import RandomizeButton from "./RandomizeButton/RandomizeButton";
 
 const UI = () => {
   const customization = useConfiguratorStore((state) => state.customization);
@@ -27,6 +28,7 @@ const UI = () => {
 
   return (
     <>
+      <RandomizeButton />
       <DownloadButton />
       <AssetsBox />
       <HeightSlider />
