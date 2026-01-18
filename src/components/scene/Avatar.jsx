@@ -1,5 +1,7 @@
 import React, { Suspense, useRef, useEffect } from "react";
 import { useAnimations, useGLTF } from "@react-three/drei";
+import { NodeIO } from "@gltf-transform/core";
+import { dedup, draco, prune, quantize } from "@gltf-transform/functions";
 import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { Asset } from "./Asset";
 import { GLTFExporter } from "three-stdlib";
@@ -38,20 +40,35 @@ export default function Model(props) {
 
   useEffect(() => {
     function download() {
-      if (!group.current) return;
-
       const exporter = new GLTFExporter();
-
       exporter.parse(
         group.current,
-        function (result) {
+        async function (result) {
+          const io = new NodeIO();
+
+          // Read.
+          const document = await io.readBinary(new Uint8Array(result)); // Uint8Array → Document
+          await document.transform(
+            // Remove unused nodes, textures, or other data.
+            prune(),
+            // Remove duplicate vertex or texture data, if any.
+            dedup(),
+            // Compress mesh geometry with Draco.
+            draco(),
+            // Quantize mesh geometry.
+            quantize(),
+          );
+
+          // Write.
+          const glb = await io.writeBinary(document); // Document → Uint8Array
+
           save(
-            new Blob([result], { type: "application/octet-stream" }),
+            new Blob([glb], { type: "application/octet-stream" }),
             `avatar_${+new Date()}.glb`,
           );
         },
         function (error) {
-          console.error("An error happened during export:", error);
+          console.error(error);
         },
         { binary: true },
       );
@@ -59,21 +76,15 @@ export default function Model(props) {
 
     const link = document.createElement("a");
     link.style.display = "none";
-    document.body.appendChild(link);
+    document.body.appendChild(link); // Firefox workaround, see #6594
 
     function save(blob, filename) {
       link.href = URL.createObjectURL(blob);
       link.download = filename;
       link.click();
-      URL.revokeObjectURL(link.href);
     }
-
     setDownload(download);
-
-    return () => {
-      document.body.removeChild(link);
-    };
-  }, [setDownload]);
+  }, []);
 
   return (
     <group ref={group} {...props} dispose={null}>

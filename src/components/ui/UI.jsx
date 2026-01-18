@@ -13,6 +13,7 @@ import RandomizeButton from "./RandomizeButton/RandomizeButton";
 import PosesBox from "./PosesBox/PosesBox";
 import ModeSelector from "./ModeSelector/ModeSelector";
 import ScreenshotButton from "./ScreenshotButton/ScreenshotButton";
+import LoadingScreen from "./LoadingScreen/LoadingScreen";
 
 const UI = () => {
   const customization = useConfiguratorStore((state) => state.customization);
@@ -32,6 +33,7 @@ const UI = () => {
 
   return (
     <>
+      <LoadingScreen />
       <RandomizeButton />
       <ScreenshotButton />
       <DownloadButton />
