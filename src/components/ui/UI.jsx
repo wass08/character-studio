@@ -12,6 +12,7 @@ import ShapeKeyControls from "./ShapeKeyControls/ShapeKeyControls";
 import RandomizeButton from "./RandomizeButton/RandomizeButton";
 import PosesBox from "./PosesBox/PosesBox";
 import ModeSelector from "./ModeSelector/ModeSelector";
+import ScreenshotButton from "./ScreenshotButton/ScreenshotButton";
 
 const UI = () => {
   const customization = useConfiguratorStore((state) => state.customization);
@@ -32,6 +33,7 @@ const UI = () => {
   return (
     <>
       <RandomizeButton />
+      <ScreenshotButton />
       <DownloadButton />
       <HeightSlider />
       <ModeSelector />

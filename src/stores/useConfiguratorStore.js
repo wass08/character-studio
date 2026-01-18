@@ -24,6 +24,7 @@ export const UI_MODES = {
 };
 
 export const useConfiguratorStore = create((set, get) => ({
+  loading: true,
   mode: UI_MODES.CUSTOMIZE,
   setMode: (mode) => {
     set({ mode: mode });
@@ -73,6 +74,8 @@ export const useConfiguratorStore = create((set, get) => ({
   customization: {},
   download: () => {},
   setDownload: (download) => set({ download }),
+  screenshot: () => {},
+  setScreenshot: (screenshot) => set({ screenshot }),
   updateColor: (colorObj) => {
     const hexColor = colorObj.hex || colorObj;
     const categoryName = get().currentCategory.name;
@@ -125,7 +128,13 @@ export const useConfiguratorStore = create((set, get) => ({
       }
     });
 
-    set({ categories, currentCategory: categories[0], assets, customization });
+    set({
+      categories,
+      currentCategory: categories[0],
+      assets,
+      customization,
+      loading: false,
+    });
   },
   setCurrentCategory: (category) => set({ currentCategory: category }),
   changeAsset: (category, asset) => {
