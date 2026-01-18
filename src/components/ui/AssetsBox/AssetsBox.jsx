@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-const { useConfiguratorStore, pb } = require("@/stores/useConfiguratorStore");
-const { useEffect } = require("react");
+import { useConfiguratorStore, pb } from "@/stores/useConfiguratorStore";
+import { useEffect } from "react";
 
 import "./AssetsBox.css";
 

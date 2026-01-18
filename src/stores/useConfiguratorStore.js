@@ -13,7 +13,25 @@ export const pb = new PocketBase(pocketBaseUrl);
 const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const randFloat = (min, max) => Math.random() * (max - min) + min;
 
+export const PHOTO_POSES = {
+  Idle: "Idle",
+  Walk: "Rig|Walk_Loop",
+};
+
+export const UI_MODES = {
+  PHOTO: "photo",
+  CUSTOMIZE: "customize",
+};
+
 export const useConfiguratorStore = create((set, get) => ({
+  mode: UI_MODES.CUSTOMIZE,
+  setMode: (mode) => {
+    set({ mode: mode });
+  },
+  pose: PHOTO_POSES.Idle,
+  setPose: (pose) => {
+    set({ pose });
+  },
   categories: [],
   currentCategory: null,
   assets: [],
@@ -81,6 +99,8 @@ export const useConfiguratorStore = create((set, get) => ({
     }
   },
   fetchCategories: async () => {
+    if (get().categories.length > 0) return;
+
     const categories = await pb
       .collection("CharacterStudioGroups")
       .getFullList({

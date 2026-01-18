@@ -6,10 +6,12 @@ import AssetsBox from "./AssetsBox/AssetsBox";
 import "./UI.css";
 import DownloadButton from "./DownloadButton/DownloadButton";
 import ColorPicker from "./ColorPicker/ColorPicker";
-import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
+import { UI_MODES, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { HeightSlider } from "./HeightSlider/HeightSlider";
 import ShapeKeyControls from "./ShapeKeyControls/ShapeKeyControls";
 import RandomizeButton from "./RandomizeButton/RandomizeButton";
+import PosesBox from "./PosesBox/PosesBox";
+import ModeSelector from "./ModeSelector/ModeSelector";
 
 const UI = () => {
   const customization = useConfiguratorStore((state) => state.customization);
@@ -24,17 +26,26 @@ const UI = () => {
 
   const isSkinCategory = currentCategory?.name === "skin";
   const hasAsset = customization[currentCategory?.name]?.asset;
-  const hasPalette = currentCategory?.colorPalette;
+
+  const mode = useConfiguratorStore((state) => state.mode);
 
   return (
     <>
       <RandomizeButton />
       <DownloadButton />
-      <AssetsBox />
       <HeightSlider />
-      {(isSkinCategory || (currentCategory?.colorPalette && hasAsset)) && (
-        <ColorPicker />
+      <ModeSelector />
+
+      {mode === UI_MODES.CUSTOMIZE && (
+        <>
+          {(isSkinCategory || (currentCategory?.colorPalette && hasAsset)) && (
+            <ColorPicker />
+          )}
+          <AssetsBox />
+        </>
       )}
+      {mode === UI_MODES.PHOTO && <PosesBox />}
+
       {uniqueMorphs.length > 0 && <ShapeKeyControls />}
     </>
   );

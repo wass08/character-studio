@@ -1,0 +1,6 @@
+.mode-selector {
+  position: absolute;
+  top: 96px;
+  left: 256px;
+  display: flex;
+}

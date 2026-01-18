@@ -13,11 +13,28 @@ export default function Model(props) {
   const setDownload = useConfiguratorStore((state) => state.setDownload);
   const height = useConfiguratorStore((state) => state.height);
 
+  const pose = useConfiguratorStore((state) => state.pose);
+
   useEffect(() => {
-    if (names.length > 0) {
-      actions["Rig|Walk_Loop"].reset().fadeIn(0.5).play();
+    animations.forEach((clip) => {
+      clip.tracks = clip.tracks.filter(
+        (track) => !track.name.includes(".scale"),
+      );
+    });
+  }, [animations]);
+
+  useEffect(() => {
+    const rig = group.current?.getObjectByName("Rig");
+    if (rig) rig.scale.set(height, height, height);
+  }, [height]);
+
+  useEffect(() => {
+    const action = actions[pose];
+    if (action) {
+      action.reset().fadeIn(0.5).play();
+      return () => action.fadeOut(0.2).stop();
     }
-  }, [actions, names]);
+  }, [actions, pose]);
 
   useEffect(() => {
     function download() {

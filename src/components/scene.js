@@ -7,20 +7,17 @@ import {
 import { Canvas, useFrame } from "@react-three/fiber";
 import Avatar from "./scene/Avatar";
 import { useRef } from "react";
+import { CameraManager } from "./scene/CameraManager";
+import { Leva } from "leva";
 
 const Scene = () => {
   const camera = useRef();
 
   return (
     <Canvas>
-      <PerspectiveCamera
-        ref={camera}
-        makeDefault
-        fov={35}
-        position={[0, 1.2, -5]}
-      />
+      <Leva hidden />
+      <CameraManager />
 
-      <CameraControls setTarget={[0, 3, 0]} />
       <color attach="background" args={["#424242"]} />
       <Environment
         background={false}

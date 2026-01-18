@@ -1,0 +1,17 @@
+.pose-box {
+  position: absolute;
+  bottom: 24px;
+  left: 50px;
+  width: 80%;
+  height: 100px;
+  background: white;
+  color: black;
+  display: flex;
+  justify-content: space-between;
+}
+
+.pose-button {
+  height: 100px;
+  width: 50px;
+  background-color: beige;
+}
