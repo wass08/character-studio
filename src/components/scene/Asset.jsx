@@ -8,7 +8,9 @@ export const Asset = ({ url, categoryName, skeleton }) => {
   const customization = useConfiguratorStore((state) => state.customization);
   const skin = useConfiguratorStore((state) => state.skin);
 
-  const assetcolor = customization[categoryName].color;
+  const assetColor = customization[categoryName]?.color;
+  const skinColor = customization["skin"]?.color;
+
   const registerMorphs = useConfiguratorStore((state) => state.registerMorphs);
   const morphValues = useConfiguratorStore((state) => state.morphValues);
   const meshRefs = useRef([]);
@@ -16,29 +18,29 @@ export const Asset = ({ url, categoryName, skeleton }) => {
   useEffect(() => {
     scene.traverse((child) => {
       if (child.isMesh) {
-        if (child.material?.name.includes("Color_")) {
-          child.material.color.set(assetcolor);
+        if (child.material?.name.includes("Color_") && assetColor) {
+          child.material.color.set(assetColor);
         }
       }
     });
-  }, [assetcolor, scene]);
+  }, [assetColor, scene]);
 
   const attachedItems = useMemo(() => {
     const items = [];
     scene.traverse((child) => {
       if (child.isMesh) {
+        const isSkin = child.material?.name.includes("Skin");
+
         items.push({
           geometry: child.geometry,
-          material: child.material.name.includes("Skin_")
-            ? skin
-            : child.material,
+          material: isSkin ? skin : child.material,
           morphTargetDictionary: child.morphTargetDictionary,
           morphTargetInfluences: child.morphTargetInfluences,
         });
       }
     });
     return items;
-  }, [scene]);
+  }, [scene, skin, skinColor]);
 
   useEffect(() => {
     const allKeys = [];

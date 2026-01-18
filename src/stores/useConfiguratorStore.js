@@ -54,22 +54,29 @@ export const useConfiguratorStore = create((set, get) => ({
   download: () => {},
   setDownload: (download) => set({ download }),
   updateColor: (colorObj) => {
+    const hexColor = colorObj.hex || colorObj;
+    const categoryName = get().currentCategory.name;
+
     set((state) => ({
       customization: {
         ...state.customization,
-        [state.currentCategory.name]: {
-          ...state.customization[state.currentCategory.name],
-          color: colorObj.hex,
-          colorData: colorObj.hsl,
+        [categoryName]: {
+          ...state.customization[categoryName],
+          color: hexColor,
+          colorData: colorObj.hsl || null,
         },
       },
     }));
-    if (get().currentCategory.name === "Head") {
-      get().updateSkin(color);
+
+    if (categoryName === "skin") {
+      get().updateSkin(hexColor);
     }
   },
   updateSkin: (color) => {
-    get().skin.color.set(color);
+    const skinMaterial = get().skin;
+    if (skinMaterial) {
+      skinMaterial.color.set(color);
+    }
   },
   fetchCategories: async () => {
     const categories = await pb

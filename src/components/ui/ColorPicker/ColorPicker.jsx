@@ -37,7 +37,7 @@ const HuePointer = () => (
 
 const CustomColorPicker = (props) => {
   const currentCategory = useConfiguratorStore(
-    (state) => state.currentCategory
+    (state) => state.currentCategory,
   );
 
   const presetColors = currentCategory?.expand?.colorPalette?.colors || [];
@@ -79,7 +79,7 @@ const StyledPicker = CustomPicker(CustomColorPicker);
 const ColorPicker = () => {
   const updateColor = useConfiguratorStore((state) => state.updateColor);
   const currentCategory = useConfiguratorStore(
-    (state) => state.currentCategory
+    (state) => state.currentCategory,
   );
   const customization = useConfiguratorStore((state) => state.customization);
 
@@ -88,7 +88,12 @@ const ColorPicker = () => {
     customization[currentCategory?.name]?.color ||
     "#ffffff";
 
-  if (!customization[currentCategory?.name]?.asset) return null;
+  const isSkin = currentCategory?.name === "skin";
+  const hasAsset = customization[currentCategory?.name]?.asset;
+
+  if (!isSkin && !hasAsset) {
+    return null;
+  }
 
   return (
     <div className="color-picker-root">

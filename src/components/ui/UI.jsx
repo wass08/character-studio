@@ -21,12 +21,16 @@ const UI = () => {
   const activeMorphs = Object.values(detectedMorphsByCategory).flat();
   const uniqueMorphs = [...new Set(activeMorphs)];
 
+  const isSkinCategory = currentCategory?.name === "skin";
+  const hasAsset = customization[currentCategory?.name]?.asset;
+  const hasPalette = currentCategory?.colorPalette;
+
   return (
     <>
       <DownloadButton />
       <AssetsBox />
       <HeightSlider />
-      {currentCategory?.colorPalette && customization[currentCategory.name] && (
+      {(isSkinCategory || (currentCategory?.colorPalette && hasAsset)) && (
         <ColorPicker />
       )}
       {uniqueMorphs.length > 0 && <ShapeKeyControls />}
