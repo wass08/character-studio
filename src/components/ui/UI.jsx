@@ -4,15 +4,15 @@ import React from "react";
 
 import AssetsBox from "./AssetsBox/AssetsBox";
 import "./UI.css";
-import DownloadButton from "./DownloadButton/DownloadButton";
+import DownloadButton from "./Buttons/DownloadButton/DownloadButton";
 import ColorPicker from "./ColorPicker/ColorPicker";
 import { UI_MODES, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { HeightSlider } from "./HeightSlider/HeightSlider";
 import ShapeKeyControls from "./ShapeKeyControls/ShapeKeyControls";
-import RandomizeButton from "./RandomizeButton/RandomizeButton";
+import RandomizeButton from "./Buttons/RandomizeButton/RandomizeButton";
 import PosesBox from "./PosesBox/PosesBox";
 import ModeSelector from "./ModeSelector/ModeSelector";
-import ScreenshotButton from "./ScreenshotButton/ScreenshotButton";
+import ScreenshotButton from "./Buttons/ScreenshotButton/ScreenshotButton";
 import LoadingScreen from "./LoadingScreen/LoadingScreen";
 
 const UI = () => {

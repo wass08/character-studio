@@ -4,8 +4,8 @@ import { Environment } from "@react-three/drei";
 import { useEffect, useRef } from "react";
 import { Leva } from "leva";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
-import Avatar from "./scene/Avatar";
-import { CameraManager } from "./scene/CameraManager";
+import Avatar from "./Avatar";
+import { CameraManager } from "./CameraManager";
 
 const SceneContent = () => {
   const gl = useThree((state) => state.gl);
