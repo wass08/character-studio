@@ -1,8 +1,8 @@
 .shape-key-container {
   width: 200px;
   position: absolute;
-  top: 50%;
-  left: 80px;
+  top: 250px;
+  right: 80px;
 }
 
 .shape-key-header {

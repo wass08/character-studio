@@ -6,10 +6,10 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 export const DEFAULT_CAMERA_POSITION = [
-  -0.409973747190002, 1.2638172494736424, -2.52503921021995,
+  0.4267973687335498, 1.4059367994699732, -2.990515168885181,
 ];
 export const DEFAULT_CAMERA_TARGET = [
-  -1.2922606470757718, 0.711227468452741, 0.4337429681603808,
+  0.7773834966980404, 0.9652248734528945, 0.5650397082939782,
 ];
 
 const CAMERA_CONFIGS = {
@@ -107,7 +107,7 @@ export const CameraManager = ({ loading }) => {
     <>
       <CameraControls
         ref={controls}
-        minPolarAngle={Math.PI / 4}
+        // minPolarAngle={Math.PI / 4}
         maxPolarAngle={Math.PI / 2}
         minDistance={2}
         maxDistance={8}

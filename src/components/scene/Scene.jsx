@@ -1,6 +1,6 @@
 "use client";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Environment, SoftShadows } from "@react-three/drei";
+import { ContactShadows, Environment, SoftShadows } from "@react-three/drei";
 import { useEffect, useRef } from "react";
 import { Leva } from "leva";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
@@ -58,20 +58,19 @@ const SceneContent = () => {
         environmentRotation={[0, Math.PI / 2, 0]}
         preset="city"
       />
+
       <ambientLight intensity={0.25} />
-      <SoftShadows size={52} samples={16} focus={0.5} />
       <directionalLight
-        position={[5, 5, 5]}
-        intensity={2.2}
+        position={[-3, 5, -3]}
+        intensity={1.2}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-bias={-0.0001}
       />
       <Backdrop />
-      <directionalLight position={[-5, 5, 5]} intensity={0.7} />
-      <directionalLight position={[3, 3, -5]} intensity={6} color={"#fff"} />
-      <directionalLight position={[-3, 3, -5]} intensity={2} color={"#fff"} />
+      <directionalLight position={[-5, 5, 5]} intensity={1.5} color={"#fff"} />
+      {/* <directionalLight position={[3, 3, -5]} intensity={6} color={"#fff"} /> */}
 
       <Avatar />
     </>
@@ -80,7 +79,7 @@ const SceneContent = () => {
 
 const Scene = () => {
   return (
-    <Canvas camera={{ fov: 40 }} gl={{ preserveDrawingBuffer: true }}>
+    <Canvas shadows camera={{ fov: 40 }} gl={{ preserveDrawingBuffer: true }}>
       <SceneContent />
     </Canvas>
   );
