@@ -17,6 +17,10 @@ export default function Model(props) {
 
   const pose = useConfiguratorStore((state) => state.pose);
 
+  const remap = (value, inMin, inMax, outMin, outMax) => {
+    return ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+  };
+
   console.log(nodes);
 
   useEffect(() => {
@@ -29,7 +33,11 @@ export default function Model(props) {
 
   useEffect(() => {
     const rig = group.current?.getObjectByName("Rig");
-    if (rig) rig.scale.set(height, height, height);
+    if (rig) {
+      const visualScale = remap(height, 0.5, 2.0, 0.95, 1);
+
+      rig.scale.set(visualScale, visualScale, visualScale);
+    }
   }, [height]);
 
   useEffect(() => {

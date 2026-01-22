@@ -16,7 +16,7 @@ export const HeightSlider = () => {
       </label>
       <input
         type="range"
-        min="0.5"
+        min="0"
         max="2.0"
         step="0.01"
         value={height}
