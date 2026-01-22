@@ -17,6 +17,8 @@ export default function Model(props) {
 
   const pose = useConfiguratorStore((state) => state.pose);
 
+  console.log(nodes);
+
   useEffect(() => {
     animations.forEach((clip) => {
       clip.tracks = clip.tracks.filter(
