@@ -14,11 +14,15 @@ const AssetsBox = () => {
     setCurrentCategory,
     changeAsset,
     gender,
+    resetAllMorphs,
     loading,
+    setHeight,
   } = useConfiguratorStore();
 
   useEffect(() => {
     fetchCategories();
+    resetAllMorphs();
+    setHeight(1);
   }, [gender]);
 
   return (
