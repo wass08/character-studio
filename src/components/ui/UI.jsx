@@ -15,6 +15,7 @@ import ModeSelector from "./ModeSelector/ModeSelector";
 import ScreenshotButton from "./Buttons/ScreenshotButton/ScreenshotButton";
 import LoadingScreen from "./LoadingScreen/LoadingScreen";
 import Logo from "./Logo/Logo";
+import GenderSelectionBox from "./GenderSelectionBox/GenderSelectionBox";
 
 const UI = () => {
   const customization = useConfiguratorStore((state) => state.customization);
@@ -41,6 +42,8 @@ const UI = () => {
       <DownloadButton />
       <HeightSlider />
       <ModeSelector />
+
+      <GenderSelectionBox />
 
       {mode === UI_MODES.CUSTOMIZE && (
         <>

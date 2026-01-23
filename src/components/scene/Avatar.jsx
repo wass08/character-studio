@@ -8,7 +8,13 @@ import { GLTFExporter } from "three-stdlib";
 
 export default function Model(props) {
   const group = useRef();
-  const { nodes, materials, animations } = useGLTF("/models/Armature.glb");
+
+  const gender = useConfiguratorStore((state) => state.gender);
+
+  const { nodes, materials, animations } = useGLTF(
+    `/models/characters/${gender}/Armature.glb`,
+  );
+
   const { actions, names } = useAnimations(animations, group);
 
   const customization = useConfiguratorStore((state) => state.customization);
@@ -129,4 +135,5 @@ export default function Model(props) {
   );
 }
 
-useGLTF.preload("/models/Armature.glb");
+useGLTF.preload("/models/characters/female/Armature.glb");
+useGLTF.preload("/models/characters/male/Armature.glb");

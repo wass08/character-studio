@@ -23,8 +23,24 @@ export const UI_MODES = {
   CUSTOMIZE: "customize",
 };
 
+export const GENDERS = {
+  MALE: "male",
+  FEMALE: "female",
+  OTHER: "other", // In case we want to add more
+  NONE: "none", // In case we don't want to start with a default gender
+};
+
 export const useConfiguratorStore = create((set, get) => ({
   loading: true,
+  gender: Math.random() > 0.5 ? GENDERS.MALE : GENDERS.FEMALE,
+  setGender: (gender) => {
+    set({
+      gender: gender,
+      loading: true,
+      categories: [],
+      customization: {},
+    });
+  },
   mode: UI_MODES.CUSTOMIZE,
   setMode: (mode) => {
     set({ mode: mode });
@@ -104,27 +120,51 @@ export const useConfiguratorStore = create((set, get) => ({
   fetchCategories: async () => {
     if (get().categories.length > 0) return;
 
-    const categories = await pb
-      .collection("CharacterStudioGroups")
-      .getFullList({
+    const currentGender = get().gender;
+
+    const [categories, assets] = await Promise.all([
+      pb.collection("CharacterStudioGroups").getFullList({
         sort: "+position",
         expand: "colorPalette",
-      });
-    const assets = await pb.collection("CharacterStudioAssets").getFullList({
-      sort: "-created",
-    });
+      }),
+      pb.collection("CharacterStudioAssets").getFullList({
+        sort: "-created",
+      }),
+    ]);
 
     const customization = {};
+
     categories.forEach((category) => {
-      category.assets = assets.filter((asset) => asset.group === category.id);
+      category.assets = assets.filter(
+        (asset) =>
+          asset.group === category.id && asset.gender === currentGender,
+      );
+
       customization[category.name] = {
         color: category.expand?.colorPalette?.colors?.[0] || "",
+        asset: null,
       };
 
-      if (category.startingAsset) {
-        customization[category.name].asset = category.assets.find(
-          (asset) => asset.id === category.startingAsset,
+      const startingAssetId =
+        currentGender === GENDERS.MALE
+          ? category.startingAssetMale
+          : category.startingAssetFemale;
+
+      if (startingAssetId) {
+        const foundAsset = category.assets.find(
+          (a) => a.id === startingAssetId,
         );
+        if (foundAsset) {
+          customization[category.name].asset = foundAsset;
+        }
+      }
+
+      if (
+        !category.optional &&
+        !customization[category.name].asset &&
+        category.assets.length > 0
+      ) {
+        customization[category.name].asset = category.assets[0];
       }
     });
 
@@ -156,7 +196,10 @@ export const useConfiguratorStore = create((set, get) => ({
     const detectedMorphs = get().detectedMorphsByCategory;
 
     categories.forEach((category) => {
-      let randomAsset = category.assets[randInt(0, category.assets.length - 1)];
+      const hasAssets = category.assets && category.assets.length > 0;
+      let randomAsset = hasAssets
+        ? category.assets[randInt(0, category.assets.length - 1)]
+        : null;
 
       if (category.optional && Math.random() > 0.7) {
         randomAsset = null;
