@@ -11,9 +11,9 @@ export default function Model(props) {
 
   const gender = useConfiguratorStore((state) => state.gender);
 
-  const { nodes, materials, animations } = useGLTF(
-    `/models/characters/${gender}/Armature.glb`,
-  );
+  const { nodes } = useGLTF(`/models/characters/${gender}/Armature.glb`);
+
+  const { animations } = useGLTF(`/models/characters/${gender}/Animations.glb`);
 
   const { actions, names } = useAnimations(animations, group);
 
@@ -48,8 +48,10 @@ export default function Model(props) {
 
   useEffect(() => {
     const action = actions[pose];
+
     if (action) {
       action.reset().fadeIn(0.5).play();
+
       return () => action.fadeOut(0.2).stop();
     }
   }, [actions, pose]);
@@ -137,3 +139,5 @@ export default function Model(props) {
 
 useGLTF.preload("/models/characters/female/Armature.glb");
 useGLTF.preload("/models/characters/male/Armature.glb");
+useGLTF.preload("/models/characters/male/Animations.glb");
+useGLTF.preload("/models/characters/female/Animations.glb");

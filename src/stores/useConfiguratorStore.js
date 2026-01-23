@@ -43,6 +43,7 @@ export const useConfiguratorStore = create((set, get) => ({
       loading: true,
       categories: [],
       customization: {},
+      pose: PHOTO_POSES.Idle,
     });
   },
   mode: UI_MODES.CUSTOMIZE,

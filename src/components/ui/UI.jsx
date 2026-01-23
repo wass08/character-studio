@@ -42,22 +42,20 @@ const UI = () => {
       <RandomizeButton />
       <ScreenshotButton />
       <DownloadButton />
-      <HeightSlider />
       <ModeSelector />
-
-      <GenderSelectionBox />
 
       {mode === UI_MODES.CUSTOMIZE && (
         <>
+          <HeightSlider />
+          <GenderSelectionBox />
           {(isSkinCategory || (currentCategory?.colorPalette && hasAsset)) && (
             <ColorPicker />
           )}
           <AssetsBox />
+          {uniqueMorphs.length > 0 && <ShapeKeyControls />}
         </>
       )}
       {mode === UI_MODES.PHOTO && <PosesBox />}
-
-      {uniqueMorphs.length > 0 && <ShapeKeyControls />}
     </>
   );
 };

@@ -9,6 +9,8 @@ import Backdrop from "./Backdrop";
 import { CameraManager } from "./CameraManager";
 
 const SceneContent = () => {
+  const gender = useConfiguratorStore((state) => state.gender);
+
   const gl = useThree((state) => state.gl);
   const setScreenshot = useConfiguratorStore((state) => state.setScreenshot);
 
@@ -70,9 +72,8 @@ const SceneContent = () => {
       />
       <Backdrop />
       <directionalLight position={[-5, 5, 5]} intensity={1.5} color={"#fff"} />
-      {/* <directionalLight position={[3, 3, -5]} intensity={6} color={"#fff"} /> */}
 
-      <Avatar />
+      <Avatar key={gender} />
     </>
   );
 };
