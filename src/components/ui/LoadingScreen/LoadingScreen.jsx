@@ -10,7 +10,9 @@ gsap.registerPlugin(useGSAP);
 
 const LoadingScreen = () => {
   const loading = useConfiguratorStore((state) => state.loading);
-  const [isVisible, setIsVisible] = useState(true);
+  const setIntroFinished = useConfiguratorStore(
+    (state) => state.setIntroFinished,
+  );
 
   const container = useRef();
   const textRef = useRef();
@@ -19,7 +21,7 @@ const LoadingScreen = () => {
     () => {
       if (!loading) {
         const tl = gsap.timeline({
-          onComplete: () => setIsVisible(false),
+          onComplete: () => setIntroFinished(true),
         });
 
         tl.to(textRef.current, {
@@ -29,19 +31,13 @@ const LoadingScreen = () => {
           ease: "power2.in",
         }).to(
           container.current,
-          {
-            opacity: 0,
-            duration: 0.8,
-            ease: "power2.out",
-          },
+          { opacity: 0, duration: 0.8, ease: "power2.out" },
           "-=0.2",
         );
       }
     },
     { dependencies: [loading], scope: container },
   );
-
-  if (!isVisible) return null;
 
   return (
     <div ref={container} className="loading-screen">

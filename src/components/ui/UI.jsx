@@ -33,10 +33,12 @@ const UI = () => {
 
   const mode = useConfiguratorStore((state) => state.mode);
 
+  const introFinished = useConfiguratorStore((state) => state.introFinished);
+
   return (
     <>
       <Logo />
-      <LoadingScreen />
+      {!introFinished && <LoadingScreen />}
       <RandomizeButton />
       <ScreenshotButton />
       <DownloadButton />
