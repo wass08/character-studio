@@ -126,7 +126,7 @@ export default function Model(props) {
                       customization[key].asset,
                       customization[key].asset.url,
                     )}
-                    skeleton={nodes.Plane.skeleton}
+                    skeleton={nodes.Plane002.skeleton}
                   />
                 </Suspense>
               ),
