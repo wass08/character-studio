@@ -14,16 +14,16 @@ const GenderSelectionBox = () => {
       <div className="gender-selection-box glass-card">
         <div className="gender-selection-box-wrapper">
           <button
-            className={`gender-button ${gender === GENDERS.MALE ? "active" : ""}`}
-            onClick={() => setGender(GENDERS.MALE)}
+            className={`gender-button ${gender === GENDERS.MAN ? "active" : ""}`}
+            onClick={() => setGender(GENDERS.MAN)}
           >
-            male
+            Man
           </button>
           <button
-            className={`gender-button ${gender === GENDERS.FEMALE ? "active" : ""}`}
-            onClick={() => setGender(GENDERS.FEMALE)}
+            className={`gender-button ${gender === GENDERS.WOMAN ? "active" : ""}`}
+            onClick={() => setGender(GENDERS.WOMAN)}
           >
-            female
+            woman
           </button>
         </div>
       </div>

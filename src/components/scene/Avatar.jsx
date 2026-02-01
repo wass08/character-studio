@@ -137,7 +137,7 @@ export default function Model(props) {
   );
 }
 
-useGLTF.preload("/models/characters/female/Armature.glb");
-useGLTF.preload("/models/characters/male/Armature.glb");
-useGLTF.preload("/models/characters/male/Animations.glb");
-useGLTF.preload("/models/characters/female/Animations.glb");
+useGLTF.preload("/models/characters/woman/Armature.glb");
+useGLTF.preload("/models/characters/man/Armature.glb");
+useGLTF.preload("/models/characters/man/Animations.glb");
+useGLTF.preload("/models/characters/woman/Animations.glb");

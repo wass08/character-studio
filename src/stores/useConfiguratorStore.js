@@ -24,8 +24,8 @@ export const UI_MODES = {
 };
 
 export const GENDERS = {
-  MALE: "male",
-  FEMALE: "female",
+  MAN: "man",
+  WOMAN: "woman",
   OTHER: "other", // In case we want to add more
   NONE: "none", // In case we don't want to start with a default gender
 };
@@ -34,8 +34,8 @@ export const useConfiguratorStore = create((set, get) => ({
   loading: true,
   introFinished: false,
   setIntroFinished: (value) => set({ introFinished: value }),
-  gender: GENDERS.FEMALE,
-  // gender: Math.random() > 0.5 ? GENDERS.MALE : GENDERS.FEMALE,
+  gender: GENDERS.WOMAN,
+  // gender: Math.random() > 0.5 ? GENDERS.MAN : GENDERS.WOMAN,
   setGender: (gender) => {
     if (get().gender === gender) return;
 
@@ -152,9 +152,9 @@ export const useConfiguratorStore = create((set, get) => ({
       };
 
       const startingAssetId =
-        currentGender === GENDERS.MALE
-          ? category.startingAssetMale
-          : category.startingAssetFemale;
+        currentGender === GENDERS.MAN
+          ? category.startingAssetMan
+          : category.startingAssetWoman;
 
       if (startingAssetId) {
         const foundAsset = category.assets.find(
