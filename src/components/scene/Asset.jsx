@@ -9,21 +9,29 @@ export const Asset = ({ url, categoryName, skeleton }) => {
   const skin = useConfiguratorStore((state) => state.skin);
 
   const assetColor = customization[categoryName]?.color;
+  const assetColors = customization[categoryName]?.colors || {};
   const skinColor = customization["skin"]?.color;
 
   const registerMorphs = useConfiguratorStore((state) => state.registerMorphs);
+  const registerColorSlots = useConfiguratorStore(
+    (state) => state.registerColorSlots,
+  ); // Import this
   const morphValues = useConfiguratorStore((state) => state.morphValues);
   const meshRefs = useRef([]);
 
   useEffect(() => {
     scene.traverse((child) => {
       if (child.isMesh) {
-        if (child.material?.name.includes("Color_") && assetColor) {
-          child.material.color.set(assetColor);
+        if (child.material?.name.includes("Color_")) {
+          const targetColor = assetColors[child.material.name] || assetColor;
+
+          if (targetColor) {
+            child.material.color.set(targetColor);
+          }
         }
       }
     });
-  }, [assetColor, scene]);
+  }, [assetColor, assetColors, scene]);
 
   const attachedItems = useMemo(() => {
     const items = [];
@@ -41,6 +49,20 @@ export const Asset = ({ url, categoryName, skeleton }) => {
     });
     return items;
   }, [scene, skin, skinColor]);
+
+  useEffect(() => {
+    const foundSlots = new Set();
+    scene.traverse((child) => {
+      if (child.isMesh && child.material?.name.includes("Color_")) {
+        foundSlots.add(child.material.name);
+      }
+    });
+    // Register unique slot names (e.g. ['Color_A', 'Color_B']) to the store
+    registerColorSlots(categoryName, Array.from(foundSlots));
+
+    // Cleanup: clear slots when unmounting
+    return () => registerColorSlots(categoryName, []);
+  }, [scene, categoryName, registerColorSlots]);
 
   useEffect(() => {
     const allKeys = [];

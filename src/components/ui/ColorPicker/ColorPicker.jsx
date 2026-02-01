@@ -83,10 +83,11 @@ const ColorPicker = () => {
   );
   const customization = useConfiguratorStore((state) => state.customization);
 
-  const activeColor =
-    customization[currentCategory?.name]?.colorData ||
-    customization[currentCategory?.name]?.color ||
-    "#ffffff";
+  // Get detected slots for this category
+  const detectedSlots = useConfiguratorStore(
+    (state) => state.detectedColorSlotsByCategory,
+  );
+  const categorySlots = detectedSlots[currentCategory?.name] || [];
 
   const isSkin = currentCategory?.name === "skin";
   const hasAsset = customization[currentCategory?.name]?.asset;
@@ -95,9 +96,49 @@ const ColorPicker = () => {
     return null;
   }
 
+  // 1. Skin or Standard (Single) Picker
+  if (isSkin || categorySlots.length === 0) {
+    const activeColor =
+      customization[currentCategory?.name]?.color || "#ffffff";
+    return (
+      <div className="color-picker-root">
+        <StyledPicker color={activeColor} onChange={(c) => updateColor(c)} />
+      </div>
+    );
+  }
+
   return (
-    <div className="color-picker-root">
-      <StyledPicker color={activeColor} onChange={(c) => updateColor(c)} />
+    <div
+      className="color-picker-root"
+      style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+    >
+      {categorySlots.sort().map((slotName) => {
+        const activeColor =
+          customization[currentCategory?.name]?.colors?.[slotName] ||
+          customization[currentCategory?.name]?.color ||
+          "#ffffff";
+
+        const label = slotName.replace("Color_", "").replace(/_/g, " ");
+
+        return (
+          <div key={slotName} className="slot-picker-container">
+            <div
+              style={{
+                fontSize: "0.85rem",
+                fontWeight: "600",
+                marginBottom: "8px",
+                textTransform: "capitalize",
+              }}
+            >
+              {label}
+            </div>
+            <StyledPicker
+              color={activeColor}
+              onChange={(c) => updateColor(c, slotName)}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 };

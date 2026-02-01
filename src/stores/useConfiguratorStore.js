@@ -65,6 +65,19 @@ export const useConfiguratorStore = create((set, get) => ({
     roughness: 1,
   }),
   morphValues: {},
+
+  detectedMorphsByCategory: {},
+
+  detectedColorSlotsByCategory: {},
+
+  registerColorSlots: (categoryName, slotNames) =>
+    set((state) => ({
+      detectedColorSlotsByCategory: {
+        ...state.detectedColorSlotsByCategory,
+        [categoryName]: slotNames,
+      },
+    })),
+
   detectedMorphsByCategory: {},
   setMorphValue: (key, value) =>
     set((state) => ({
@@ -98,20 +111,31 @@ export const useConfiguratorStore = create((set, get) => ({
   setDownload: (download) => set({ download }),
   screenshot: () => {},
   setScreenshot: (screenshot) => set({ screenshot }),
-  updateColor: (colorObj) => {
+  updateColor: (colorObj, slotName = null) => {
     const hexColor = colorObj.hex || colorObj;
     const categoryName = get().currentCategory.name;
 
-    set((state) => ({
-      customization: {
-        ...state.customization,
-        [categoryName]: {
-          ...state.customization[categoryName],
-          color: hexColor,
-          colorData: colorObj.hsl || null,
+    set((state) => {
+      const currentCategoryData = state.customization[categoryName] || {};
+      const currentColors = currentCategoryData.colors || {};
+
+      return {
+        customization: {
+          ...state.customization,
+          [categoryName]: {
+            ...currentCategoryData,
+            color: slotName ? currentCategoryData.color : hexColor,
+            colors: {
+              ...currentColors,
+              ...(slotName ? { [slotName]: hexColor } : {}),
+            },
+            colorData: slotName
+              ? currentCategoryData.colorData
+              : colorObj.hsl || null,
+          },
         },
-      },
-    }));
+      };
+    });
 
     if (categoryName === "skin") {
       get().updateSkin(hexColor);

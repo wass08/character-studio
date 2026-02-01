@@ -1,6 +1,6 @@
 .color-picker-root {
   position: absolute;
-  left: 48px;
+  left: 256px;
   top: 48px;
 
   z-index: 999;
@@ -44,7 +44,9 @@ div:has(> .saturation-pointer) {
   border-radius: 4px;
   cursor: pointer;
   border: 1px solid rgba(0, 0, 0, 0.05);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
 }
 
 .swatch-item:hover {
