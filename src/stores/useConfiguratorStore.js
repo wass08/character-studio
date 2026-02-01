@@ -34,7 +34,8 @@ export const useConfiguratorStore = create((set, get) => ({
   loading: true,
   introFinished: false,
   setIntroFinished: (value) => set({ introFinished: value }),
-  gender: Math.random() > 0.5 ? GENDERS.MALE : GENDERS.FEMALE,
+  gender: GENDERS.FEMALE,
+  // gender: Math.random() > 0.5 ? GENDERS.MALE : GENDERS.FEMALE,
   setGender: (gender) => {
     if (get().gender === gender) return;
 
