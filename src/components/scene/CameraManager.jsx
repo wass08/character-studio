@@ -16,18 +16,27 @@ const CAMERA_CONFIGS = {
   Hat: {
     bone: "DEF-head",
     offset: new THREE.Vector3(0, 0.1, -0.6),
+    targetOffset: new THREE.Vector3(0, 0.1, 0),
+  },
+  Hair: {
+    bone: "DEF-head",
+    offset: new THREE.Vector3(0.4, 0.3, -0.6),
+    targetOffset: new THREE.Vector3(0, 0.2, 0),
   },
   Top: {
     bone: "DEF-spine002",
     offset: new THREE.Vector3(0, 0, -1.2),
+    targetOffset: new THREE.Vector3(0, 0, 0),
   },
   Bottom: {
     bone: "DEF-hips",
     offset: new THREE.Vector3(0, 0.2, -1.5),
+    targetOffset: new THREE.Vector3(0, -0.2, 0),
   },
   Shoe: {
     bone: "DEF-footL",
     offset: new THREE.Vector3(-1, 0.2, -0.5),
+    targetOffset: new THREE.Vector3(0, 0, 0),
   },
 };
 
@@ -52,6 +61,11 @@ export const CameraManager = ({ loading }) => {
 
     if (targetObject) {
       targetObject.getWorldPosition(lookAtPos);
+
+      if (config.targetOffset) {
+        lookAtPos.add(config.targetOffset);
+      }
+
       targetPos.copy(lookAtPos).add(config.offset);
     } else {
       targetPos.set(...DEFAULT_CAMERA_POSITION);
@@ -62,17 +76,15 @@ export const CameraManager = ({ loading }) => {
       config?.offset.x ?? DEFAULT_CAMERA_POSITION[0] - DEFAULT_CAMERA_TARGET[0],
       config?.offset.z ?? DEFAULT_CAMERA_POSITION[2] - DEFAULT_CAMERA_TARGET[2],
     );
-
     const currentAzimuth = controls.current.azimuthAngle;
-
     const closestAzimuth =
       currentAzimuth -
       2 * Math.PI * Math.round((currentAzimuth - destAzimuth) / (2 * Math.PI));
 
     controls.current.azimuthAngle = closestAzimuth;
-
     controls.current.update(0);
 
+    // 4. Perform the transition
     controls.current.setLookAt(
       targetPos.x,
       targetPos.y,
