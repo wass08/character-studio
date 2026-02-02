@@ -9,7 +9,7 @@ export default function Model(props) {
       <mesh
         receiveShadow
         geometry={nodes.Plane002.geometry}
-        position={[0, 0, -1]}
+        position={[0, -0.01, -1]}
         scale={[2.898, 1, 1]}
       >
         <meshStandardMaterial color="#D3C9A9" roughness={1} />

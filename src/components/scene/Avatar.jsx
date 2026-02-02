@@ -62,6 +62,8 @@ export default function Model(props) {
       exporter.parse(
         group.current,
         async function (result) {
+          console.log("Export Result:", result);
+          console.log("Result Byte Length:", result.byteLength);
           const io = new NodeIO();
 
           // Read.
@@ -114,7 +116,7 @@ export default function Model(props) {
           scale={[height, height, height]}
         >
           <primitive object={nodes.root} />
-          {/* <primitive object={nodes["MCH-eyes_parent"]} /> */}
+          <primitive object={nodes["MCH-eyes_parent"]} />
 
           {Object.keys(customization).map(
             (key) =>
