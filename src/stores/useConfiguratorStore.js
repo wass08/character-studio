@@ -14,7 +14,7 @@ const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const randFloat = (min, max) => Math.random() * (max - min) + min;
 
 export const PHOTO_POSES = {
-  Idle: "Idle",
+  Idle: "Rig|Idle_Loop",
   Walk: "Rig|Walk_Loop",
 };
 
@@ -159,6 +159,7 @@ export const useConfiguratorStore = create((set, get) => ({
       }),
       pb.collection("CharacterStudioAssets").getFullList({
         sort: "-created",
+        expand: "gender",
       }),
     ]);
 
@@ -167,7 +168,8 @@ export const useConfiguratorStore = create((set, get) => ({
     categories.forEach((category) => {
       category.assets = assets.filter(
         (asset) =>
-          asset.group === category.id && asset.gender === currentGender,
+          asset.group === category.id &&
+          asset.expand?.gender?.name === currentGender,
       );
 
       customization[category.name] = {

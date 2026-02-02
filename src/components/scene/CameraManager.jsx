@@ -16,12 +16,12 @@ const CAMERA_CONFIGS = {
   Hat: {
     bone: "DEF-head",
     offset: new THREE.Vector3(0, 0.1, -0.6),
-    targetOffset: new THREE.Vector3(0, 0.1, 0),
+    targetOffset: new THREE.Vector3(0, 0, 0),
   },
   Hair: {
     bone: "DEF-head",
-    offset: new THREE.Vector3(0.4, 0.3, -0.6),
-    targetOffset: new THREE.Vector3(0, 0.2, 0),
+    offset: new THREE.Vector3(0.4, 0.2, -0.6),
+    targetOffset: new THREE.Vector3(0, 0.1, 0),
   },
   Top: {
     bone: "DEF-spine002",
@@ -31,7 +31,7 @@ const CAMERA_CONFIGS = {
   Bottom: {
     bone: "DEF-hips",
     offset: new THREE.Vector3(0, 0.2, -1.5),
-    targetOffset: new THREE.Vector3(0, -0.2, 0),
+    targetOffset: new THREE.Vector3(0, 0, 0),
   },
   Shoe: {
     bone: "DEF-footL",
