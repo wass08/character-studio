@@ -65,11 +65,8 @@ export const useConfiguratorStore = create((set, get) => ({
     roughness: 1,
   }),
   morphValues: {},
-
   detectedMorphsByCategory: {},
-
   detectedColorSlotsByCategory: {},
-
   registerColorSlots: (categoryName, slotNames) =>
     set((state) => ({
       detectedColorSlotsByCategory: {
@@ -173,8 +170,9 @@ export const useConfiguratorStore = create((set, get) => ({
       );
 
       customization[category.name] = {
-        color: category.expand?.colorPalette?.colors?.[0] || "",
+        color: null,
         asset: null,
+        colors: {},
       };
 
       const startingAssetId =

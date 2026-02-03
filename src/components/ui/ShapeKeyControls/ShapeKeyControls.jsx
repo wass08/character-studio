@@ -8,6 +8,9 @@ const ShapeKeyControls = () => {
   const detectedMorphsByCategory = useConfiguratorStore(
     (state) => state.detectedMorphsByCategory,
   );
+  const currentCategory = useConfiguratorStore(
+    (state) => state.currentCategory,
+  ); // Get current category
   const morphValues = useConfiguratorStore((state) => state.morphValues);
   const setMorphValue = useConfiguratorStore((state) => state.setMorphValue);
   const resetAllMorphs = useConfiguratorStore((state) => state.resetAllMorphs);
@@ -17,8 +20,29 @@ const ShapeKeyControls = () => {
     const counts = {};
     const categoriesPerMorph = {};
 
+    const hiddenPrefixes = [
+      "viseme",
+      "eyeBlink",
+      "eyeLook",
+      "eyeWide",
+      "eyeSquint",
+      "brow",
+      "jaw",
+      "mouth",
+      "cheekPuff",
+      "cheekSquint",
+      "noseSneer",
+      "tongueOut",
+    ];
+
     Object.entries(detectedMorphsByCategory).forEach(([category, keys]) => {
       keys.forEach((key) => {
+        const isHidden = hiddenPrefixes.some((prefix) =>
+          key.toLowerCase().startsWith(prefix.toLowerCase()),
+        );
+
+        if (isHidden) return;
+
         counts[key] = (counts[key] || 0) + 1;
         if (!categoriesPerMorph[key]) categoriesPerMorph[key] = [];
         categoriesPerMorph[key].push(category);
@@ -41,57 +65,64 @@ const ShapeKeyControls = () => {
 
   const { universal, specific } = morphAnalysis;
 
-  if (universal.length === 0 && specific.length === 0) return null;
+  const activeSpecificMorphs = useMemo(() => {
+    if (!currentCategory) return [];
+    return specific.filter((s) => s.category === currentCategory.name);
+  }, [specific, currentCategory]);
+
+  if (universal.length === 0 && activeSpecificMorphs.length === 0) return null;
 
   return (
-    <>
-      <div className="shape-key-container">
-        <div className="shape-key-header">
-          <h3>Adjustments</h3>
-          <button className="reset-btn-main" onClick={resetAllMorphs}>
-            Reset All
-          </button>
-        </div>
-
-        {universal.length > 0 && (
-          <div className="morph-group">
-            <div className="group-label">
-              <span>Global</span>
-              <button onClick={() => resetMorphSet(universal)}>
-                Reset Global
-              </button>
-            </div>
-            {universal.map((key) => (
-              <MorphSlider
-                key={key}
-                label={key}
-                value={morphValues[key]}
-                onChange={(v) => setMorphValue(key, v)}
-              />
-            ))}
-          </div>
-        )}
-
-        {specific.length > 0 && (
-          <div className="morph-group">
-            <div className="group-label">
-              <span>Item Specific</span>
-              <button onClick={() => resetMorphSet(specific.map((s) => s.key))}>
-                Reset Items
-              </button>
-            </div>
-            {specific.map(({ key, category }) => (
-              <MorphSlider
-                key={key}
-                label={`${key} (${category})`}
-                value={morphValues[key]}
-                onChange={(v) => setMorphValue(key, v)}
-              />
-            ))}
-          </div>
-        )}
+    <div className="shape-key-container">
+      <div className="shape-key-header">
+        <h3>Adjustments</h3>
+        <button className="reset-btn-main" onClick={resetAllMorphs}>
+          Reset All
+        </button>
       </div>
-    </>
+
+      {universal.length > 0 && (
+        <div className="morph-group">
+          <div className="group-label">
+            <span>Global</span>
+            <button onClick={() => resetMorphSet(universal)}>
+              Reset Global
+            </button>
+          </div>
+          {universal.map((key) => (
+            <MorphSlider
+              key={key}
+              label={key}
+              value={morphValues[key]}
+              onChange={(v) => setMorphValue(key, v)}
+            />
+          ))}
+        </div>
+      )}
+
+      {activeSpecificMorphs.length > 0 && (
+        <div className="morph-group">
+          <div className="group-label">
+            <span>{currentCategory?.name} Controls</span>
+            <button
+              onClick={() =>
+                resetMorphSet(activeSpecificMorphs.map((s) => s.key))
+              }
+            >
+              Reset {currentCategory?.name}
+            </button>
+          </div>
+          {activeSpecificMorphs.map(({ key }) => (
+            <MorphSlider
+              key={key}
+              label={key}
+              value={morphValues[key]}
+              onChange={(v) => setMorphValue(key, v)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 

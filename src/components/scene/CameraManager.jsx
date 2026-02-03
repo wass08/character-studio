@@ -33,7 +33,7 @@ const CAMERA_CONFIGS = {
     offset: new THREE.Vector3(0, 0.2, -1.5),
     targetOffset: new THREE.Vector3(0, 0, 0),
   },
-  Shoe: {
+  Footwear: {
     bone: "DEF-footL",
     offset: new THREE.Vector3(-1, 0.2, -0.5),
     targetOffset: new THREE.Vector3(0, 0, 0),

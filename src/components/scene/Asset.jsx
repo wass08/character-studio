@@ -8,6 +8,7 @@ export const Asset = ({ url, categoryName, skeleton }) => {
   const customization = useConfiguratorStore((state) => state.customization);
   const skin = useConfiguratorStore((state) => state.skin);
 
+  const updateColor = useConfiguratorStore((state) => state.updateColor);
   const assetColor = customization[categoryName]?.color;
   const assetColors = customization[categoryName]?.colors || {};
   const skinColor = customization["skin"]?.color;
@@ -15,7 +16,7 @@ export const Asset = ({ url, categoryName, skeleton }) => {
   const registerMorphs = useConfiguratorStore((state) => state.registerMorphs);
   const registerColorSlots = useConfiguratorStore(
     (state) => state.registerColorSlots,
-  ); // Import this
+  );
   const morphValues = useConfiguratorStore((state) => state.morphValues);
   const meshRefs = useRef([]);
 
@@ -51,18 +52,35 @@ export const Asset = ({ url, categoryName, skeleton }) => {
   }, [scene, skin, skinColor]);
 
   useEffect(() => {
-    const foundSlots = new Set();
+    const newDetectedSlots = [];
+    const initialColors = {};
+
     scene.traverse((child) => {
-      if (child.isMesh && child.material?.name.includes("Color_")) {
-        foundSlots.add(child.material.name);
+      if (child.isMesh && child.material) {
+        if (child.material.name.includes("Color_")) {
+          const slotName = child.material.name;
+          newDetectedSlots.push(slotName);
+
+          if (!assetColors[slotName] && !assetColor) {
+            const hex = `#${child.material.color.getHexString()}`;
+            initialColors[slotName] = hex;
+          }
+        }
       }
     });
-    // Register unique slot names (e.g. ['Color_A', 'Color_B']) to the store
-    registerColorSlots(categoryName, Array.from(foundSlots));
 
-    // Cleanup: clear slots when unmounting
+    registerColorSlots(categoryName, newDetectedSlots);
+
+    if (Object.keys(initialColors).length > 0) {
+      Object.entries(initialColors).forEach(([slot, hex]) => {
+        if (!customization[categoryName]?.colors?.[slot]) {
+          updateColor(hex, slot);
+        }
+      });
+    }
+
     return () => registerColorSlots(categoryName, []);
-  }, [scene, categoryName, registerColorSlots]);
+  }, [scene, categoryName]);
 
   useEffect(() => {
     const allKeys = [];

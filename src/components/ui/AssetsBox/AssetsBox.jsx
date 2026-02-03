@@ -26,10 +26,10 @@ const AssetsBox = () => {
   }, [gender]);
 
   const filteredCategories = categories.filter(
-    (cat) => cat.assets && cat.assets.length > 1,
+    (cat) => cat.assets && cat.assets.length > 0,
   );
   const isCurrentCategoryVisible =
-    currentCategory && currentCategory.assets?.length > 1;
+    currentCategory && currentCategory.assets?.length > 0;
 
   return (
     <>
