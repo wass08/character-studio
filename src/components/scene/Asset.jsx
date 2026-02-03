@@ -23,7 +23,7 @@ export const Asset = ({ url, categoryName, skeleton }) => {
   useEffect(() => {
     scene.traverse((child) => {
       if (child.isMesh) {
-        if (child.material?.name.includes("Color_")) {
+        if (child.material?.name.includes("Color")) {
           const targetColor = assetColors[child.material.name] || assetColor;
 
           if (targetColor) {
@@ -56,7 +56,7 @@ export const Asset = ({ url, categoryName, skeleton }) => {
     const initialColors = {};
 
     scene.traverse((child) => {
-      if (child.isMesh && child.material) {
+      if (child.isMesh) {
         if (child.material.name.includes("Color_")) {
           const slotName = child.material.name;
           newDetectedSlots.push(slotName);
@@ -69,7 +69,7 @@ export const Asset = ({ url, categoryName, skeleton }) => {
       }
     });
 
-    registerColorSlots(categoryName, newDetectedSlots);
+    registerColorSlots(categoryName, [...new Set(newDetectedSlots)]);
 
     if (Object.keys(initialColors).length > 0) {
       Object.entries(initialColors).forEach(([slot, hex]) => {

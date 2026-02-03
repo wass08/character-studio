@@ -96,7 +96,6 @@ const ColorPicker = () => {
     return null;
   }
 
-  // 1. Skin or Standard (Single) Picker
   if (isSkin || categorySlots.length === 0) {
     const activeColor =
       customization[currentCategory?.name]?.color || "#ffffff";
