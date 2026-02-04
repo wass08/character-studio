@@ -83,7 +83,6 @@ const ColorPicker = () => {
   );
   const customization = useConfiguratorStore((state) => state.customization);
 
-  // Get detected slots for this category
   const detectedSlots = useConfiguratorStore(
     (state) => state.detectedColorSlotsByCategory,
   );
