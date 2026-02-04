@@ -73,56 +73,87 @@ const ShapeKeyControls = () => {
   if (universal.length === 0 && activeSpecificMorphs.length === 0) return null;
 
   return (
-    <div className="shape-key-container">
-      <div className="shape-key-header">
-        <h3>Adjustments</h3>
-        <button className="reset-btn-main" onClick={resetAllMorphs}>
-          Reset All
-        </button>
+    <>
+      <div className="shape-key-container">
+        <div className="shape-key-header">
+          <h3>Adjustments</h3>
+          <button
+            className="reset-button"
+            onClick={() => resetMorphSet(universal)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="size-6 reset-icon"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {universal.length > 0 && (
+          <div className="morph-group">
+            {/* <div className="group-label">
+              <span>Global</span>
+            </div> */}
+            {universal.map((key) => (
+              <MorphSlider
+                key={key}
+                label={key}
+                value={morphValues[key]}
+                onChange={(v) => setMorphValue(key, v)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {universal.length > 0 && (
-        <div className="morph-group">
-          <div className="group-label">
-            <span>Global</span>
-            <button onClick={() => resetMorphSet(universal)}>
-              Reset Global
-            </button>
+      <div className="shape-key-container-category">
+        {activeSpecificMorphs.length > 0 && (
+          <div className="morph-group">
+            <div className="shape-key-header">
+              <h3>{currentCategory?.name}</h3>
+              <button
+                className="reset-button"
+                onClick={() =>
+                  resetMorphSet(activeSpecificMorphs.map((s) => s.key))
+                }
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="size-6 reset-icon"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+                  />
+                </svg>
+              </button>
+            </div>
+            {activeSpecificMorphs.map(({ key }) => (
+              <MorphSlider
+                key={key}
+                label={key}
+                value={morphValues[key]}
+                onChange={(v) => setMorphValue(key, v)}
+              />
+            ))}
           </div>
-          {universal.map((key) => (
-            <MorphSlider
-              key={key}
-              label={key}
-              value={morphValues[key]}
-              onChange={(v) => setMorphValue(key, v)}
-            />
-          ))}
-        </div>
-      )}
-
-      {activeSpecificMorphs.length > 0 && (
-        <div className="morph-group">
-          <div className="group-label">
-            <span>{currentCategory?.name} Controls</span>
-            <button
-              onClick={() =>
-                resetMorphSet(activeSpecificMorphs.map((s) => s.key))
-              }
-            >
-              Reset {currentCategory?.name}
-            </button>
-          </div>
-          {activeSpecificMorphs.map(({ key }) => (
-            <MorphSlider
-              key={key}
-              label={key}
-              value={morphValues[key]}
-              onChange={(v) => setMorphValue(key, v)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 };
 
@@ -130,8 +161,9 @@ export default ShapeKeyControls;
 
 const MorphSlider = ({ label, value, onChange }) => (
   <div className="slider-item">
-    <label>{label}</label>
+    <label className="slider-label">{label}</label>
     <input
+      className="slider-input"
       type="range"
       min="0"
       max="1"

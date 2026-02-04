@@ -1,8 +1,33 @@
 .shape-key-container {
-  width: 200px;
+  width: 350px;
+  height: 300px;
+  padding: 20px;
   position: absolute;
-  top: 250px;
+  top: 150px;
   right: 80px;
+  color: white;
+  background: rgba(255, 255, 255, 0.21);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(3.7px);
+  -webkit-backdrop-filter: blur(3.7px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.shape-key-container-category {
+  width: 350px;
+  height: auto;
+  padding: 20px;
+  position: absolute;
+  top: 475px;
+  right: 80px;
+  color: white;
+  background: rgba(255, 255, 255, 0.21);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(3.7px);
+  -webkit-backdrop-filter: blur(3.7px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
 .shape-key-header {
@@ -27,19 +52,25 @@
   justify-content: space-between;
   font-size: 0.8rem;
   font-weight: bold;
-  color: #888;
-  border-bottom: 1px solid #333;
+  color: #ffffff;
+  border-bottom: 2px solid #ffffff;
   margin-bottom: 10px;
   padding-bottom: 5px;
 }
 
-.group-label button {
-  background: transparent;
-  border: 1px solid #555;
-  color: #aaa;
-  font-size: 0.6rem;
-  border-radius: 3px;
+.reset-button {
+  outline: none;
+  border: none;
   cursor: pointer;
+  background: transparent;
+  cursor: pointer;
+}
+
+.reset-icon {
+  color: white;
+  outline: none;
+  border: none;
+  background: transparent;
 }
 
 .group-label button:hover {
@@ -49,5 +80,65 @@
 
 .morph-group {
   height: 200px;
-  overflow: scroll;
+  overflow-y: scroll;
+}
+
+.morph-group::-webkit-scrollbar {
+  width: 3px;
+}
+
+.morph-group::-webkit-scrollbar-track {
+  background: transparent;
+  width: 1px;
+}
+
+.morph-group::-webkit-scrollbar-thumb {
+  background: #ffffff;
+  width: 1px;
+  height: 5px;
+  border-radius: 7px;
+}
+
+.morph-group::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.slider-label {
+  font-size: 14px;
+  font-weight: 250;
+  letter-spacing: 1px;
+  /* text-transform: uppercase; */
+}
+
+.slider-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 1px;
+  background: #ffffff;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  overflow: visible;
+}
+
+.slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.slider-input::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }

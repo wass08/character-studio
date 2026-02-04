@@ -45,51 +45,51 @@ const AssetsBox = () => {
             {category.name}
           </button>
         ))}
+      </div>
 
-        <div className="assets-box-wrapper">
-          {loading ? (
-            <div className="loading-message">Loading Assets...</div>
-          ) : (
-            isCurrentCategoryVisible && (
-              <>
-                {currentCategory?.optional && (
-                  <button
-                    onClick={() => changeAsset(currentCategory.name, null)}
-                    className="asset-button"
+      <div className="assets-box-wrapper glass-card">
+        {loading ? (
+          <div className="loading-message">Loading Assets...</div>
+        ) : (
+          isCurrentCategoryVisible && (
+            <>
+              {currentCategory?.optional && (
+                <button
+                  onClick={() => changeAsset(currentCategory.name, null)}
+                  className="asset-button"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-6"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="size-6"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18 18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                )}
-
-                {currentCategory?.assets.map((asset) => (
-                  <button
-                    onClick={() => changeAsset(currentCategory.name, asset)}
-                    className="asset-button"
-                    key={asset.id}
-                  >
-                    <img
-                      src={pb.files.getURL(asset, asset.thumbnail)}
-                      alt="asset"
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18 18 6M6 6l12 12"
                     />
-                  </button>
-                ))}
-              </>
-            )
-          )}
-        </div>
+                  </svg>
+                </button>
+              )}
+
+              {currentCategory?.assets.map((asset) => (
+                <button
+                  onClick={() => changeAsset(currentCategory.name, asset)}
+                  className="asset-button"
+                  key={asset.id}
+                >
+                  <img
+                    src={pb.files.getURL(asset, asset.thumbnail)}
+                    alt="asset"
+                  />
+                </button>
+              ))}
+            </>
+          )
+        )}
       </div>
     </>
   );

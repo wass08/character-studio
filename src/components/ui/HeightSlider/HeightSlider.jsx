@@ -15,13 +15,13 @@ export const HeightSlider = () => {
         Height: {height.toFixed(2)}
       </label>
       <input
+        className="height-slider"
         type="range"
         min="0"
         max="2.0"
         step="0.01"
         value={height}
         onChange={(e) => setHeight(parseFloat(e.target.value))}
-        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
       />
     </div>
   );

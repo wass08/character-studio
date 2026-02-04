@@ -2,16 +2,19 @@
   position: absolute;
   left: 256px;
   top: 48px;
-
   z-index: 999;
+  font-family: "Inter";
 }
+
 .custom-picker-container {
   width: 240px;
   height: 200px;
-  background: white;
-  padding: 12px;
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -35,7 +38,27 @@ div:has(> .saturation-pointer) {
   gap: 6px;
   margin-bottom: 12px;
   max-width: 100%;
-  overflow: scroll;
+  overflow-y: scroll;
+}
+
+.swatch-container::-webkit-scrollbar {
+  width: 3px;
+}
+
+.swatch-container::-webkit-scrollbar-track {
+  background: transparent;
+  width: 1px;
+}
+
+.swatch-container::-webkit-scrollbar-thumb {
+  background: #ffffff;
+  width: 1px;
+  height: 5px;
+  border-radius: 7px;
+}
+
+.swatch-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .swatch-item {
@@ -69,7 +92,7 @@ div:has(> .saturation-pointer) {
 .input-wrapper {
   display: flex;
   align-items: center;
-  background: #f1f1f1;
+  background: transparent;
   border-radius: 6px;
   padding: 4px 10px;
 }
@@ -77,17 +100,17 @@ div:has(> .saturation-pointer) {
 .input-label {
   font-size: 10px;
   font-weight: 800;
-  color: #aaa;
+  color: #ffffff;
   margin-right: 8px;
+  border: 1px solid;
 }
 
 .input-wrapper input {
   width: 100%;
   border: none !important;
-  background: transparent !important;
+  background: transparent;
   outline: none !important;
-  font-family: "Courier New", Courier, monospace;
-  font-weight: bold;
-  color: #333;
+  font-weight: 250;
+  color: #ffffff;
   padding: 4px 0;
 }

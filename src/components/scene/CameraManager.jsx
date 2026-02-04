@@ -30,7 +30,27 @@ const CAMERA_CONFIGS = {
   },
   Bottom: {
     bone: "DEF-hips",
-    offset: new THREE.Vector3(0, 0.2, -1.5),
+    offset: new THREE.Vector3(1, 0.2, -2.3),
+    targetOffset: new THREE.Vector3(0, -0.14, 0),
+  },
+  Mouth: {
+    bone: "teethB",
+    offset: new THREE.Vector3(0, 0, -0.5),
+    targetOffset: new THREE.Vector3(0, 0, 0),
+  },
+  Eyes: {
+    bone: "nose",
+    offset: new THREE.Vector3(0, 0, -0.5),
+    targetOffset: new THREE.Vector3(0, 0, 0),
+  },
+  Eyelashes: {
+    bone: "nose",
+    offset: new THREE.Vector3(0.02, 0, -0.2),
+    targetOffset: new THREE.Vector3(0, 0, 0),
+  },
+  Eyebrows: {
+    bone: "nose",
+    offset: new THREE.Vector3(0, 0, -0.35),
     targetOffset: new THREE.Vector3(0, 0, 0),
   },
   Footwear: {
