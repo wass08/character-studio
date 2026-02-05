@@ -28,7 +28,7 @@ const UI = () => {
   const activeMorphs = Object.values(detectedMorphsByCategory).flat();
   const uniqueMorphs = [...new Set(activeMorphs)];
 
-  const isSkinCategory = currentCategory?.name === "skin";
+  const isSkinCategory = currentCategory?.name === "Skin";
   const hasAsset = customization[currentCategory?.name]?.asset;
 
   const mode = useConfiguratorStore((state) => state.mode);

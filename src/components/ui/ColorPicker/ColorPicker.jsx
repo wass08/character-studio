@@ -90,8 +90,14 @@ const ColorPicker = () => {
 
   const isSkin = currentCategory?.name === "Skin";
   const hasAsset = customization[currentCategory?.name]?.asset;
+  console.log({
+    name: currentCategory?.name,
+    isSkin: isSkin,
+    hasAsset: !!hasAsset,
+  });
 
   if (!isSkin && !hasAsset) {
+    console.log(!isSkin, !hasAsset);
     return null;
   }
 

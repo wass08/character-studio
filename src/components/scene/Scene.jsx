@@ -61,7 +61,7 @@ const SceneContent = () => {
         preset="city"
       />
 
-      <ambientLight intensity={0.25} />
+      <ambientLight intensity={0.4} />
       <directionalLight
         position={[-3, 5, -3]}
         intensity={1.2}
@@ -69,9 +69,10 @@ const SceneContent = () => {
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-bias={-0.0001}
+        color="#ffebe3"
       />
       <Backdrop />
-      <directionalLight position={[-5, 5, 5]} intensity={1.5} color={"#fff"} />
+      <directionalLight position={[-5, 5, 5]} intensity={1.5} color="#ffebe3" />
 
       <Avatar key={gender} />
     </>

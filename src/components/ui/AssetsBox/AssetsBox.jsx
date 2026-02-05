@@ -25,9 +25,15 @@ const AssetsBox = () => {
     setHeight(1);
   }, [gender]);
 
-  const filteredCategories = categories.filter(
-    (cat) => cat.assets && cat.assets.length >= 0,
-  );
+  //temporary filter
+  const filteredCategories = categories.filter((cat) => {
+    console.log(cat.name);
+    const isSkin = cat.name?.toLowerCase() === "skin";
+    const hasAssets = cat.assets && cat.assets.length > 0;
+
+    return isSkin || hasAssets;
+  });
+
   const isCurrentCategoryVisible =
     currentCategory && currentCategory.assets?.length >= 0;
 

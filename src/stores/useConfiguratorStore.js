@@ -13,7 +13,7 @@ export const pb = new PocketBase(pocketBaseUrl);
 const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const randFloat = (min, max) => Math.random() * (max - min) + min;
 
-const DEFAULT_SKIN_COLOR = "#e7a67a";
+const DEFAULT_SKIN_COLOR = "#E7AF91";
 
 export const PHOTO_POSES = {
   Idle: "Rig|Idle_Loop",
