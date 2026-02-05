@@ -5,6 +5,7 @@ import { dedup, draco, prune, quantize } from "@gltf-transform/functions";
 import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { Asset } from "./Asset";
 import { GLTFExporter } from "three-stdlib";
+import { TextureLayer } from "./TextureLayer";
 
 export default function Model(props) {
   const group = useRef();
@@ -118,21 +119,27 @@ export default function Model(props) {
           <primitive object={nodes.root} />
           <primitive object={nodes["MCH-eyes_parent"]} />
 
-          {Object.keys(customization).map(
-            (key) =>
-              customization[key]?.asset?.url && (
-                <Suspense key={customization[key].asset.id}>
+          {Object.keys(customization).map((key) => {
+            const asset = customization[key]?.asset;
+            if (!asset?.url) return null;
+
+            const url = pb.files.getURL(asset, asset.url);
+            const isImage = url.match(/\.(png|jpg|jpeg)$/i);
+
+            return (
+              <Suspense key={asset.id}>
+                {isImage ? (
+                  <TextureLayer url={url} />
+                ) : (
                   <Asset
                     categoryName={key}
-                    url={pb.files.getURL(
-                      customization[key].asset,
-                      customization[key].asset.url,
-                    )}
+                    url={url}
                     skeleton={nodes.Plane002.skeleton}
                   />
-                </Suspense>
-              ),
-          )}
+                )}
+              </Suspense>
+            );
+          })}
         </group>
       </group>
     </group>
