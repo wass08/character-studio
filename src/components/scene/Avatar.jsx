@@ -5,7 +5,7 @@ import { dedup, draco, prune, quantize } from "@gltf-transform/functions";
 import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { Asset } from "./Asset";
 import { GLTFExporter } from "three-stdlib";
-import { TextureLayer } from "./TextureLayer";
+import { SkinManager } from "./SkinManager";
 
 export default function Model(props) {
   const group = useRef();
@@ -107,6 +107,7 @@ export default function Model(props) {
 
   return (
     <group ref={group} {...props} dispose={null}>
+      <SkinManager />
       <group name="Scene">
         <group
           name="Rig"
@@ -124,17 +125,15 @@ export default function Model(props) {
             const url = pb.files.getURL(asset, asset.url);
             const isImage = url.match(/\.(png|jpg|jpeg)$/i);
 
+            if (isImage) return null;
+
             return (
               <Suspense key={asset.id}>
-                {isImage ? (
-                  <TextureLayer url={url} />
-                ) : (
-                  <Asset
-                    categoryName={key}
-                    url={url}
-                    skeleton={nodes.Plane002.skeleton}
-                  />
-                )}
+                <Asset
+                  categoryName={key}
+                  url={url}
+                  skeleton={nodes.Plane002.skeleton}
+                />
               </Suspense>
             );
           })}

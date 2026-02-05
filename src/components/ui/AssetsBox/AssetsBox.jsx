@@ -27,7 +27,6 @@ const AssetsBox = () => {
 
   //temporary filter
   const filteredCategories = categories.filter((cat) => {
-    console.log(cat.name);
     const isSkin = cat.name?.toLowerCase() === "skin";
     const hasAssets = cat.assets && cat.assets.length > 0;
 

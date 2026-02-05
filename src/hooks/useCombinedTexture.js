@@ -2,23 +2,38 @@ import { useEffect, useState } from "react";
 import * as THREE from "three";
 import { useTexture } from "@react-three/drei";
 
-export const useCombinedTexture = (imageUrl, baseColorHex) => {
-  const textureMap = useTexture(imageUrl);
+export const useCombinedTexture = (imageUrls, baseColorHex) => {
+  const textureMaps = useTexture(imageUrls);
   const [canvasTexture, setCanvasTexture] = useState(null);
 
   useEffect(() => {
-    const imgElement = textureMap.image || textureMap.source?.data;
-    if (!imgElement) return;
+    if (
+      !textureMaps ||
+      (Array.isArray(textureMaps) && textureMaps.length === 0)
+    ) {
+      setCanvasTexture(null);
+      return;
+    }
+
+    const maps = Array.isArray(textureMaps) ? textureMaps : [textureMaps];
+
+    const firstImg = maps[0].image || maps[0].source?.data;
+    if (!firstImg) return;
 
     const canvas = document.createElement("canvas");
-    canvas.width = imgElement.width;
-    canvas.height = imgElement.height;
+    canvas.width = firstImg.width;
+    canvas.height = firstImg.height;
     const ctx = canvas.getContext("2d");
 
-    ctx.fillStyle = baseColorHex;
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.drawImage(imgElement, 0, 0);
+    maps.forEach((map) => {
+      const img = map.image || map.source?.data;
+      if (img) {
+        ctx.drawImage(img, 0, 0);
+      }
+    });
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
@@ -28,7 +43,7 @@ export const useCombinedTexture = (imageUrl, baseColorHex) => {
     setCanvasTexture(texture);
 
     return () => texture.dispose();
-  }, [textureMap, baseColorHex]);
+  }, [textureMaps, baseColorHex]);
 
   return canvasTexture;
 };
