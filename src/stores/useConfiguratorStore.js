@@ -13,6 +13,8 @@ export const pb = new PocketBase(pocketBaseUrl);
 const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const randFloat = (min, max) => Math.random() * (max - min) + min;
 
+const DEFAULT_SKIN_COLOR = "#e7a67a";
+
 export const PHOTO_POSES = {
   Idle: "Rig|Idle_Loop",
   Walk: "Rig|Walk_Loop",
@@ -61,7 +63,7 @@ export const useConfiguratorStore = create((set, get) => ({
   height: 1,
   setHeight: (height) => set({ height }),
   skin: new MeshStandardMaterial({
-    color: 0xffcc99,
+    color: DEFAULT_SKIN_COLOR,
     roughness: 1,
   }),
   morphValues: {},
@@ -134,7 +136,7 @@ export const useConfiguratorStore = create((set, get) => ({
       };
     });
 
-    if (categoryName === "skin") {
+    if (categoryName === "Skin") {
       get().updateSkin(hexColor);
     }
   },
@@ -170,7 +172,7 @@ export const useConfiguratorStore = create((set, get) => ({
       );
 
       customization[category.name] = {
-        color: null,
+        color: category.name === "Skin" ? DEFAULT_SKIN_COLOR : null,
         asset: null,
         colors: {},
       };
@@ -250,7 +252,7 @@ export const useConfiguratorStore = create((set, get) => ({
         });
       }
 
-      if (category.name === "skin" && randomColor) {
+      if (category.name === "Skin" && randomColor) {
         get().updateSkin(randomColor);
       }
     });

@@ -15,7 +15,7 @@ export const useCombinedTexture = (imageUrl, baseColorHex) => {
     canvas.height = imgElement.height;
     const ctx = canvas.getContext("2d");
 
-    ctx.fillStyle = baseColorHex || "#f5c6a5";
+    ctx.fillStyle = baseColorHex;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.drawImage(imgElement, 0, 0);

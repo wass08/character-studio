@@ -88,7 +88,7 @@ const ColorPicker = () => {
   );
   const categorySlots = detectedSlots[currentCategory?.name] || [];
 
-  const isSkin = currentCategory?.name === "skin";
+  const isSkin = currentCategory?.name === "Skin";
   const hasAsset = customization[currentCategory?.name]?.asset;
 
   if (!isSkin && !hasAsset) {

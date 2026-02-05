@@ -28,8 +28,6 @@ export default function Model(props) {
     return ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
   };
 
-  console.log(nodes);
-
   useEffect(() => {
     animations.forEach((clip) => {
       clip.tracks = clip.tracks.filter(

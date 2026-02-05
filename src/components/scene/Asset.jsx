@@ -11,7 +11,7 @@ export const Asset = ({ url, categoryName, skeleton }) => {
   const updateColor = useConfiguratorStore((state) => state.updateColor);
   const assetColor = customization[categoryName]?.color;
   const assetColors = customization[categoryName]?.colors || {};
-  const skinColor = customization["skin"]?.color;
+  const skinColor = customization["Skin"]?.color;
 
   const registerMorphs = useConfiguratorStore((state) => state.registerMorphs);
   const registerColorSlots = useConfiguratorStore(
