@@ -93,6 +93,8 @@ export default function Model(props) {
       );
     }
 
+    console.log("TEST LOG");
+
     const link = document.createElement("a");
     link.style.display = "none";
     document.body.appendChild(link); // Firefox workaround, see #6594
@@ -107,7 +109,9 @@ export default function Model(props) {
 
   return (
     <group ref={group} {...props} dispose={null}>
-      <SkinManager />
+      <Suspense fallback={null}>
+        <SkinManager />
+      </Suspense>
       <group name="Scene">
         <group
           name="Rig"
