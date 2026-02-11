@@ -46,8 +46,6 @@ const UI = () => {
 
       {mode === UI_MODES.CUSTOMIZE && (
         <>
-          <HeightSlider />
-          <GenderSelectionBox />
           {(isSkinCategory || (currentCategory?.colorPalette && hasAsset)) && (
             <ColorPicker />
           )}
