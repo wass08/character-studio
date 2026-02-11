@@ -1,13 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useConfiguratorStore, pb } from "@/stores/useConfiguratorStore";
-import { useEffect } from "react";
-
 import "./AssetsBox.css";
 
 const AssetsBox = () => {
   const {
+    sections,
     categories,
     currentCategory,
     fetchCategories,
@@ -19,37 +18,84 @@ const AssetsBox = () => {
     setHeight,
   } = useConfiguratorStore();
 
+  const [activeSectionId, setActiveSectionId] = useState(null);
+
   useEffect(() => {
     fetchCategories();
     resetAllMorphs();
     setHeight(1);
   }, [gender]);
 
-  //temporary filter
-  const filteredCategories = categories.filter((cat) => {
-    const isSkin = cat.name?.toLowerCase() === "skin";
-    const hasAssets = cat.assets && cat.assets.length > 0;
+  const categoriesBySection = useMemo(() => {
+    const map = {};
 
-    return isSkin || hasAssets;
-  });
+    categories.forEach((cat) => {
+      const isSkin = cat.name?.toLowerCase() === "skin";
+      const hasAssets = cat.assets && cat.assets.length > 0;
 
+      if (isSkin || hasAssets) {
+        const sectionId = cat.expand?.section?.id;
+
+        if (sectionId) {
+          if (!map[sectionId]) map[sectionId] = [];
+          map[sectionId].push(cat);
+        } else {
+          if (!map["unassigned"]) map["unassigned"] = [];
+          map["unassigned"].push(cat);
+        }
+      }
+    });
+
+    console.log("Categories mapped by Section ID:", map);
+    return map;
+  }, [categories]);
+
+  useEffect(() => {
+    if (!activeSectionId && sections.length > 0) {
+      setActiveSectionId(sections[0].id);
+    }
+  }, [sections]);
+
+  const visibleCategories = categoriesBySection[activeSectionId] || [];
   const isCurrentCategoryVisible =
     currentCategory && currentCategory.assets?.length >= 0;
 
   return (
     <>
       <div className="assets-box glass-card">
-        {filteredCategories.map((category) => (
-          <button
-            className={`category-button ${
-              currentCategory?.id === category.id ? "active" : ""
-            }`}
-            key={category.id}
-            onClick={() => setCurrentCategory(category)}
-          >
-            {category.name}
-          </button>
-        ))}
+        <div className="sections-tabs">
+          {sections.map((section) => (
+            <button
+              key={section.id}
+              className={`section-tab ${activeSectionId === section.id ? "active" : ""}`}
+              onClick={() => {
+                setActiveSectionId(section.id);
+                const firstCat = categoriesBySection[section.id]?.[0];
+                if (firstCat) setCurrentCategory(firstCat);
+              }}
+            >
+              <img
+                src={pb.files.getURL(section, section.icon)}
+                alt={section.name}
+              />
+              <span>{section.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="categories-box-wrapper glass-card">
+        <div className="categories-list">
+          {visibleCategories.map((category) => (
+            <button
+              className={`category-button ${currentCategory?.id === category.id ? "active" : ""}`}
+              key={category.id}
+              onClick={() => setCurrentCategory(category)}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="assets-box-wrapper glass-card">

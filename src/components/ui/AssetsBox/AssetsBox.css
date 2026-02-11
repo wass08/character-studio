@@ -17,8 +17,19 @@
   align-items: center;
   flex-direction: column;
   position: absolute;
-  left: 120px;
+  left: 220px;
   width: 350px;
+  bottom: 20%;
+}
+
+.categories-box-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  position: absolute;
+  left: 120px;
+  width: 150px;
   bottom: 20%;
 }
 

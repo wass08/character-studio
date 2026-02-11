@@ -57,6 +57,7 @@ export const useConfiguratorStore = create((set, get) => ({
   setPose: (pose) => {
     set({ pose });
   },
+  sections: [],
   categories: [],
   currentCategory: null,
   assets: [],
@@ -151,10 +152,13 @@ export const useConfiguratorStore = create((set, get) => ({
 
     const currentGender = get().gender;
 
-    const [categories, assets] = await Promise.all([
+    const [sections, categories, assets] = await Promise.all([
+      pb.collection("CharacterStudioSections").getFullList({
+        sort: "+position",
+      }),
       pb.collection("CharacterStudioGroups").getFullList({
         sort: "+position",
-        expand: "colorPalette",
+        expand: "colorPalette,section",
       }),
       pb.collection("CharacterStudioAssets").getFullList({
         sort: "-created",
@@ -186,9 +190,7 @@ export const useConfiguratorStore = create((set, get) => ({
         const foundAsset = category.assets.find(
           (a) => a.id === startingAssetId,
         );
-        if (foundAsset) {
-          customization[category.name].asset = foundAsset;
-        }
+        if (foundAsset) customization[category.name].asset = foundAsset;
       }
 
       if (
@@ -201,6 +203,7 @@ export const useConfiguratorStore = create((set, get) => ({
     });
 
     set({
+      sections,
       categories,
       currentCategory: categories[0],
       assets,
@@ -208,6 +211,7 @@ export const useConfiguratorStore = create((set, get) => ({
       loading: false,
     });
   },
+
   setCurrentCategory: (category) => set({ currentCategory: category }),
   changeAsset: (category, asset) => {
     set((state) => ({
