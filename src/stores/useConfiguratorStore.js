@@ -202,15 +202,15 @@ export const useConfiguratorStore = create((set, get) => ({
       }
     });
 
-    const firstSection = sections[0];
-    const firstCategoryOfFirstSection =
-      categories.find((cat) => cat.expand?.section?.id === firstSection.id) ||
-      categories[0];
+    // const firstSection = sections[0];
+    // const firstCategoryOfFirstSection =
+    //   categories.find((cat) => cat.expand?.section?.id === firstSection.id) ||
+    //   categories[0];
 
     set({
       sections,
       categories,
-      currentCategory: firstCategoryOfFirstSection,
+      currentCategory: "Skin",
       assets,
       customization,
       loading: false,

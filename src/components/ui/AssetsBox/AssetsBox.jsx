@@ -23,10 +23,15 @@ const AssetsBox = () => {
   const [activeSectionId, setActiveSectionId] = useState(null);
 
   useEffect(() => {
-    fetchCategories();
-    resetAllMorphs();
-    setHeight(1);
-  }, [gender]);
+    const init = async () => {
+      await fetchCategories();
+
+      resetAllMorphs();
+      setHeight(1);
+    };
+
+    init();
+  }, [gender, fetchCategories, resetAllMorphs, setHeight]);
 
   // Find the Character section object to identify it by name
   const characterSection = useMemo(
@@ -60,12 +65,10 @@ const AssetsBox = () => {
   }, [categories]);
 
   useEffect(() => {
-    if (!activeSectionId && currentCategory) {
-      setActiveSectionId(
-        currentCategory.expand?.section?.id || sections[0]?.id,
-      );
+    if (!activeSectionId && sections.length > 0) {
+      setActiveSectionId(sections[0].id);
     }
-  }, [currentCategory, sections, activeSectionId]);
+  }, [sections]);
 
   const visibleCategories = categoriesBySection[activeSectionId] || [];
   const isCurrentCategoryVisible =
