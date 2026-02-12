@@ -10,13 +10,35 @@ const ShapeKeyControls = () => {
   );
   const currentCategory = useConfiguratorStore(
     (state) => state.currentCategory,
-  ); // Get current category
+  );
+  const categories = useConfiguratorStore((state) => state.categories);
+
   const morphValues = useConfiguratorStore((state) => state.morphValues);
   const setMorphValue = useConfiguratorStore((state) => state.setMorphValue);
-  const resetAllMorphs = useConfiguratorStore((state) => state.resetAllMorphs);
   const resetMorphSet = useConfiguratorStore((state) => state.resetMorphSet);
 
   const morphAnalysis = useMemo(() => {
+    if (
+      !currentCategory ||
+      !categories.length ||
+      Object.keys(detectedMorphsByCategory).length === 0
+    ) {
+      return { universal: [], specific: [] };
+    }
+
+    const currentCategoryName = currentCategory.name || currentCategory;
+    const activeCategoryObj = categories.find(
+      (c) => c.name === currentCategoryName,
+    );
+
+    if (!activeCategoryObj) return { universal: [], specific: [] };
+
+    const currentSectionId = activeCategoryObj.section;
+
+    const sectionCategories = categories
+      .filter((c) => c.section === currentSectionId)
+      .map((c) => c.name);
+
     const counts = {};
     const categoriesPerMorph = {};
 
@@ -35,7 +57,10 @@ const ShapeKeyControls = () => {
       "tongueOut",
     ];
 
-    Object.entries(detectedMorphsByCategory).forEach(([category, keys]) => {
+    sectionCategories.forEach((catName) => {
+      const keys = detectedMorphsByCategory[catName];
+      if (!keys) return;
+
       keys.forEach((key) => {
         const isHidden = hiddenPrefixes.some((prefix) =>
           key.toLowerCase().startsWith(prefix.toLowerCase()),
@@ -45,7 +70,7 @@ const ShapeKeyControls = () => {
 
         counts[key] = (counts[key] || 0) + 1;
         if (!categoriesPerMorph[key]) categoriesPerMorph[key] = [];
-        categoriesPerMorph[key].push(category);
+        categoriesPerMorph[key].push(catName);
       });
     });
 
@@ -61,13 +86,14 @@ const ShapeKeyControls = () => {
     });
 
     return { universal, specific };
-  }, [detectedMorphsByCategory]);
+  }, [detectedMorphsByCategory, currentCategory, categories]);
 
   const { universal, specific } = morphAnalysis;
 
   const activeSpecificMorphs = useMemo(() => {
     if (!currentCategory) return [];
-    return specific.filter((s) => s.category === currentCategory.name);
+    const name = currentCategory.name || currentCategory;
+    return specific.filter((s) => s.category === name);
   }, [specific, currentCategory]);
 
   if (universal.length === 0 && activeSpecificMorphs.length === 0) return null;
@@ -75,34 +101,17 @@ const ShapeKeyControls = () => {
   return (
     <>
       <div className="shape-key-container">
-        <div className="shape-key-header">
-          <h3>Adjustments</h3>
-          <button
-            className="reset-button"
-            onClick={() => resetMorphSet(universal)}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="size-6 reset-icon"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-              />
-            </svg>
-          </button>
-        </div>
-
         {universal.length > 0 && (
           <div className="morph-group">
-            {/* <div className="group-label">
-              <span>Global</span>
-            </div> */}
+            <div className="shape-key-header">
+              <h3>Section Adjustments</h3>
+              <button
+                className="reset-button"
+                onClick={() => resetMorphSet(universal)}
+              >
+                <ResetIcon />
+              </button>
+            </div>
             {universal.map((key) => (
               <MorphSlider
                 key={key}
@@ -119,27 +128,14 @@ const ShapeKeyControls = () => {
         {activeSpecificMorphs.length > 0 && (
           <div className="morph-group">
             <div className="shape-key-header">
-              <h3>{currentCategory?.name}</h3>
+              <h3>{currentCategory?.name || currentCategory}</h3>
               <button
                 className="reset-button"
                 onClick={() =>
                   resetMorphSet(activeSpecificMorphs.map((s) => s.key))
                 }
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="size-6 reset-icon"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-                  />
-                </svg>
+                <ResetIcon />
               </button>
             </div>
             {activeSpecificMorphs.map(({ key }) => (
@@ -158,6 +154,23 @@ const ShapeKeyControls = () => {
 };
 
 export default ShapeKeyControls;
+
+const ResetIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className="size-6 reset-icon"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+    />
+  </svg>
+);
 
 const MorphSlider = ({ label, value, onChange }) => (
   <div className="slider-item">
