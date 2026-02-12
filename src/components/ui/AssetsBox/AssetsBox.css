@@ -97,6 +97,7 @@
 }
 
 .section-tab:hover .section-icon {
+  cursor: pointer;
   background-color: #feffff;
 }
 

@@ -23,17 +23,11 @@ const AssetsBox = () => {
   const [activeSectionId, setActiveSectionId] = useState(null);
 
   useEffect(() => {
-    const init = async () => {
-      await fetchCategories();
+    fetchCategories();
+    resetAllMorphs();
+    setHeight(1);
+  }, [gender]);
 
-      resetAllMorphs();
-      setHeight(1);
-    };
-
-    init();
-  }, [gender, fetchCategories, resetAllMorphs, setHeight]);
-
-  // Find the Character section object to identify it by name
   const characterSection = useMemo(
     () => sections.find((s) => s.name === "Character"),
     [sections],
@@ -101,20 +95,21 @@ const AssetsBox = () => {
         </div>
       </div>
 
-      {/* 2. SUB-CATEGORY LIST (Visible if current section has multiple categories) */}
-      <div className="categories-box-wrapper glass-card">
-        <div className="categories-list">
-          {visibleCategories.map((category) => (
-            <button
-              className={`category-button ${currentCategory?.id === category.id ? "active" : ""}`}
-              key={category.id}
-              onClick={() => setCurrentCategory(category)}
-            >
-              {category.name}
-            </button>
-          ))}
+      {currentCategory?.name?.toLowerCase() !== "skin" && (
+        <div className="categories-box-wrapper glass-card">
+          <div className="categories-list">
+            {visibleCategories.map((category) => (
+              <button
+                className={`category-button ${currentCategory?.id === category.id ? "active" : ""}`}
+                key={category.id}
+                onClick={() => setCurrentCategory(category)}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="assets-box-wrapper glass-card">
         {loading ? (
