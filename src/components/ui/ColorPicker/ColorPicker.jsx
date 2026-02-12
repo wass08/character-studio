@@ -100,7 +100,10 @@ const ColorPicker = () => {
       customization[currentCategory?.name]?.color || "#ffffff";
     return (
       <div className="color-picker-root">
-        <StyledPicker color={activeColor} onChange={(c) => updateColor(c)} />
+        <StyledPicker
+          color={activeColor}
+          onChange={(c) => updateColor(currentCategory.name, c, slotName)}
+        />
       </div>
     );
   }
@@ -132,7 +135,7 @@ const ColorPicker = () => {
             </div>
             <StyledPicker
               color={activeColor}
-              onChange={(c) => updateColor(c, slotName)}
+              onChange={(c) => updateColor(currentCategory.name, c, slotName)}
             />
           </div>
         );

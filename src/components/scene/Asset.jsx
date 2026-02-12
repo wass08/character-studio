@@ -11,7 +11,9 @@ export const Asset = ({ url, categoryName, skeleton }) => {
   const updateColor = useConfiguratorStore((state) => state.updateColor);
   const assetColor = customization[categoryName]?.color;
   const assetColors = customization[categoryName]?.colors || {};
-  const skinColor = customization["Skin"]?.color;
+
+  const skinColor =
+    customization["Skin"]?.color || customization["skin"]?.color;
 
   const registerMorphs = useConfiguratorStore((state) => state.registerMorphs);
   const registerColorSlots = useConfiguratorStore(
@@ -38,7 +40,8 @@ export const Asset = ({ url, categoryName, skeleton }) => {
     const items = [];
     scene.traverse((child) => {
       if (child.isMesh) {
-        const isSkin = child.material?.name.includes("Skin");
+        // Case-insensitive check for Skin material in GLTF
+        const isSkin = child.material?.name.toLowerCase().includes("skin");
 
         items.push({
           geometry: child.geometry,
@@ -56,7 +59,7 @@ export const Asset = ({ url, categoryName, skeleton }) => {
     const initialColors = {};
 
     scene.traverse((child) => {
-      if (child.isMesh) {
+      if (child.isMesh && child.material) {
         if (child.material.name.includes("Color_")) {
           const slotName = child.material.name;
           newDetectedSlots.push(slotName);
@@ -74,13 +77,13 @@ export const Asset = ({ url, categoryName, skeleton }) => {
     if (Object.keys(initialColors).length > 0) {
       Object.entries(initialColors).forEach(([slot, hex]) => {
         if (!customization[categoryName]?.colors?.[slot]) {
-          updateColor(hex, slot);
+          updateColor(categoryName, hex, slot);
         }
       });
     }
 
     return () => registerColorSlots(categoryName, []);
-  }, [scene, categoryName]);
+  }, [scene, categoryName, updateColor]);
 
   useEffect(() => {
     const allKeys = [];
@@ -110,7 +113,7 @@ export const Asset = ({ url, categoryName, skeleton }) => {
 
   return attachedItems.map((item, index) => (
     <skinnedMesh
-      key={index}
+      key={`${url}-${index}`}
       ref={(el) => (meshRefs.current[index] = el)}
       skeleton={skeleton}
       geometry={item.geometry}

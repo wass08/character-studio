@@ -60,9 +60,23 @@ const AssetsBox = () => {
 
   useEffect(() => {
     if (!activeSectionId && sections.length > 0) {
-      setActiveSectionId(sections[0].id);
+      const firstSectionId = sections[0].id;
+      setActiveSectionId(firstSectionId);
+
+      const firstCat = categories.find(
+        (c) => c.expand?.section?.id === firstSectionId,
+      );
+      if (firstCat) {
+        setCurrentCategory(firstCat);
+      }
     }
-  }, [sections]);
+  }, [
+    sections,
+    categories,
+    setActiveSectionId,
+    setCurrentCategory,
+    activeSectionId,
+  ]);
 
   const visibleCategories = categoriesBySection[activeSectionId] || [];
   const isCurrentCategoryVisible =
@@ -100,11 +114,17 @@ const AssetsBox = () => {
           <div className="categories-list">
             {visibleCategories.map((category) => (
               <button
-                className={`category-button ${currentCategory?.id === category.id ? "active" : ""}`}
+                className={`category-tab ${currentCategory?.id === category.id ? "active" : ""}`}
                 key={category.id}
                 onClick={() => setCurrentCategory(category)}
+                title={category.name}
               >
-                {category.name}
+                <div
+                  className="category-icon"
+                  style={{
+                    "--icon-url": `url(${pb.files.getURL(category, category.icon)})`,
+                  }}
+                />
               </button>
             ))}
           </div>

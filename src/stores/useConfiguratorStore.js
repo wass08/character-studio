@@ -128,9 +128,10 @@ export const useConfiguratorStore = create((set, get) => ({
   setDownload: (download) => set({ download }),
   screenshot: () => {},
   setScreenshot: (screenshot) => set({ screenshot }),
-  updateColor: (colorObj, slotName = null) => {
+  updateColor: (categoryName, colorObj, slotName = null) => {
+    if (!categoryName) return;
+
     const hexColor = colorObj.hex || colorObj;
-    const categoryName = get().currentCategory.name;
 
     set((state) => {
       const currentCategoryData = state.customization[categoryName] || {};
@@ -146,15 +147,13 @@ export const useConfiguratorStore = create((set, get) => ({
               ...currentColors,
               ...(slotName ? { [slotName]: hexColor } : {}),
             },
-            colorData: slotName
-              ? currentCategoryData.colorData
-              : colorObj.hsl || null,
+            asset: currentCategoryData.asset || null,
           },
         },
       };
     });
 
-    if (categoryName === "Skin") {
+    if (categoryName.toLowerCase() === "skin") {
       get().updateSkin(hexColor);
     }
   },
@@ -222,7 +221,7 @@ export const useConfiguratorStore = create((set, get) => ({
     set({
       sections,
       categories,
-      currentCategory: "Skin",
+      currentCategory: categories[0],
       assets,
       customization,
       loading: false,
