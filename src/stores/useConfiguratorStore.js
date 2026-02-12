@@ -15,6 +15,23 @@ const randFloat = (min, max) => Math.random() * (max - min) + min;
 
 const DEFAULT_SKIN_COLOR = "#E7AF91";
 
+export const hiddenPrefixes = [
+  "viseme",
+  "eyeBlink",
+  "eyeLook",
+  "eyeWide",
+  "eyeSquint",
+  "brow",
+  "jaw",
+  "mouth",
+  "cheekPuff",
+  "cheekSquint",
+  "noseSneer",
+  "tongueOut",
+];
+
+const excludedColorCategories = ["Eyes"];
+
 export const PHOTO_POSES = {
   Idle: "Rig|Idle_Loop",
   Walk: "Rig|Walk_Loop",
@@ -242,7 +259,12 @@ export const useConfiguratorStore = create((set, get) => ({
       }
 
       const colors = category.expand?.colorPalette?.colors;
-      const randomColor = colors ? colors[randInt(0, colors.length - 1)] : "";
+      let randomColor = "";
+      if (!excludedColorCategories.includes(category.name)) {
+        randomColor = colors ? colors[randInt(0, colors.length - 1)] : "";
+      } else {
+        randomColor = get().customization[category.name]?.color || "";
+      }
 
       customization[category.name] = {
         asset: randomAsset,
@@ -252,7 +274,12 @@ export const useConfiguratorStore = create((set, get) => ({
       const categoryMorphs = detectedMorphs[category.name];
       if (categoryMorphs) {
         categoryMorphs.forEach((morphKey) => {
-          morphValues[morphKey] = randFloat(0, 1);
+          const shouldSkip = hiddenPrefixes.some((prefix) =>
+            morphKey.startsWith(prefix),
+          );
+          if (!shouldSkip) {
+            morphValues[morphKey] = randFloat(0, 1);
+          }
         });
       }
 

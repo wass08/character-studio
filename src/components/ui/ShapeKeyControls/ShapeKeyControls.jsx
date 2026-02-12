@@ -1,5 +1,8 @@
 "use client";
-import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
+import {
+  hiddenPrefixes,
+  useConfiguratorStore,
+} from "@/stores/useConfiguratorStore";
 import React, { useMemo } from "react";
 
 import "./ShapeKeyControls.css";
@@ -41,21 +44,6 @@ const ShapeKeyControls = () => {
 
     const counts = {};
     const categoriesPerMorph = {};
-
-    const hiddenPrefixes = [
-      "viseme",
-      "eyeBlink",
-      "eyeLook",
-      "eyeWide",
-      "eyeSquint",
-      "brow",
-      "jaw",
-      "mouth",
-      "cheekPuff",
-      "cheekSquint",
-      "noseSneer",
-      "tongueOut",
-    ];
 
     sectionCategories.forEach((catName) => {
       const keys = detectedMorphsByCategory[catName];
