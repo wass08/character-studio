@@ -37,24 +37,15 @@ const AssetsBox = () => {
 
   const categoriesBySection = useMemo(() => {
     const map = {};
-
     categories.forEach((cat) => {
       const isSkin = cat.name?.toLowerCase() === "skin";
       const hasAssets = cat.assets && cat.assets.length > 0;
-
       if (isSkin || hasAssets) {
-        const sectionId = cat.expand?.section?.id;
-
-        if (sectionId) {
-          if (!map[sectionId]) map[sectionId] = [];
-          map[sectionId].push(cat);
-        } else {
-          if (!map["unassigned"]) map["unassigned"] = [];
-          map["unassigned"].push(cat);
-        }
+        const sectionId = cat.expand?.section?.id || "unassigned";
+        if (!map[sectionId]) map[sectionId] = [];
+        map[sectionId].push(cat);
       }
     });
-
     return map;
   }, [categories]);
 
@@ -62,13 +53,10 @@ const AssetsBox = () => {
     if (!activeSectionId && sections.length > 0) {
       const firstSectionId = sections[0].id;
       setActiveSectionId(firstSectionId);
-
       const firstCat = categories.find(
         (c) => c.expand?.section?.id === firstSectionId,
       );
-      if (firstCat) {
-        setCurrentCategory(firstCat);
-      }
+      if (firstCat) setCurrentCategory(firstCat);
     }
   }, [
     sections,
@@ -86,6 +74,7 @@ const AssetsBox = () => {
 
   return (
     <>
+      {/* Sidebar: Section Selection */}
       <div className="assets-box glass-card">
         <div className="sections-tabs">
           {sections.map((section) => (
@@ -109,6 +98,7 @@ const AssetsBox = () => {
         </div>
       </div>
 
+      {/* Categories Column (only if not skin) */}
       {currentCategory?.name?.toLowerCase() !== "skin" && (
         <div className="categories-box-wrapper glass-card">
           <div className="categories-list">
@@ -131,11 +121,13 @@ const AssetsBox = () => {
         </div>
       )}
 
+      {/* Main Content: Slider, Gender, and Assets */}
       <div className="assets-box-wrapper glass-card">
         {loading ? (
           <div className="loading-message">Loading Assets...</div>
         ) : (
           <div className="content-container">
+            {/* Height & Gender - Always visible in Character section */}
             {isCharacterSectionActive && (
               <div className="character-global-controls">
                 <GenderSelectionBox />
@@ -143,8 +135,12 @@ const AssetsBox = () => {
               </div>
             )}
 
+            {/* Assets Grid */}
             {isCurrentCategoryVisible && (
-              <div className="category-assets-grid">
+              <div
+                className="category-assets-grid"
+                style={{ marginTop: isCharacterSectionActive ? "20px" : "0" }}
+              >
                 {currentCategory?.optional && (
                   <button
                     onClick={() => changeAsset(currentCategory.name, null)}
@@ -156,7 +152,7 @@ const AssetsBox = () => {
                       viewBox="0 0 24 24"
                       strokeWidth={1.5}
                       stroke="currentColor"
-                      className="size-6"
+                      style={{ width: "24px" }}
                     >
                       <path
                         strokeLinecap="round"
@@ -169,13 +165,13 @@ const AssetsBox = () => {
 
                 {currentCategory?.assets.map((asset) => (
                   <button
+                    key={asset.id}
                     onClick={() => changeAsset(currentCategory.name, asset)}
                     className="asset-button"
-                    key={asset.id}
                   >
                     <img
                       src={pb.files.getURL(asset, asset.thumbnail)}
-                      alt="asset"
+                      alt="thumbnail"
                     />
                   </button>
                 ))}

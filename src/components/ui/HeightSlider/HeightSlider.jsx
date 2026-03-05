@@ -8,7 +8,7 @@ export const HeightSlider = () => {
 
   return (
     <div
-      className="absolute top-2 left-80 p-4 bg-white/10 rounded-lg"
+      className="p-4 bg-white/10 rounded-lg"
       onPointerDown={(e) => e.stopPropagation()}
     >
       <label className="block text-white mb-2">

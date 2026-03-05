@@ -1,7 +1,7 @@
 .gender-selection-box {
-  position: absolute;
-  top: 20%;
-  left: 300px;
+  /* position: absolute; */
+  /* top: 20%; */
+  /* left: 300px; */
   width: 120px;
   display: flex;
   justify-content: space-between;
