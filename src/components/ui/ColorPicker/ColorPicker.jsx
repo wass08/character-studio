@@ -13,11 +13,11 @@ const SaturationPointer = () => (
   <div
     className="saturation-pointer"
     style={{
-      width: "12px",
-      height: "12px",
-      borderRadius: "6px",
+      width: "9px",
+      height: "9px",
+      borderRadius: "50%",
       boxShadow: "rgb(255, 255, 255) 0px 0px 0px 1px inset",
-      transform: "translate(-6px, -6px)",
+      transform: "translate(-4px, -4px)",
     }}
   />
 );
@@ -26,11 +26,11 @@ const HuePointer = () => (
   <div
     className="hue-pointer"
     style={{
-      width: "6px",
-      height: "20px",
+      width: "4px",
+      height: "14px",
       backgroundColor: "white",
       borderRadius: "2px",
-      transform: "translate(-3px, -2px)",
+      transform: "translate(-2px, -2px)",
     }}
   />
 );
@@ -95,51 +95,54 @@ const ColorPicker = () => {
     return null;
   }
 
+  // Single color — skin or no slots
   if (isSkin || categorySlots.length === 0) {
     const activeColor =
       customization[currentCategory?.name]?.color || "#ffffff";
     return (
       <div className="color-picker-root">
-        <StyledPicker
-          color={activeColor}
-          onChange={(c) => updateColor(currentCategory.name, c, undefined)}
-        />
+        <div className="color-picker-scroll">
+          <StyledPicker
+            color={activeColor}
+            onChange={(c) => updateColor(currentCategory.name, c, undefined)}
+          />
+        </div>
       </div>
     );
   }
 
+  // Multi-slot — label pinned per slot, picker scrolls within the shared container
+  const sortedSlots = [...categorySlots].sort();
+
   return (
-    <div
-      className="color-picker-root"
-      style={{ display: "flex", flexDirection: "column", gap: "20px" }}
-    >
-      {categorySlots.sort().map((slotName) => {
-        const activeColor =
-          customization[currentCategory?.name]?.colors?.[slotName] ||
-          customization[currentCategory?.name]?.color ||
-          "#ffffff";
+    <div className="color-picker-root">
+      <div className="color-picker-scroll">
+        {sortedSlots.map((slotName, index) => {
+          const activeColor =
+            customization[currentCategory?.name]?.colors?.[slotName] ||
+            customization[currentCategory?.name]?.color ||
+            "#ffffff";
 
-        const label = slotName.replace("Color_", "").replace(/_/g, " ");
+          const label = slotName.replace("Color_", "").replace(/_/g, " ");
 
-        return (
-          <div key={slotName} className="slot-picker-container">
-            <div
-              style={{
-                fontSize: "0.85rem",
-                fontWeight: "600",
-                marginBottom: "8px",
-                textTransform: "capitalize",
-              }}
-            >
-              {label}
-            </div>
-            <StyledPicker
-              color={activeColor}
-              onChange={(c) => updateColor(currentCategory.name, c, slotName)}
-            />
-          </div>
-        );
-      })}
+          return (
+            <React.Fragment key={slotName}>
+              <div className="slot-picker-container">
+                <div className="slot-picker-label">{label}&nbsp;Color</div>
+                <StyledPicker
+                  color={activeColor}
+                  onChange={(c) =>
+                    updateColor(currentCategory.name, c, slotName)
+                  }
+                />
+              </div>
+              {index < sortedSlots.length - 1 && (
+                <div className="color-slot-divider" />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
     </div>
   );
 };

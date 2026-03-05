@@ -1,61 +1,54 @@
 .shape-key-container {
-  width: 350px;
-  height: 300px;
-  padding: 20px;
+  width: 280px;
+  padding: 14px;
   position: absolute;
   top: 150px;
   right: 80px;
   color: white;
   background: rgba(255, 255, 255, 0.21);
-  border-radius: 16px;
+  border-radius: 14px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(3.7px);
   -webkit-backdrop-filter: blur(3.7px);
   border: 1px solid rgba(255, 255, 255, 0.35);
-}
-
-.shape-key-container-category {
-  width: 350px;
-  height: auto;
-  padding: 20px;
-  position: absolute;
-  top: 475px;
-  right: 80px;
-  color: white;
-  background: rgba(255, 255, 255, 0.21);
-  border-radius: 16px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(3.7px);
-  -webkit-backdrop-filter: blur(3.7px);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .shape-key-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.shape-key-header h3 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.5px;
 }
 
 .reset-btn-main {
   background: #ff4444;
   color: white;
   border: none;
-  padding: 4px 8px;
+  padding: 3px 6px;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
 }
 
 .group-label {
   display: flex;
   justify-content: space-between;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: bold;
   color: #ffffff;
   border-bottom: 2px solid #ffffff;
-  margin-bottom: 10px;
-  padding-bottom: 5px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
 }
 
 .reset-button {
@@ -63,7 +56,6 @@
   border: none;
   cursor: pointer;
   background: transparent;
-  cursor: pointer;
 }
 
 .reset-icon {
@@ -71,6 +63,8 @@
   outline: none;
   border: none;
   background: transparent;
+  width: 14px;
+  height: 14px;
 }
 
 .group-label button:hover {
@@ -78,36 +72,48 @@
   border-color: white;
 }
 
-.morph-group {
-  height: 200px;
-  overflow-y: scroll;
+.morph-section-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.25);
 }
 
-.morph-group::-webkit-scrollbar {
+.morph-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.morph-scroll {
+  max-height: 130px;
+  overflow-y: auto;
+}
+
+.morph-scroll::-webkit-scrollbar {
   width: 3px;
 }
 
-.morph-group::-webkit-scrollbar-track {
+.morph-scroll::-webkit-scrollbar-track {
   background: transparent;
-  width: 1px;
 }
 
-.morph-group::-webkit-scrollbar-thumb {
+.morph-scroll::-webkit-scrollbar-thumb {
   background: #ffffff;
-  width: 1px;
   height: 5px;
   border-radius: 7px;
 }
 
-.morph-group::-webkit-scrollbar-thumb:hover {
+.morph-scroll::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
 
 .slider-label {
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 250;
-  letter-spacing: 1px;
-  /* text-transform: uppercase; */
+  letter-spacing: 0.5px;
+}
+
+.slider-item {
+  margin-bottom: 8px;
 }
 
 .slider-input {
@@ -125,8 +131,8 @@
 .slider-input::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 12px;
-  height: 12px;
+  width: 9px;
+  height: 9px;
   background: #ffffff;
   border-radius: 50%;
   cursor: pointer;
@@ -134,8 +140,8 @@
 }
 
 .slider-input::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
+  width: 9px;
+  height: 9px;
   background: #ffffff;
   border: none;
   border-radius: 50%;

@@ -87,19 +87,19 @@ const ShapeKeyControls = () => {
   if (universal.length === 0 && activeSpecificMorphs.length === 0) return null;
 
   return (
-    <>
-      <div className="shape-key-container">
-        {universal.length > 0 && (
-          <div className="morph-group">
-            <div className="shape-key-header">
-              <h3>Section Adjustments</h3>
-              <button
-                className="reset-button"
-                onClick={() => resetMorphSet(universal)}
-              >
-                <ResetIcon />
-              </button>
-            </div>
+    <div className="shape-key-container">
+      {universal.length > 0 && (
+        <div className="morph-group">
+          <div className="shape-key-header">
+            <h3>Section Adjustments</h3>
+            <button
+              className="reset-button"
+              onClick={() => resetMorphSet(universal)}
+            >
+              <ResetIcon />
+            </button>
+          </div>
+          <div className="morph-scroll">
             {universal.map((key) => (
               <MorphSlider
                 key={key}
@@ -109,23 +109,27 @@ const ShapeKeyControls = () => {
               />
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="shape-key-container-category">
-        {activeSpecificMorphs.length > 0 && (
-          <div className="morph-group">
-            <div className="shape-key-header">
-              <h3>{currentCategory?.name || currentCategory}</h3>
-              <button
-                className="reset-button"
-                onClick={() =>
-                  resetMorphSet(activeSpecificMorphs.map((s) => s.key))
-                }
-              >
-                <ResetIcon />
-              </button>
-            </div>
+      {universal.length > 0 && activeSpecificMorphs.length > 0 && (
+        <div className="morph-section-divider" />
+      )}
+
+      {activeSpecificMorphs.length > 0 && (
+        <div className="morph-group">
+          <div className="shape-key-header">
+            <h3>{currentCategory?.name || currentCategory}</h3>
+            <button
+              className="reset-button"
+              onClick={() =>
+                resetMorphSet(activeSpecificMorphs.map((s) => s.key))
+              }
+            >
+              <ResetIcon />
+            </button>
+          </div>
+          <div className="morph-scroll">
             {activeSpecificMorphs.map(({ key }) => (
               <MorphSlider
                 key={key}
@@ -135,9 +139,9 @@ const ShapeKeyControls = () => {
               />
             ))}
           </div>
-        )}
-      </div>
-    </>
+        </div>
+      )}
+    </div>
   );
 };
 
