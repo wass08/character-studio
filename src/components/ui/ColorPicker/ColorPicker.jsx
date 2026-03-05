@@ -102,7 +102,7 @@ const ColorPicker = () => {
       <div className="color-picker-root">
         <StyledPicker
           color={activeColor}
-          onChange={(c) => updateColor(currentCategory.name, c, slotName)}
+          onChange={(c) => updateColor(currentCategory.name, c, undefined)}
         />
       </div>
     );
