@@ -74,7 +74,6 @@ const AssetsBox = () => {
 
   return (
     <>
-      {/* Sidebar: Section Selection */}
       <div className="assets-box glass-card">
         <div className="sections-tabs">
           {sections.map((section) => (
@@ -98,7 +97,6 @@ const AssetsBox = () => {
         </div>
       </div>
 
-      {/* Categories Column (only if not skin) */}
       {currentCategory?.name?.toLowerCase() !== "skin" && (
         <div className="categories-box-wrapper glass-card">
           <div className="categories-list">
@@ -121,13 +119,11 @@ const AssetsBox = () => {
         </div>
       )}
 
-      {/* Main Content: Slider, Gender, and Assets */}
       <div className="assets-box-wrapper glass-card">
         {loading ? (
           <div className="loading-message">Loading Assets...</div>
         ) : (
           <div className="content-container">
-            {/* Height & Gender - Always visible in Character section */}
             {isCharacterSectionActive && (
               <div className="character-global-controls">
                 <GenderSelectionBox />
@@ -135,7 +131,6 @@ const AssetsBox = () => {
               </div>
             )}
 
-            {/* Assets Grid */}
             {isCurrentCategoryVisible && (
               <div
                 className="category-assets-grid"
