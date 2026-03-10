@@ -137,7 +137,6 @@ const AssetsBox = () => {
                   <GenderSelectionBox />
                   <HeightSlider />
 
-                  {/* Body Size & Muscularity — only visible in Character section */}
                   <div className="morph-group">
                     <div className="shape-key-header">
                       <h3>Body Shape</h3>

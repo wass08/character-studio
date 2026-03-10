@@ -49,8 +49,8 @@ const UI = () => {
           {(isSkinCategory || (currentCategory?.colorPalette && hasAsset)) && (
             <ColorPicker />
           )}
-          <AssetsBox />
           {uniqueMorphs.length > 0 && <ShapeKeyControls />}
+          <AssetsBox />
         </>
       )}
       {mode === UI_MODES.PHOTO && <PosesBox />}
