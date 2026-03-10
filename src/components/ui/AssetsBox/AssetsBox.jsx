@@ -74,106 +74,108 @@ const AssetsBox = () => {
 
   return (
     <>
-      <div className="assets-box glass-card">
-        <div className="sections-tabs">
-          {sections.map((section) => (
-            <button
-              key={section.id}
-              className={`section-tab ${activeSectionId === section.id ? "active" : ""}`}
-              onClick={() => {
-                setActiveSectionId(section.id);
-                const firstCat = categoriesBySection[section.id]?.[0];
-                if (firstCat) setCurrentCategory(firstCat);
-              }}
-            >
-              <div
-                className="section-icon"
-                style={{
-                  "--icon-url": `url(${pb.files.getURL(section, section.icon)})`,
-                }}
-              />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {currentCategory?.name?.toLowerCase() !== "skin" && (
-        <div className="categories-box-wrapper glass-card">
-          <div className="categories-list">
-            {visibleCategories.map((category) => (
+      <div className="sidebar">
+        <div className="assets-box glass-card">
+          <div className="sections-tabs">
+            {sections.map((section) => (
               <button
-                className={`category-tab ${currentCategory?.id === category.id ? "active" : ""}`}
-                key={category.id}
-                onClick={() => setCurrentCategory(category)}
-                title={category.name}
+                key={section.id}
+                className={`section-tab ${activeSectionId === section.id ? "active" : ""}`}
+                onClick={() => {
+                  setActiveSectionId(section.id);
+                  const firstCat = categoriesBySection[section.id]?.[0];
+                  if (firstCat) setCurrentCategory(firstCat);
+                }}
               >
                 <div
-                  className="category-icon"
+                  className="section-icon"
                   style={{
-                    "--icon-url": `url(${pb.files.getURL(category, category.icon)})`,
+                    "--icon-url": `url(${pb.files.getURL(section, section.icon)})`,
                   }}
                 />
               </button>
             ))}
           </div>
         </div>
-      )}
 
-      <div className="assets-box-wrapper glass-card">
-        {loading ? (
-          <div className="loading-message">Loading Assets...</div>
-        ) : (
-          <div className="content-container">
-            {isCharacterSectionActive && (
-              <div className="character-global-controls">
-                <GenderSelectionBox />
-                <HeightSlider />
-              </div>
-            )}
-
-            {isCurrentCategoryVisible && (
-              <div
-                className="category-assets-grid"
-                style={{ marginTop: isCharacterSectionActive ? "20px" : "0" }}
-              >
-                {currentCategory?.optional && (
-                  <button
-                    onClick={() => changeAsset(currentCategory.name, null)}
-                    className="asset-button"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      style={{ width: "24px" }}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18 18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                )}
-
-                {currentCategory?.assets.map((asset) => (
-                  <button
-                    key={asset.id}
-                    onClick={() => changeAsset(currentCategory.name, asset)}
-                    className="asset-button"
-                  >
-                    <img
-                      src={pb.files.getURL(asset, asset.thumbnail)}
-                      alt="thumbnail"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
+        {currentCategory?.name?.toLowerCase() !== "skin" && (
+          <div className="categories-box-wrapper glass-card">
+            <div className="categories-list">
+              {visibleCategories.map((category) => (
+                <button
+                  className={`category-tab ${currentCategory?.id === category.id ? "active" : ""}`}
+                  key={category.id}
+                  onClick={() => setCurrentCategory(category)}
+                  title={category.name}
+                >
+                  <div
+                    className="category-icon"
+                    style={{
+                      "--icon-url": `url(${pb.files.getURL(category, category.icon)})`,
+                    }}
+                  />
+                </button>
+              ))}
+            </div>
           </div>
         )}
+
+        <div className="assets-box-wrapper glass-card">
+          {loading ? (
+            <div className="loading-message">Loading Assets...</div>
+          ) : (
+            <div className="content-container">
+              {isCharacterSectionActive && (
+                <div className="character-global-controls">
+                  <GenderSelectionBox />
+                  <HeightSlider />
+                </div>
+              )}
+
+              {isCurrentCategoryVisible && (
+                <div
+                  className="category-assets-grid"
+                  style={{ marginTop: isCharacterSectionActive ? "20px" : "0" }}
+                >
+                  {currentCategory?.optional && (
+                    <button
+                      onClick={() => changeAsset(currentCategory.name, null)}
+                      className="asset-button"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        style={{ width: "24px" }}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 18 18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  )}
+
+                  {currentCategory?.assets.map((asset) => (
+                    <button
+                      key={asset.id}
+                      onClick={() => changeAsset(currentCategory.name, asset)}
+                      className="asset-button"
+                    >
+                      <img
+                        src={pb.files.getURL(asset, asset.thumbnail)}
+                        alt="thumbnail"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
