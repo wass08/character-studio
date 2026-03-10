@@ -7,6 +7,12 @@ import React, { useMemo } from "react";
 
 import "./ShapeKeyControls.css";
 
+export const CHARACTER_GLOBAL_MORPHS = [
+  "Body Size",
+  "Muscularity",
+  "Eye Spacing",
+];
+
 const ShapeKeyControls = () => {
   const detectedMorphsByCategory = useConfiguratorStore(
     (state) => state.detectedMorphsByCategory,
@@ -54,7 +60,11 @@ const ShapeKeyControls = () => {
           key.toLowerCase().startsWith(prefix.toLowerCase()),
         );
 
-        if (isHidden) return;
+        const isCharacterGlobal = CHARACTER_GLOBAL_MORPHS.some(
+          (g) => g.toLowerCase() === key.toLowerCase(),
+        );
+
+        if (isHidden || isCharacterGlobal) return;
 
         counts[key] = (counts[key] || 0) + 1;
         if (!categoriesPerMorph[key]) categoriesPerMorph[key] = [];
@@ -164,7 +174,7 @@ const ResetIcon = () => (
   </svg>
 );
 
-const MorphSlider = ({ label, value, onChange }) => (
+export const MorphSlider = ({ label, value, onChange }) => (
   <div className="slider-item">
     <label className="slider-label">{label}</label>
     <input
