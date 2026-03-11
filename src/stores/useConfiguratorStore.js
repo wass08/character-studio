@@ -68,7 +68,10 @@ export const useConfiguratorStore = create((set, get) => ({
   },
   mode: UI_MODES.CUSTOMIZE,
   setMode: (mode) => {
-    set({ mode: mode });
+    set({ mode });
+    if (mode === UI_MODES.CUSTOMIZE) {
+      set({ pose: PHOTO_POSES.Idle });
+    }
   },
   pose: PHOTO_POSES.Idle,
   setPose: (pose) => {

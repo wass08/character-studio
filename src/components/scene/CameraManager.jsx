@@ -1,4 +1,4 @@
-import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
+import { useConfiguratorStore, UI_MODES } from "@/stores/useConfiguratorStore";
 import { CameraControls, PerspectiveCamera } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { button, useControls } from "leva";
@@ -11,6 +11,9 @@ export const DEFAULT_CAMERA_POSITION = [
 export const DEFAULT_CAMERA_TARGET = [
   0.1, 0.9652248734528945, 0.5650397082939782,
 ];
+
+export const PHOTO_CAMERA_POSITION = [0, 1.4, -3.5];
+export const PHOTO_CAMERA_TARGET = [0, 1.0, 0];
 
 const CAMERA_CONFIGS = {
   Hat: {
@@ -67,9 +70,24 @@ export const CameraManager = ({ loading }) => {
     (state) => state.currentCategory,
   );
   const height = useConfiguratorStore((state) => state.height);
+  const mode = useConfiguratorStore((state) => state.mode);
 
   useEffect(() => {
     if (!controls.current) return;
+
+    // Photo mode: use fixed full-body camera, disable orbit
+    if (mode === UI_MODES.PHOTO) {
+      controls.current.enabled = false;
+      controls.current.setLookAt(
+        ...PHOTO_CAMERA_POSITION,
+        ...PHOTO_CAMERA_TARGET,
+        true,
+      );
+      return;
+    }
+
+    // Re-enable controls when back in customize mode
+    controls.current.enabled = true;
 
     const config = currentCategory
       ? CAMERA_CONFIGS[currentCategory.name]
@@ -104,7 +122,6 @@ export const CameraManager = ({ loading }) => {
     controls.current.azimuthAngle = closestAzimuth;
     controls.current.update(0);
 
-    // 4. Perform the transition
     controls.current.setLookAt(
       targetPos.x,
       targetPos.y,
@@ -114,7 +131,7 @@ export const CameraManager = ({ loading }) => {
       lookAtPos.z,
       true,
     );
-  }, [currentCategory, height, scene]);
+  }, [currentCategory, height, scene, mode]);
 
   useEffect(() => {
     if (controls.current) {
@@ -139,7 +156,6 @@ export const CameraManager = ({ loading }) => {
     <>
       <CameraControls
         ref={controls}
-        // minPolarAngle={Math.PI / 4}
         maxPolarAngle={Math.PI / 2}
         minDistance={2}
         maxDistance={8}
