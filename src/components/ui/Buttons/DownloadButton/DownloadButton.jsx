@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 
-import "./DownloadButton.css";
+import "../Button.css";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 
 const DownloadButton = () => {

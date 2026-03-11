@@ -1,5 +1,5 @@
 .shape-key-container {
-  width: clamp(200px, 20vw, 280px);
+  width: clamp(280px, 30vw, 380px);
   padding: clamp(8px, 1.2vh, 14px);
   position: absolute;
   top: 39%;
@@ -7,7 +7,7 @@
   right: clamp(20px, 3.55vw, 256px);
   color: white;
   background: rgba(255, 255, 255, 0.21);
-  border-radius: 14px;
+  border-radius: 8px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(3.7px);
   -webkit-backdrop-filter: blur(3.7px);
@@ -85,7 +85,8 @@
 .morph-group {
   display: flex;
   flex-direction: column;
-  min-height: 0; /* allows flex children to shrink */
+  min-height: 0;
+  width: 100%;
 }
 
 .morph-scroll {
@@ -111,45 +112,98 @@
   background: #555;
 }
 
-.slider-label {
-  font-size: clamp(9px, 1vw, 11px);
-  font-weight: 250;
-  letter-spacing: 0.5px;
-}
+/* ── Pill-style slider ── */
 
 .slider-item {
   margin-bottom: clamp(4px, 0.8vh, 8px);
 }
 
+.slider-track-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: clamp(22px, 3vh, 28px);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 0 10px;
+}
+
+/* Filled portion that grows with the slider value */
+.slider-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Label on the left */
+.slider-label-inline {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(8px, 0.9vw, 10px);
+  font-weight: 400;
+  letter-spacing: 0.4px;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  pointer-events: none;
+  touch-action: none;
+  user-select: none;
+}
+
+/* Numeric value on the right */
+.slider-value-inline {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(8px, 0.9vw, 10px);
+  font-weight: 400;
+  letter-spacing: 0.3px;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  pointer-events: none;
+  touch-action: none;
+  user-select: none;
+  min-width: 2.4ch;
+  text-align: right;
+}
+
 .slider-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  z-index: 2;
   -webkit-appearance: none;
   appearance: none;
-  width: 100%;
-  height: 1px;
-  background: #ffffff;
-  border-radius: 3px;
-  outline: none;
-  cursor: pointer;
-  overflow: visible;
 }
 
 .slider-input::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 9px;
-  height: 9px;
-  background: #ffffff;
-  border-radius: 50%;
+  width: 2px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 2px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  margin-left: -10px;
 }
 
 .slider-input::-moz-range-thumb {
-  width: 9px;
-  height: 9px;
-  background: #ffffff;
+  width: 2px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.9);
   border: none;
-  border-radius: 50%;
+  border-radius: 2px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  margin-left: -10px;
 }

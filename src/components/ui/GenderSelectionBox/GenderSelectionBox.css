@@ -1,27 +1,28 @@
 .gender-selection-box {
-  /* position: absolute; */
-  /* top: 20%; */
-  /* left: 300px; */
-  width: 120px;
+  justify-self: center;
+  flex-direction: row;
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-direction: column;
 }
 
 .gender-selection-box-wrapper {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
+  gap: 12px;
   align-items: center;
-  flex-direction: column;
+  flex-direction: row;
   width: 100%;
 }
 
 .gender-button {
-  width: 90px;
+  width: 100%;
   display: flex;
+  align-items: center;
   justify-content: center;
   height: 40px;
+  text-transform: capitalize;
 }
 
 .gender-button:hover {

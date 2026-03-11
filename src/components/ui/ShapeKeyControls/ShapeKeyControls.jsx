@@ -174,17 +174,29 @@ const ResetIcon = () => (
   </svg>
 );
 
-export const MorphSlider = ({ label, value, onChange }) => (
-  <div className="slider-item">
-    <label className="slider-label">{label}</label>
-    <input
-      className="slider-input"
-      type="range"
-      min="0"
-      max="1"
-      step="0.01"
-      value={value || 0}
-      onChange={(e) => onChange(parseFloat(e.target.value))}
-    />
-  </div>
-);
+export const MorphSlider = ({ label, value, onChange }) => {
+  const numericValue = value || 0;
+  const displayValue = numericValue.toFixed(2);
+
+  return (
+    <div className="slider-item">
+      <div className="slider-track-wrapper">
+        <div
+          className="slider-fill"
+          style={{ width: `${numericValue * 100}%` }}
+        />
+        <span className="slider-label-inline">{label}</span>
+        <span className="slider-value-inline">{displayValue}</span>
+        <input
+          className="slider-input"
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={numericValue}
+          onChange={(e) => onChange(parseFloat(e.target.value))}
+        />
+      </div>
+    </div>
+  );
+};

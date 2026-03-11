@@ -1,9 +1,11 @@
 .mode-selector {
   position: absolute;
-  top: clamp(110px, 2vh, 20px);
+  top: clamp(40px, 15vh, 220px);
   right: clamp(20px, 3.55vw, 256px);
   display: flex;
   gap: 8px;
+  justify-self: center;
+  flex-direction: row;
   color: white;
   background: rgba(255, 255, 255, 0.21);
   border-radius: 10px;
