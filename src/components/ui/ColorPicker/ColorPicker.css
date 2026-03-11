@@ -21,6 +21,24 @@
   overflow: hidden;
 }
 
+/* ─── Inline variant — sits inside the assets panel ── */
+.color-picker-root--inline {
+  position: static;
+  transform: none;
+  right: auto;
+  bottom: auto;
+  z-index: auto;
+  width: 100%;
+  height: auto;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  padding: 0;
+}
+
 .color-picker-scroll {
   flex: 1;
   min-height: 0;

@@ -46,7 +46,7 @@ const UI = () => {
 
       {mode === UI_MODES.CUSTOMIZE && (
         <>
-          {(isSkinCategory || (currentCategory?.colorPalette && hasAsset)) && (
+          {!isSkinCategory && currentCategory?.colorPalette && hasAsset && (
             <ColorPicker />
           )}
           {uniqueMorphs.length > 0 && <ShapeKeyControls />}

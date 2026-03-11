@@ -76,7 +76,7 @@ const CustomColorPicker = (props) => {
 
 const StyledPicker = CustomPicker(CustomColorPicker);
 
-const ColorPicker = () => {
+const ColorPicker = ({ inline = false }) => {
   const updateColor = useConfiguratorStore((state) => state.updateColor);
   const currentCategory = useConfiguratorStore(
     (state) => state.currentCategory,
@@ -95,12 +95,16 @@ const ColorPicker = () => {
     return null;
   }
 
+  const rootClass = inline
+    ? "color-picker-root color-picker-root--inline"
+    : "color-picker-root";
+
   // Single color — skin or no slots
   if (isSkin || categorySlots.length === 0) {
     const activeColor =
       customization[currentCategory?.name]?.color || "#ffffff";
     return (
-      <div className="color-picker-root">
+      <div className={rootClass}>
         <div className="color-picker-scroll">
           <StyledPicker
             color={activeColor}
@@ -111,11 +115,11 @@ const ColorPicker = () => {
     );
   }
 
-  // Multi-slot — label pinned per slot, picker scrolls within the shared container
+  // Multi-slot
   const sortedSlots = [...categorySlots].sort();
 
   return (
-    <div className="color-picker-root">
+    <div className={rootClass}>
       <div className="color-picker-scroll">
         {sortedSlots.map((slotName, index) => {
           const activeColor =

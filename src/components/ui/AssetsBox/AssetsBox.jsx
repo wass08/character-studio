@@ -8,6 +8,7 @@ import {
   CHARACTER_GLOBAL_MORPHS,
   MorphSlider,
 } from "../ShapeKeyControls/ShapeKeyControls";
+import ColorPicker from "../ColorPicker/ColorPicker";
 import "./AssetsBox.css";
 
 const AssetsBox = () => {
@@ -51,6 +52,7 @@ const AssetsBox = () => {
   );
 
   const isCharacterSectionActive = activeSectionId === characterSection?.id;
+  const isSkinCategory = currentCategory?.name?.toLowerCase() === "skin";
 
   const categoriesBySection = useMemo(() => {
     const map = {};
@@ -115,7 +117,7 @@ const AssetsBox = () => {
           </div>
         </div>
 
-        {currentCategory?.name?.toLowerCase() !== "skin" && (
+        {!isSkinCategory && (
           <div className="categories-box-wrapper glass-card">
             <div className="categories-list">
               {visibleCategories.map((category) => (
@@ -147,6 +149,15 @@ const AssetsBox = () => {
                   <GenderSelectionBox />
                   <HeightSlider />
 
+                  {isSkinCategory && (
+                    <div className="skin-color-picker-wrapper">
+                      <div className="shape-key-header">
+                        <h3>Skin Color</h3>
+                      </div>
+                      <ColorPicker inline />
+                    </div>
+                  )}
+
                   <div className="morph-group">
                     <div className="shape-key-header">
                       <h3>Body Shape</h3>
@@ -169,7 +180,7 @@ const AssetsBox = () => {
                 </div>
               )}
 
-              {isCurrentCategoryVisible && (
+              {isCurrentCategoryVisible && !isSkinCategory && (
                 <div
                   className="category-assets-grid"
                   style={{ marginTop: isCharacterSectionActive ? "20px" : "0" }}
