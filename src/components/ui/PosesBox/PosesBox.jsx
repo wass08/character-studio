@@ -13,7 +13,7 @@ const PosesBox = () => {
 
   return (
     <>
-      <div className="poses-box">
+      <div className="poses-box glass-card">
         {Object.keys(PHOTO_POSES).map((pose, index) => (
           <button
             key={index}
@@ -21,6 +21,7 @@ const PosesBox = () => {
             className="pose-button"
           >
             {pose}
+            {/* <img src={pb.files.getURL(pose, pose.thumbnail)} alt="thumbnail" /> */}
           </button>
         ))}
       </div>

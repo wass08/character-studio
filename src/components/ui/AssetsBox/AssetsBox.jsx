@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useConfiguratorStore, pb } from "@/stores/useConfiguratorStore";
 import GenderSelectionBox from "../GenderSelectionBox/GenderSelectionBox";
 import { HeightSlider } from "../HeightSlider/HeightSlider";
@@ -28,11 +28,21 @@ const AssetsBox = () => {
   } = useConfiguratorStore();
 
   const [activeSectionId, setActiveSectionId] = useState(null);
+  const prevGenderRef = useRef(null);
 
   useEffect(() => {
-    fetchCategories();
-    resetAllMorphs();
-    setHeight(1);
+    if (prevGenderRef.current === null) {
+      prevGenderRef.current = gender;
+      fetchCategories();
+      return;
+    }
+
+    if (prevGenderRef.current !== gender) {
+      prevGenderRef.current = gender;
+      fetchCategories();
+      resetAllMorphs();
+      setHeight(1);
+    }
   }, [gender]);
 
   const characterSection = useMemo(

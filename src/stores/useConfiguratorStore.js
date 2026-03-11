@@ -96,10 +96,13 @@ export const useConfiguratorStore = create((set, get) => ({
     })),
 
   detectedMorphsByCategory: {},
-  setMorphValue: (key, value) =>
+  setMorphValue: (key, value) => {
+    if (value === 0) console.trace("morphValue set to 0 for", key);
+
     set((state) => ({
       morphValues: { ...state.morphValues, [key]: value },
-    })),
+    }));
+  },
   registerMorphs: (categoryName, keys) =>
     set((state) => ({
       detectedMorphsByCategory: {
@@ -108,6 +111,8 @@ export const useConfiguratorStore = create((set, get) => ({
       },
     })),
   resetAllMorphs: () => {
+    console.trace("resetAllMorphs called"); // add this
+
     const currentValues = get().morphValues;
     const resetValues = {};
     Object.keys(currentValues).forEach((key) => {

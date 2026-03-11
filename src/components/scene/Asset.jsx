@@ -22,6 +22,14 @@ export const Asset = ({ url, categoryName, skeleton }) => {
   const morphValues = useConfiguratorStore((state) => state.morphValues);
   const meshRefs = useRef([]);
 
+  console.log("Asset render:", categoryName);
+
+  // Add this too
+  useEffect(() => {
+    console.log("Asset MOUNTED:", categoryName);
+    return () => console.log("Asset UNMOUNTED:", categoryName);
+  }, []);
+
   useEffect(() => {
     scene.traverse((child) => {
       if (child.isMesh) {
