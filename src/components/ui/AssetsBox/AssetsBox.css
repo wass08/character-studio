@@ -225,3 +225,211 @@
 .skin-color-picker-wrapper .shape-key-header {
   margin-bottom: 8px;
 }
+
+/* ═══════════════════════════════════════════════════
+   MOBILE — horizontal bottom bar (< 764px)
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 764px) {
+  /* ── Root: stick to bottom, full width, column stack ── */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    top: auto;
+    transform: none;
+    width: 100%;
+    flex-direction: column-reverse; /* assets on top, sections at bottom */
+    align-items: stretch;
+    gap: 6px;
+    max-height: 50vh; /* never crowd the 3-D view */
+    padding: 0 8px 8px;
+    box-sizing: border-box;
+    z-index: 100;
+  }
+
+  /* ── Shared horizontal strip behaviour ── */
+  .assets-box,
+  .categories-box-wrapper,
+  .assets-box-wrapper {
+    width: 100%;
+    max-height: none;
+    overflow-y: visible;
+    border-radius: 12px;
+  }
+
+  /* ─── Section tabs → single horizontal row ─── */
+  .assets-box {
+    padding: 0 8px;
+    height: 52px;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .assets-box::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sections-tabs {
+    flex-direction: row;
+    gap: 4px;
+    width: max-content;
+    min-width: 100%;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .section-tab {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+    padding: 10px 12px;
+  }
+
+  .section-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* ─── Category tabs → horizontal scrollable row ─── */
+  .categories-box-wrapper {
+    padding: 0 8px;
+    height: 52px;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .categories-box-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+
+  .categories-list {
+    flex-direction: row;
+    gap: 4px;
+    width: max-content;
+    min-width: 100%;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .category-tab {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+    padding: 10px 12px;
+  }
+
+  .category-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* ─── Assets panel → horizontal scroll strip (default) ─── */
+  .assets-box-wrapper {
+    padding: 8px 10px;
+    max-height: 110px;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    align-items: center;
+  }
+  .assets-box-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+
+  .content-container {
+    flex-direction: row;
+    align-items: center;
+    height: 100%;
+    width: max-content;
+    gap: 8px;
+  }
+
+  /* Character controls (gender + height + morphs) become a horizontal strip */
+  .character-global-controls {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 10px;
+    height: 100%;
+    width: max-content;
+  }
+
+  /* Assets grid → single horizontal row */
+  .category-assets-grid {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 8px;
+    width: max-content;
+    max-height: none;
+    overflow: visible;
+    margin-top: 0 !important;
+    align-items: center;
+  }
+
+  .asset-button {
+    height: 72px;
+    width: 72px;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+
+  /* Skin color picker in horizontal context */
+  .skin-color-picker-wrapper {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    padding-left: 10px;
+    margin-left: 4px;
+    flex-shrink: 0;
+  }
+
+  /* ─── Skin / character section → vertical scrollable panel ─── */
+  .assets-box-wrapper.skin-mode {
+    max-height: 45vh;
+    height: 45vh;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scroll-snap-type: none;
+    align-items: stretch;
+    padding: 12px;
+  }
+
+  .assets-box-wrapper.skin-mode .content-container {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    height: auto;
+    min-height: min-content;
+  }
+
+  .assets-box-wrapper.skin-mode .character-global-controls {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    height: auto;
+    min-height: min-content;
+    flex-shrink: 0;
+  }
+
+  .assets-box-wrapper.skin-mode .skin-color-picker-wrapper {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-left: 0;
+    margin-left: 0;
+    padding-top: 12px;
+    margin-top: 12px;
+    flex-shrink: 0;
+  }
+}

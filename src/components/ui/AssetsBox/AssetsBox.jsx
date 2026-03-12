@@ -139,7 +139,10 @@ const AssetsBox = () => {
           </div>
         )}
 
-        <div className="assets-box-wrapper glass-card">
+        <div
+          className={`assets-box-wrapper glass-card${isCharacterSectionActive && isSkinCategory ? " skin-mode" : ""}`}
+        >
+          {" "}
           {loading ? (
             <div className="loading-message">Loading Assets...</div>
           ) : (
