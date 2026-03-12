@@ -207,3 +207,70 @@
   cursor: pointer;
   margin-left: -10px;
 }
+
+/* ═══════════════════════════════════════════════════
+   MOBILE — centered floating panel above bottom bar
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 764px) {
+  .shape-key-container {
+    position: fixed;
+    top: auto;
+    bottom: calc(223px + 18vh + 4px);
+    left: 8px;
+    right: 8px;
+    transform: none;
+    width: auto;
+    z-index: 200;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* overscroll-behavior: contain; */
+    -ms-overflow-style: none;
+    /* CHANGE THESE: */
+    max-height: 25vh; /* Gives it a bit of room before parent scrolling kicks in */
+    height: fit-content; /* Replaces 'height: 18vh;' */
+  }
+
+  .shape-key-container .morph-scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+
+    /* ADD THIS: Replaces 'max-height: none;' so the list actually scrolls */
+    max-height: 15vh;
+  }
+
+  /* Give the container itself a scrollable column layout */
+  .shape-key-container {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
+
+/* --- New Toggle Styles --- */
+.header-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s ease;
+}
+
+.header-toggle:hover {
+  opacity: 0.8;
+}
+
+.chevron-icon {
+  width: clamp(10px, 1.2vw, 12px);
+  height: clamp(10px, 1.2vw, 12px);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chevron-icon.closed {
+  transform: rotate(-90deg);
+}
+
+.chevron-icon.open {
+  transform: rotate(0deg);
+}

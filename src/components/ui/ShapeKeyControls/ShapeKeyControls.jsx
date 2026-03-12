@@ -3,7 +3,7 @@ import {
   hiddenPrefixes,
   useConfiguratorStore,
 } from "@/stores/useConfiguratorStore";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 
 import "./ShapeKeyControls.css";
 
@@ -25,6 +25,10 @@ const ShapeKeyControls = () => {
   const morphValues = useConfiguratorStore((state) => state.morphValues);
   const setMorphValue = useConfiguratorStore((state) => state.setMorphValue);
   const resetMorphSet = useConfiguratorStore((state) => state.resetMorphSet);
+
+  // Toggle states for minimizing/maximizing components
+  const [isUniversalOpen, setIsUniversalOpen] = useState(true);
+  const [isSpecificOpen, setIsSpecificOpen] = useState(true);
 
   const morphAnalysis = useMemo(() => {
     if (
@@ -98,57 +102,78 @@ const ShapeKeyControls = () => {
 
   return (
     <div className="shape-key-container">
+      {/* Universal Morphs Section */}
       {universal.length > 0 && (
         <div className="morph-group">
           <div className="shape-key-header">
-            <h3>Section Adjustments</h3>
+            <div
+              className="header-toggle"
+              onClick={() => setIsUniversalOpen(!isUniversalOpen)}
+            >
+              <ChevronIcon isOpen={isUniversalOpen} />
+              <h3>Section Adjustments</h3>
+            </div>
             <button
               className="reset-button"
               onClick={() => resetMorphSet(universal)}
+              title="Reset Section"
             >
               <ResetIcon />
             </button>
           </div>
-          <div className="morph-scroll">
-            {universal.map((key) => (
-              <MorphSlider
-                key={key}
-                label={key}
-                value={morphValues[key]}
-                onChange={(v) => setMorphValue(key, v)}
-              />
-            ))}
-          </div>
+          {isUniversalOpen && (
+            <div className="morph-scroll">
+              {universal.map((key) => (
+                <MorphSlider
+                  key={key}
+                  label={key}
+                  value={morphValues[key]}
+                  onChange={(v) => setMorphValue(key, v)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
+      {/* Divider */}
       {universal.length > 0 && activeSpecificMorphs.length > 0 && (
         <div className="morph-section-divider" />
       )}
 
+      {/* Specific Morphs Section */}
       {activeSpecificMorphs.length > 0 && (
         <div className="morph-group">
           <div className="shape-key-header">
-            <h3>{currentCategory?.name || currentCategory}</h3>
+            <div
+              className="header-toggle"
+              onClick={() => setIsSpecificOpen(!isSpecificOpen)}
+            >
+              <ChevronIcon isOpen={isSpecificOpen} />
+              <h3>{currentCategory?.name || currentCategory}</h3>
+            </div>
             <button
               className="reset-button"
               onClick={() =>
                 resetMorphSet(activeSpecificMorphs.map((s) => s.key))
               }
+              title="Reset Category"
             >
               <ResetIcon />
             </button>
           </div>
-          <div className="morph-scroll">
-            {activeSpecificMorphs.map(({ key }) => (
-              <MorphSlider
-                key={key}
-                label={key}
-                value={morphValues[key]}
-                onChange={(v) => setMorphValue(key, v)}
-              />
-            ))}
-          </div>
+          {isSpecificOpen && (
+            <div className="morph-scroll">
+              {activeSpecificMorphs.map(({ key }) => (
+                <MorphSlider
+                  key={key}
+                  label={key}
+                  value={morphValues[key]}
+                  onChange={(v) => setMorphValue(key, v)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -156,6 +181,23 @@ const ShapeKeyControls = () => {
 };
 
 export default ShapeKeyControls;
+
+const ChevronIcon = ({ isOpen }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={2.5}
+    stroke="currentColor"
+    className={`chevron-icon ${isOpen ? "open" : "closed"}`}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+    />
+  </svg>
+);
 
 const ResetIcon = () => (
   <svg

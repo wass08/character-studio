@@ -188,3 +188,29 @@ div:has(> .saturation-pointer) {
   color: #ffffff;
   padding: 2px 0;
 }
+
+/* ═══════════════════════════════════════════════════
+   MOBILE — centered floating panel above bottom bar
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 764px) {
+  /* Non-inline (floating) variant only */
+  .color-picker-root:not(.color-picker-root--inline) {
+    position: fixed;
+    /* sits above the shape-key panel (244px bottom bar + 25vh shape keys + 8px gap) */
+    bottom: 222px;
+    left: 8px;
+    right: 8px;
+    transform: none;
+    width: auto;
+    height: 18vh;
+    overflow: hidden;
+    z-index: 200;
+  }
+
+  .color-picker-root:not(.color-picker-root--inline) .color-picker-scroll {
+    height: 100%;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}

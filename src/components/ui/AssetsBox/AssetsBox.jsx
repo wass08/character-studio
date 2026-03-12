@@ -26,9 +26,10 @@ const AssetsBox = () => {
     morphValues,
     setMorphValue,
     resetMorphSet,
+    activeSectionId,
+    setActiveSectionId,
   } = useConfiguratorStore();
 
-  const [activeSectionId, setActiveSectionId] = useState(null);
   const prevGenderRef = useRef(null);
 
   useEffect(() => {

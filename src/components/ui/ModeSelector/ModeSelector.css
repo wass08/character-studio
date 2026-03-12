@@ -1,6 +1,6 @@
 .mode-selector {
   position: absolute;
-  top: clamp(40px, 15vh, 220px);
+  top: clamp(35px, 13vh, 220px);
   right: clamp(20px, 3.55vw, 256px);
   display: flex;
   gap: 8px;
@@ -23,4 +23,10 @@
 .mode-button:hover {
   cursor: pointer;
   color: rgb(241, 241, 241);
+}
+
+@media (max-width: 764px) {
+  .mode-selector {
+    flex-direction: column;
+  }
 }

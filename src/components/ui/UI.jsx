@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
 import AssetsBox from "./AssetsBox/AssetsBox";
 import "./UI.css";
@@ -16,8 +16,10 @@ import ScreenshotButton from "./Buttons/ScreenshotButton/ScreenshotButton";
 import LoadingScreen from "./LoadingScreen/LoadingScreen";
 import Logo from "./Logo/Logo";
 import GenderSelectionBox from "./GenderSelectionBox/GenderSelectionBox";
+import HideUIButton from "./Buttons/HideUIButton/HideUIButton";
 
 const UI = () => {
+  const [isHidden, setIsHidden] = useState(false);
   const customization = useConfiguratorStore((state) => state.customization);
   const currentCategory = useConfiguratorStore(
     (state) => state.currentCategory,
@@ -44,15 +46,18 @@ const UI = () => {
       <DownloadButton />
       <ModeSelector />
 
+      <HideUIButton isHidden={isHidden} setIsHidden={setIsHidden} />
+
       {mode === UI_MODES.CUSTOMIZE && (
-        <>
+        <div className={isHidden ? "ui-hidden-mobile" : ""}>
           {!isSkinCategory && currentCategory?.colorPalette && hasAsset && (
             <ColorPicker />
           )}
           {uniqueMorphs.length > 0 && <ShapeKeyControls />}
           <AssetsBox />
-        </>
+        </div>
       )}
+
       {mode === UI_MODES.PHOTO && <PosesBox />}
     </>
   );

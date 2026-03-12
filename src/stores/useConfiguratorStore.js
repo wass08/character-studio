@@ -78,6 +78,8 @@ export const useConfiguratorStore = create((set, get) => ({
     set({ pose });
   },
   sections: [],
+  activeSectionId: null,
+  setActiveSectionId: (id) => set({ activeSectionId: id }),
   categories: [],
   currentCategory: null,
   assets: [],
