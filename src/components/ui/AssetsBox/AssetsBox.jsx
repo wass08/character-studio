@@ -28,6 +28,7 @@ const AssetsBox = () => {
     resetMorphSet,
     activeSectionId,
     setActiveSectionId,
+    lockedGroups,
   } = useConfiguratorStore();
 
   const prevGenderRef = useRef(null);
@@ -182,6 +183,15 @@ const AssetsBox = () => {
                     ))}
                   </div>
                 </div>
+              )}
+
+              {lockedGroups[currentCategory?.name] && (
+                <p className="text-red-400 px-6">
+                  Asset is hidden by{" "}
+                  {lockedGroups[currentCategory.name]
+                    .map((asset) => `${asset.name} (${asset.categoryName})`)
+                    .join(", ")}
+                </p>
               )}
 
               {isCurrentCategoryVisible && !isSkinCategory && (

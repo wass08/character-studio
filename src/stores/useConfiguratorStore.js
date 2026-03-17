@@ -53,7 +53,7 @@ export const useConfiguratorStore = create((set, get) => ({
   loading: true,
   introFinished: false,
   setIntroFinished: (value) => set({ introFinished: value }),
-  gender: GENDERS.WOMAN,
+  gender: GENDERS.MAN,
   // gender: Math.random() > 0.5 ? GENDERS.MAN : GENDERS.WOMAN,
   setGender: (gender) => {
     if (get().gender === gender) return;
@@ -62,8 +62,11 @@ export const useConfiguratorStore = create((set, get) => ({
       gender: gender,
       loading: true,
       categories: [],
+      sections: [],
       customization: {},
       pose: PHOTO_POSES.Idle,
+      activeSectionId: null,
+      currentCategory: null,
     });
   },
   mode: UI_MODES.CUSTOMIZE,
@@ -83,6 +86,7 @@ export const useConfiguratorStore = create((set, get) => ({
   categories: [],
   currentCategory: null,
   assets: [],
+  lockedGroups: {},
   height: 1,
   setHeight: (height) => set({ height }),
   skin: new MeshStandardMaterial({
@@ -231,11 +235,11 @@ export const useConfiguratorStore = create((set, get) => ({
     set({
       sections,
       categories,
-      currentCategory: categories[0],
       assets,
       customization,
       loading: false,
     });
+    get().applyLockedAssets();
   },
 
   setCurrentCategory: (category) => set({ currentCategory: category }),
@@ -249,6 +253,7 @@ export const useConfiguratorStore = create((set, get) => ({
         },
       },
     }));
+    get().applyLockedAssets();
   },
 
   randomize: () => {
@@ -304,5 +309,34 @@ export const useConfiguratorStore = create((set, get) => ({
       morphValues,
       height: randomHeight,
     });
+    get().applyLockedAssets();
+  },
+
+  applyLockedAssets: () => {
+    const customization = get().customization;
+    const categories = get().categories;
+    const lockedGroups = {};
+
+    Object.values(customization).forEach((category) => {
+      if (category.asset?.lockedGroups) {
+        category.asset.lockedGroups.forEach((group) => {
+          const categoryName = categories.find(
+            (category) => category.id === group,
+          ).name;
+          if (!lockedGroups[categoryName]) {
+            lockedGroups[categoryName] = [];
+          }
+          const lockingAssetCategoryName = categories.find(
+            (cat) => cat.id === category.asset.group,
+          ).name;
+          lockedGroups[categoryName].push({
+            name: category.asset.name,
+            categoryName: lockingAssetCategoryName,
+          });
+        });
+      }
+    });
+
+    set({ lockedGroups });
   },
 }));

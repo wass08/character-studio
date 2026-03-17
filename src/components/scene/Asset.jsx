@@ -6,6 +6,7 @@ export const Asset = ({ url, categoryName, skeleton }) => {
   const { scene } = useGLTF(url);
 
   const customization = useConfiguratorStore((state) => state.customization);
+  const lockedGroups = useConfiguratorStore((state) => state.lockedGroups);
   const skin = useConfiguratorStore((state) => state.skin);
 
   const updateColor = useConfiguratorStore((state) => state.updateColor);
@@ -40,7 +41,6 @@ export const Asset = ({ url, categoryName, skeleton }) => {
     const items = [];
     scene.traverse((child) => {
       if (child.isMesh) {
-        // Case-insensitive check for Skin material in GLTF
         const isSkin = child.material?.name.toLowerCase().includes("skin");
 
         items.push({
@@ -110,6 +110,10 @@ export const Asset = ({ url, categoryName, skeleton }) => {
       });
     });
   }, [morphValues, attachedItems]);
+
+  if (lockedGroups[categoryName]) {
+    return null;
+  }
 
   return attachedItems.map((item, index) => (
     <skinnedMesh
