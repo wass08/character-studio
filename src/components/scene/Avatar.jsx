@@ -18,10 +18,6 @@ export default function Model(props) {
 
   const { actions, names } = useAnimations(animations, group);
 
-  if (!nodes?.root || !nodes?.["MCH-eyes_parent"] || !nodes?.Plane002) {
-    return null;
-  }
-
   const customization = useConfiguratorStore((state) => state.customization);
   const setDownload = useConfiguratorStore((state) => state.setDownload);
   const height = useConfiguratorStore((state) => state.height);
@@ -110,6 +106,10 @@ export default function Model(props) {
     }
     setDownload(download);
   }, []);
+
+  if (!nodes?.root || !nodes?.["MCH-eyes_parent"] || !nodes?.Plane002) {
+    return null;
+  }
 
   return (
     <group ref={group} {...props} dispose={null}>
