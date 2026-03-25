@@ -1,4 +1,4 @@
-import React, { Suspense, useRef, useEffect } from "react";
+import React, { Suspense, useRef, useEffect, useLayoutEffect } from "react";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { NodeIO } from "@gltf-transform/core";
 import { dedup, draco, prune, quantize } from "@gltf-transform/functions";

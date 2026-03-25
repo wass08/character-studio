@@ -40,7 +40,7 @@ export const Asset = ({ url, categoryName, skeleton }) => {
   const attachedItems = useMemo(() => {
     const items = [];
     scene.traverse((child) => {
-      if (child.isMesh) {
+      if (child.isMesh && !child.name.includes("Plane002")) {
         const isSkin = child.material?.name.toLowerCase().includes("skin");
 
         items.push({
