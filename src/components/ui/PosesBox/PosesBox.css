@@ -1,0 +1,43 @@
+.poses-box {
+  position: absolute;
+  bottom: clamp(10px, 2vh, 24px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: clamp(200px, 60vw, 80%);
+  max-width: 90vw;
+  height: clamp(70px, 10vh, 100px);
+  color: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(4px, 1vw, 10px);
+  padding: clamp(6px, 1vh, 12px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.poses-box::-webkit-scrollbar {
+  display: none;
+}
+
+.pose-button {
+  height: clamp(50px, 8vh, 100px);
+  width: clamp(35px, 4vw, 50px);
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.pose-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.pose-button:hover {
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.15s ease;
+}

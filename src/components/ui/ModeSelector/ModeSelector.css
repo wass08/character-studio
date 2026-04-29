@@ -1,0 +1,32 @@
+.mode-selector {
+  position: absolute;
+  top: clamp(35px, 13vh, 220px);
+  right: clamp(20px, 3.55vw, 256px);
+  display: flex;
+  gap: 8px;
+  justify-self: center;
+  flex-direction: row;
+  color: white;
+  background: rgba(255, 255, 255, 0.21);
+  border-radius: 10px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(3.7px);
+  -webkit-backdrop-filter: blur(3.7px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.mode-button {
+  padding: 5px;
+  font-size: 12px;
+}
+
+.mode-button:hover {
+  cursor: pointer;
+  color: rgb(241, 241, 241);
+}
+
+@media (max-width: 764px) {
+  .mode-selector {
+    flex-direction: column;
+  }
+}

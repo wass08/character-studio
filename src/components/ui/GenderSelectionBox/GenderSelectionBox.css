@@ -1,0 +1,30 @@
+.gender-selection-box {
+  justify-self: center;
+  flex-direction: row;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gender-selection-box-wrapper {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-direction: row;
+  width: 100%;
+}
+
+.gender-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  text-transform: capitalize;
+}
+
+.gender-button:hover {
+  cursor: pointer;
+}

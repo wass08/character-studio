@@ -1,0 +1,17 @@
+.hide-ui-btn {
+  display: none;
+  position: fixed;
+  top: clamp(35px, 13vh, 220px);
+  left: 20px;
+  z-index: 999999999;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-size: 12px;
+  color: white;
+}
+
+@media (max-width: 764px) {
+  .hide-ui-btn {
+    display: block;
+  }
+}
