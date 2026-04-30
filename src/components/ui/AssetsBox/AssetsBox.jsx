@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
+import { motion } from "motion/react";
 import { useConfiguratorStore, pb } from "@/stores/useConfiguratorStore";
 import GenderSelectionBox from "../GenderSelectionBox/GenderSelectionBox";
 import { HeightSlider } from "../HeightSlider/HeightSlider";
@@ -9,7 +10,84 @@ import {
   MorphSlider,
 } from "../ShapeKeyControls/ShapeKeyControls";
 import ColorPicker from "../ColorPicker/ColorPicker";
-import "./AssetsBox.css";
+import { Tooltip } from "../primitives/Tooltip";
+import { cn } from "../primitives/cn";
+
+const PILL_SPRING = { type: "spring", stiffness: 380, damping: 32 };
+const ASSET_SPRING = { type: "spring", stiffness: 360, damping: 28 };
+
+const SIDEBAR_CLASS = cn(
+  "fixed inset-x-0 bottom-0 z-40 flex max-h-[55vh] w-full flex-col-reverse items-stretch gap-2 px-2 pb-2",
+  "md:absolute md:inset-x-auto md:bottom-auto md:top-1/2 md:left-4 md:max-h-[calc(100vh-32px)] md:w-auto md:-translate-y-1/2 md:flex-row md:items-start md:gap-3 md:px-0 md:pb-0",
+);
+
+const NAV_PANEL_CLASS = cn(
+  "glass-panel flex shrink-0 rounded-xl p-1.5 gap-1.5",
+  "max-md:flex-col-reverse",
+  "md:flex-row md:max-h-[calc(100vh-32px)]",
+);
+
+const SECTIONS_RAIL_CLASS = cn(
+  "no-scrollbar flex gap-0.5",
+  "max-md:w-full max-md:flex-row max-md:overflow-x-auto",
+  "md:flex-col md:overflow-y-auto md:max-h-full",
+);
+
+const CATEGORIES_RAIL_CLASS = cn(
+  "no-scrollbar flex gap-0.5 rounded-lg bg-white/[0.04] p-1 ring-1 ring-white/[0.04]",
+  "max-md:w-full max-md:flex-row max-md:overflow-x-auto",
+  "md:flex-col md:overflow-y-auto md:max-h-full",
+);
+
+const TAB_BUTTON_CLASS =
+  "relative inline-flex shrink-0 items-center justify-center rounded-lg p-2.5 transition-colors hover:bg-white/[0.05]";
+
+const ACTIVE_PILL_CLASS =
+  "absolute inset-0 rounded-lg bg-white/[0.12] ring-1 ring-white/20 shadow-[0_0_18px_rgba(255,255,255,0.08)]";
+
+const ASSETS_PANEL_CLASS = cn(
+  "glass-panel thin-scrollbar flex w-full flex-row items-center overflow-x-auto rounded-xl p-4",
+  "max-md:max-h-[120px]",
+  "md:max-h-[calc(100vh-32px)] md:w-[280px] md:flex-col md:items-start md:overflow-x-hidden md:overflow-y-auto",
+);
+
+const MaskIcon = ({ url, active }) => (
+  <div
+    className={cn(
+      "h-6 w-6 transition-colors duration-200 md:h-7 md:w-7",
+      active ? "bg-white" : "bg-white/55",
+    )}
+    style={{
+      maskImage: `url(${url})`,
+      WebkitMaskImage: `url(${url})`,
+      maskSize: "contain",
+      WebkitMaskSize: "contain",
+      maskRepeat: "no-repeat",
+      WebkitMaskRepeat: "no-repeat",
+      maskPosition: "center",
+      WebkitMaskPosition: "center",
+    }}
+  />
+);
+
+const SectionHeader = ({ children, onReset, resetLabel }) => (
+  <div className="mb-2.5 flex items-center justify-between px-0.5">
+    <h3 className="text-[10px] font-semibold tracking-[0.14em] text-white/65 uppercase">
+      {children}
+    </h3>
+    {onReset && (
+      <Tooltip label={resetLabel} side="top">
+        <button
+          type="button"
+          onClick={onReset}
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-white/55 transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <ResetIcon />
+        </button>
+      </Tooltip>
+    )}
+  </div>
+);
 
 const AssetsBox = () => {
   const {
@@ -29,6 +107,7 @@ const AssetsBox = () => {
     activeSectionId,
     setActiveSectionId,
     lockedGroups,
+    customization,
   } = useConfiguratorStore();
 
   const prevGenderRef = useRef(null);
@@ -93,86 +172,124 @@ const AssetsBox = () => {
     (currentCategory.assets?.length >= 0 ||
       currentCategory.name?.toLowerCase() === "skin");
 
+  const selectedAssetId = customization[currentCategory?.name]?.asset?.id;
+
   return (
-    <>
-      <div className="sidebar">
-        <div className="assets-box glass-card">
-          <div className="sections-tabs">
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                className={`section-tab ${activeSectionId === section.id ? "active" : ""}`}
-                onClick={() => {
-                  setActiveSectionId(section.id);
-                  const firstCat = categoriesBySection[section.id]?.[0];
-                  if (firstCat) setCurrentCategory(firstCat);
-                }}
-              >
-                <div
-                  className="section-icon"
-                  style={{
-                    "--icon-url": `url(${pb.files.getURL(section, section.icon)})`,
+    <div className={SIDEBAR_CLASS}>
+      {/* Nav panel: sections directly on panel, categories in nested lighter sub-box */}
+      <div className={NAV_PANEL_CLASS}>
+        <div className={SECTIONS_RAIL_CLASS}>
+          {sections.map((section) => {
+            const active = activeSectionId === section.id;
+            return (
+              <Tooltip key={section.id} label={section.name} side="top">
+                <button
+                  onClick={() => {
+                    setActiveSectionId(section.id);
+                    const firstCat = categoriesBySection[section.id]?.[0];
+                    if (firstCat) setCurrentCategory(firstCat);
                   }}
-                />
-              </button>
-            ))}
-          </div>
+                  className={TAB_BUTTON_CLASS}
+                >
+                  {active && (
+                    <motion.div
+                      layoutId="active-section-pill"
+                      transition={PILL_SPRING}
+                      className={ACTIVE_PILL_CLASS}
+                    />
+                  )}
+                  <div className="relative">
+                    <MaskIcon
+                      url={pb.files.getURL(section, section.icon)}
+                      active={active}
+                    />
+                  </div>
+                </button>
+              </Tooltip>
+            );
+          })}
         </div>
 
-        {!isSkinCategory && (
-          <div className="categories-box-wrapper glass-card">
-            <div className="categories-list">
-              {visibleCategories.map((category) => (
-                <button
-                  className={`category-tab ${currentCategory?.id === category.id ? "active" : ""}`}
-                  key={category.id}
-                  onClick={() => setCurrentCategory(category)}
-                  title={category.name}
-                >
-                  <div
-                    className="category-icon"
-                    style={{
-                      "--icon-url": `url(${pb.files.getURL(category, category.icon)})`,
-                    }}
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div
-          className={`assets-box-wrapper glass-card${isCharacterSectionActive && isSkinCategory ? " skin-mode" : ""}`}
-        >
-          {" "}
-          {loading ? (
-            <div className="loading-message">Loading Assets...</div>
-          ) : (
-            <div className="content-container">
-              {isCharacterSectionActive && (
-                <div className="character-global-controls">
-                  <GenderSelectionBox />
-                  <HeightSlider />
-
-                  {isSkinCategory && (
-                    <div className="skin-color-picker-wrapper">
-                      <div className="shape-key-header">
-                        <h3>Skin Color</h3>
+        {!isSkinCategory && visibleCategories.length > 0 && (
+          <>
+            <div className={CATEGORIES_RAIL_CLASS}>
+              {visibleCategories.map((category) => {
+                const active = currentCategory?.id === category.id;
+                return (
+                  <Tooltip key={category.id} label={category.name} side="top">
+                    <button
+                      onClick={() => setCurrentCategory(category)}
+                      className={TAB_BUTTON_CLASS}
+                    >
+                      {active && (
+                        <motion.div
+                          layoutId="active-category-pill"
+                          transition={PILL_SPRING}
+                          className={ACTIVE_PILL_CLASS}
+                        />
+                      )}
+                      <div className="relative">
+                        <MaskIcon
+                          url={pb.files.getURL(category, category.icon)}
+                          active={active}
+                        />
                       </div>
-                      <ColorPicker inline />
-                    </div>
-                  )}
+                    </button>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
 
-                  <div className="morph-group">
-                    <div className="shape-key-header">
-                      <h3>Body Shape</h3>
-                      <button
-                        className="reset-button"
-                        onClick={() => resetMorphSet(CHARACTER_GLOBAL_MORPHS)}
-                      >
-                        <ResetIcon />
-                      </button>
-                    </div>
+      {/* Assets panel */}
+      <div className={ASSETS_PANEL_CLASS}>
+        {loading ? (
+          <div className="m-auto text-sm text-white/60">Loading assets…</div>
+        ) : (
+          <div
+            className={cn(
+              "flex h-full w-max flex-row items-center gap-3",
+              "md:h-auto md:w-full md:flex-col md:items-stretch md:gap-0",
+              isCharacterSectionActive &&
+                isSkinCategory &&
+                "max-md:w-full max-md:flex-col max-md:items-stretch max-md:gap-3",
+            )}
+          >
+            {isCharacterSectionActive && (
+              <div
+                className={cn(
+                  "flex h-full flex-row flex-nowrap items-center gap-3",
+                  "md:h-auto md:w-full md:flex-col md:items-stretch md:gap-3.5",
+                  isSkinCategory &&
+                    "max-md:w-full max-md:flex-col max-md:items-stretch",
+                )}
+              >
+                <GenderSelectionBox />
+                <HeightSlider />
+
+                {isSkinCategory && (
+                  <div
+                    className={cn(
+                      "shrink-0",
+                      "max-md:w-full max-md:border-t max-md:border-white/[0.08] max-md:pt-3",
+                      "md:mt-1 md:w-full md:border-t md:border-white/[0.08] md:pt-3.5",
+                    )}
+                  >
+                    <SectionHeader>Skin Color</SectionHeader>
+                    <ColorPicker inline />
+                  </div>
+                )}
+
+                <div className="md:w-full md:border-t md:border-white/[0.08] md:pt-3.5">
+                  <SectionHeader
+                    onReset={() => resetMorphSet(CHARACTER_GLOBAL_MORPHS)}
+                    resetLabel="Reset body shape"
+                  >
+                    Body Shape
+                  </SectionHeader>
+                  <div className="flex flex-col gap-2 max-md:w-44">
                     {CHARACTER_GLOBAL_MORPHS.map((key) => (
                       <MorphSlider
                         key={key}
@@ -183,76 +300,104 @@ const AssetsBox = () => {
                     ))}
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {lockedGroups[currentCategory?.name] && (
-                <p className="text-red-400 px-6">
-                  Asset is hidden by{" "}
-                  {lockedGroups[currentCategory.name]
-                    .map((asset) => `${asset.name} (${asset.categoryName})`)
-                    .join(", ")}
-                </p>
-              )}
+            {lockedGroups[currentCategory?.name] && (
+              <p className="px-2 py-2 text-xs text-amber-300/90 max-md:shrink-0">
+                Hidden by{" "}
+                {lockedGroups[currentCategory.name]
+                  .map((asset) => `${asset.name} (${asset.categoryName})`)
+                  .join(", ")}
+              </p>
+            )}
 
-              {isCurrentCategoryVisible && !isSkinCategory && (
-                <div
-                  className="category-assets-grid"
-                  style={{ marginTop: isCharacterSectionActive ? "20px" : "0" }}
-                >
-                  {currentCategory?.optional && (
-                    <button
-                      onClick={() => changeAsset(currentCategory.name, null)}
-                      className="asset-button"
+            {isCurrentCategoryVisible && !isSkinCategory && (
+              <div
+                className={cn(
+                  "flex flex-row flex-nowrap items-center gap-2.5 max-md:w-max",
+                  "md:grid md:w-full md:grid-cols-[repeat(auto-fill,minmax(60px,1fr))] md:gap-2 md:items-stretch",
+                  isCharacterSectionActive && "md:mt-3",
+                )}
+              >
+                {currentCategory?.optional && (
+                  <AssetButton
+                    onClick={() => changeAsset(currentCategory.name, null)}
+                    selected={!selectedAssetId}
+                    label="None"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="h-6 w-6"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                        style={{ width: "24px" }}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M6 18 18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  )}
-
-                  {currentCategory?.assets.map((asset) => (
-                    <button
-                      key={asset.id}
-                      onClick={() => changeAsset(currentCategory.name, asset)}
-                      className="asset-button"
-                    >
-                      <img
-                        src={pb.files.getURL(asset, asset.thumbnail)}
-                        alt="thumbnail"
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 18 18 6M6 6l12 12"
                       />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+                    </svg>
+                  </AssetButton>
+                )}
+
+                {currentCategory?.assets.map((asset) => (
+                  <AssetButton
+                    key={asset.id}
+                    onClick={() => changeAsset(currentCategory.name, asset)}
+                    selected={asset.id === selectedAssetId}
+                    label={asset.name}
+                  >
+                    <img
+                      src={pb.files.getURL(asset, asset.thumbnail)}
+                      alt={asset.name || "asset"}
+                      className="h-full w-full object-contain"
+                    />
+                  </AssetButton>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 
 export default AssetsBox;
+
+const AssetButton = ({ children, onClick, selected, label }) => (
+  <Tooltip label={label} side="top">
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      transition={ASSET_SPRING}
+      className={cn(
+        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg border p-1.5 text-white/80 transition-colors",
+        "h-[72px] w-[72px]",
+        "md:h-auto md:w-full md:aspect-square",
+        selected
+          ? "border-white/70 bg-white/[0.10] shadow-[0_0_22px_rgba(255,255,255,0.22)] ring-1 ring-white/55"
+          : "border-white/[0.08] bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06]",
+      )}
+    >
+      {children}
+    </motion.button>
+  </Tooltip>
+);
 
 const ResetIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
-    strokeWidth={1.5}
+    strokeWidth={1.8}
     stroke="currentColor"
-    className="size-6 reset-icon"
+    className="h-3.5 w-3.5"
   >
     <path
       strokeLinecap="round"

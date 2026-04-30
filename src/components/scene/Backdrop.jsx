@@ -1,6 +1,4 @@
-import React, { useRef } from "react";
 import { useGLTF } from "@react-three/drei";
-import * as THREE from "three";
 
 export default function Model(props) {
   const { nodes, materials } = useGLTF("/models/Backdrop.glb");
@@ -20,7 +18,7 @@ export default function Model(props) {
         position={[0, -0.017, 0]}
         geometry={nodes.Plane002.geometry}
       >
-        <meshStandardMaterial roughness={1} color="#e8b97f" />
+        <meshStandardMaterial roughness={1} color="#b0b0ff" />
       </mesh>
       <mesh
         castShadow

@@ -1,10 +1,8 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
-
-import "./LoadingScreen.css";
 
 gsap.registerPlugin(useGSAP);
 
@@ -40,9 +38,15 @@ const LoadingScreen = () => {
   );
 
   return (
-    <div ref={container} className="loading-screen">
-      <div ref={textRef} className="loading-text">
-        loading brotha
+    <div
+      ref={container}
+      className="fixed inset-0 z-[999999] flex items-center justify-center bg-black text-white"
+    >
+      <div
+        ref={textRef}
+        className="text-sm font-medium tracking-[0.3em] text-white/85 uppercase"
+      >
+        Loading
       </div>
     </div>
   );

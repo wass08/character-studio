@@ -3,20 +3,19 @@
 import React, { useState } from "react";
 
 import AssetsBox from "./AssetsBox/AssetsBox";
-import "./UI.css";
-import DownloadButton from "./Buttons/DownloadButton/DownloadButton";
+import TopActions from "./Buttons/TopActions";
 import ColorPicker from "./ColorPicker/ColorPicker";
 import { UI_MODES, useConfiguratorStore } from "@/stores/useConfiguratorStore";
-import { HeightSlider } from "./HeightSlider/HeightSlider";
 import ShapeKeyControls from "./ShapeKeyControls/ShapeKeyControls";
-import RandomizeButton from "./Buttons/RandomizeButton/RandomizeButton";
 import PosesBox from "./PosesBox/PosesBox";
 import ModeSelector from "./ModeSelector/ModeSelector";
-import ScreenshotButton from "./Buttons/ScreenshotButton/ScreenshotButton";
 import LoadingScreen from "./LoadingScreen/LoadingScreen";
 import Logo from "./Logo/Logo";
-import GenderSelectionBox from "./GenderSelectionBox/GenderSelectionBox";
 import HideUIButton from "./Buttons/HideUIButton/HideUIButton";
+import { cn } from "./primitives/cn";
+
+const showColorPicker = (isSkin, currentCategory, hasAsset) =>
+  !isSkin && currentCategory?.colorPalette && hasAsset;
 
 const UI = () => {
   const [isHidden, setIsHidden] = useState(false);
@@ -41,19 +40,27 @@ const UI = () => {
     <>
       <Logo />
       {!introFinished && <LoadingScreen />}
-      <RandomizeButton />
-      <ScreenshotButton />
-      <DownloadButton />
+      <TopActions />
       <ModeSelector />
 
       <HideUIButton isHidden={isHidden} setIsHidden={setIsHidden} />
 
       {mode === UI_MODES.CUSTOMIZE && (
-        <div className={isHidden ? "ui-hidden-mobile" : ""}>
-          {!isSkinCategory && currentCategory?.colorPalette && hasAsset && (
-            <ColorPicker />
+        <div className={isHidden ? "max-md:hidden" : ""}>
+          {(showColorPicker(isSkinCategory, currentCategory, hasAsset) ||
+            uniqueMorphs.length > 0) && (
+            <div
+              className={cn(
+                "absolute right-[clamp(20px,3.5vw,256px)] top-1/2 z-30 flex w-[clamp(300px,28vw,380px)] max-h-[calc(100vh-120px)] -translate-y-1/2 flex-col gap-3",
+                "max-md:fixed max-md:top-auto max-md:bottom-[calc(50vh+8px)] max-md:left-2 max-md:right-2 max-md:w-auto max-md:max-h-[55vh] max-md:translate-y-0",
+              )}
+            >
+              {showColorPicker(isSkinCategory, currentCategory, hasAsset) && (
+                <ColorPicker />
+              )}
+              {uniqueMorphs.length > 0 && <ShapeKeyControls />}
+            </div>
           )}
-          {uniqueMorphs.length > 0 && <ShapeKeyControls />}
           <AssetsBox />
         </div>
       )}
