@@ -16,7 +16,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        <Tooltip.Provider delayDuration={150} skipDelayDuration={300}>
+        <Tooltip.Provider
+          delayDuration={150}
+          skipDelayDuration={300}
+          disableHoverableContent
+        >
           {children}
         </Tooltip.Provider>
       </body>

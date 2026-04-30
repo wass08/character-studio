@@ -16,7 +16,7 @@ const GenderSelectionBox = () => {
   const setGender = useConfiguratorStore((state) => state.setGender);
 
   return (
-    <div className="glass-panel relative flex w-full shrink-0 flex-row items-stretch gap-1 rounded-lg p-1 max-md:w-[180px] md:w-full">
+    <div className="relative flex w-full shrink-0 flex-row items-stretch gap-1 rounded-lg bg-black/15 p-1 ring-1 ring-white/[0.04] max-md:w-[180px] md:w-full">
       {OPTIONS.map((opt) => {
         const active = gender === opt.id;
         return (
@@ -24,8 +24,8 @@ const GenderSelectionBox = () => {
             key={opt.id}
             type="button"
             onClick={() => setGender(opt.id)}
-            className={`relative flex flex-1 items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium tracking-tight transition-colors ${
-              active ? "text-white" : "text-white/60 hover:text-white/85"
+            className={`relative flex flex-1 items-center justify-center rounded-md px-4 py-2 text-xs font-medium tracking-tight transition-colors ${
+              active ? "text-white" : "text-white/55 hover:text-white/85"
             }`}
           >
             {active && (

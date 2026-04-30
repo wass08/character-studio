@@ -17,20 +17,39 @@ const PILL_SPRING = { type: "spring", stiffness: 380, damping: 32 };
 const ASSET_SPRING = { type: "spring", stiffness: 360, damping: 28 };
 
 const SIDEBAR_CLASS = cn(
-  "fixed inset-x-0 bottom-0 z-40 flex max-h-[50vh] w-full flex-col-reverse items-stretch gap-1.5 px-2 pb-2",
-  "md:absolute md:inset-x-auto md:bottom-auto md:top-1/2 md:left-3 md:max-h-[calc(100vh-32px)] md:w-auto md:-translate-y-1/2 md:flex-row md:items-start md:gap-3 md:px-0 md:pb-0",
+  "fixed inset-x-0 bottom-0 z-40 flex max-h-[55vh] w-full flex-col-reverse items-stretch gap-2 px-2 pb-2",
+  "md:absolute md:inset-x-auto md:bottom-auto md:top-1/2 md:left-4 md:max-h-[calc(100vh-32px)] md:w-auto md:-translate-y-1/2 md:flex-row md:items-start md:gap-3 md:px-0 md:pb-0",
 );
 
-const TAB_RAIL_CLASS = cn(
-  "glass-panel no-scrollbar flex w-full shrink-0 flex-row items-center gap-1 overflow-x-auto rounded-xl px-2 py-1.5",
-  "md:max-h-[calc(100vh-32px)] md:w-[68px] md:flex-col md:items-center md:gap-2 md:overflow-x-hidden md:overflow-y-auto md:px-0 md:py-3",
+const NAV_PANEL_CLASS = cn(
+  "glass-panel flex shrink-0 rounded-xl p-1.5 gap-1.5",
+  "max-md:flex-col-reverse",
+  "md:flex-row md:max-h-[calc(100vh-32px)]",
+);
+
+const SECTIONS_RAIL_CLASS = cn(
+  "no-scrollbar flex gap-0.5",
+  "max-md:w-full max-md:flex-row max-md:overflow-x-auto",
+  "md:flex-col md:overflow-y-auto md:max-h-full",
+);
+
+const CATEGORIES_RAIL_CLASS = cn(
+  "no-scrollbar flex gap-0.5 rounded-lg bg-white/[0.04] p-1 ring-1 ring-white/[0.04]",
+  "max-md:w-full max-md:flex-row max-md:overflow-x-auto",
+  "md:flex-col md:overflow-y-auto md:max-h-full",
 );
 
 const TAB_BUTTON_CLASS =
-  "relative inline-flex shrink-0 items-center justify-center rounded-lg p-2.5 transition-colors hover:bg-white/5";
+  "relative inline-flex shrink-0 items-center justify-center rounded-lg p-2.5 transition-colors hover:bg-white/[0.05]";
 
 const ACTIVE_PILL_CLASS =
-  "absolute inset-1 rounded-md bg-white/10 ring-1 ring-white/25 shadow-[0_0_18px_rgba(255,255,255,0.12)]";
+  "absolute inset-0 rounded-lg bg-white/[0.12] ring-1 ring-white/20 shadow-[0_0_18px_rgba(255,255,255,0.08)]";
+
+const ASSETS_PANEL_CLASS = cn(
+  "glass-panel thin-scrollbar flex w-full flex-row items-center overflow-x-auto rounded-xl p-4",
+  "max-md:max-h-[120px]",
+  "md:max-h-[calc(100vh-32px)] md:w-[280px] md:flex-col md:items-start md:overflow-x-hidden md:overflow-y-auto",
+);
 
 const MaskIcon = ({ url, active }) => (
   <div
@@ -52,8 +71,8 @@ const MaskIcon = ({ url, active }) => (
 );
 
 const SectionHeader = ({ children, onReset, resetLabel }) => (
-  <div className="mb-2 flex items-center justify-between">
-    <h3 className="text-[10px] font-semibold tracking-[0.12em] text-white/70 uppercase">
+  <div className="mb-2.5 flex items-center justify-between px-0.5">
+    <h3 className="text-[10px] font-semibold tracking-[0.14em] text-white/65 uppercase">
       {children}
     </h3>
     {onReset && (
@@ -61,7 +80,7 @@ const SectionHeader = ({ children, onReset, resetLabel }) => (
         <button
           type="button"
           onClick={onReset}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-white/55 transition-colors hover:bg-white/10 hover:text-white"
         >
           <ResetIcon />
         </button>
@@ -157,60 +176,31 @@ const AssetsBox = () => {
 
   return (
     <div className={SIDEBAR_CLASS}>
-      {/* Section tabs */}
-      <div className={TAB_RAIL_CLASS}>
-        {sections.map((section) => {
-          const active = activeSectionId === section.id;
-          return (
-            <Tooltip key={section.id} label={section.name} side="top">
-              <button
-                onClick={() => {
-                  setActiveSectionId(section.id);
-                  const firstCat = categoriesBySection[section.id]?.[0];
-                  if (firstCat) setCurrentCategory(firstCat);
-                }}
-                className={TAB_BUTTON_CLASS}
-              >
-                {active && (
-                  <motion.div
-                    layoutId="active-section-pill"
-                    transition={PILL_SPRING}
-                    className={ACTIVE_PILL_CLASS}
-                  />
-                )}
-                <div className="relative">
-                  <MaskIcon
-                    url={pb.files.getURL(section, section.icon)}
-                    active={active}
-                  />
-                </div>
-              </button>
-            </Tooltip>
-          );
-        })}
-      </div>
-
-      {/* Category tabs */}
-      {!isSkinCategory && (
-        <div className={TAB_RAIL_CLASS}>
-          {visibleCategories.map((category) => {
-            const active = currentCategory?.id === category.id;
+      {/* Nav panel: sections directly on panel, categories in nested lighter sub-box */}
+      <div className={NAV_PANEL_CLASS}>
+        <div className={SECTIONS_RAIL_CLASS}>
+          {sections.map((section) => {
+            const active = activeSectionId === section.id;
             return (
-              <Tooltip key={category.id} label={category.name} side="top">
+              <Tooltip key={section.id} label={section.name} side="top">
                 <button
-                  onClick={() => setCurrentCategory(category)}
+                  onClick={() => {
+                    setActiveSectionId(section.id);
+                    const firstCat = categoriesBySection[section.id]?.[0];
+                    if (firstCat) setCurrentCategory(firstCat);
+                  }}
                   className={TAB_BUTTON_CLASS}
                 >
                   {active && (
                     <motion.div
-                      layoutId="active-category-pill"
+                      layoutId="active-section-pill"
                       transition={PILL_SPRING}
                       className={ACTIVE_PILL_CLASS}
                     />
                   )}
                   <div className="relative">
                     <MaskIcon
-                      url={pb.files.getURL(category, category.icon)}
+                      url={pb.files.getURL(section, section.icon)}
                       active={active}
                     />
                   </div>
@@ -219,24 +209,48 @@ const AssetsBox = () => {
             );
           })}
         </div>
-      )}
 
-      {/* Assets / character controls panel */}
-      <div
-        className={cn(
-          "glass-panel thin-scrollbar flex w-full flex-row items-center overflow-x-auto rounded-xl p-3 max-md:max-h-[110px]",
-          "md:max-h-[calc(100vh-32px)] md:w-[260px] md:flex-col md:items-start md:overflow-x-hidden md:overflow-y-auto",
-          isCharacterSectionActive &&
-            isSkinCategory &&
-            "max-md:!max-h-[45vh] max-md:!flex-col max-md:!items-stretch max-md:!overflow-x-hidden max-md:!overflow-y-auto",
+        {!isSkinCategory && visibleCategories.length > 0 && (
+          <>
+            <div className={CATEGORIES_RAIL_CLASS}>
+              {visibleCategories.map((category) => {
+                const active = currentCategory?.id === category.id;
+                return (
+                  <Tooltip key={category.id} label={category.name} side="top">
+                    <button
+                      onClick={() => setCurrentCategory(category)}
+                      className={TAB_BUTTON_CLASS}
+                    >
+                      {active && (
+                        <motion.div
+                          layoutId="active-category-pill"
+                          transition={PILL_SPRING}
+                          className={ACTIVE_PILL_CLASS}
+                        />
+                      )}
+                      <div className="relative">
+                        <MaskIcon
+                          url={pb.files.getURL(category, category.icon)}
+                          active={active}
+                        />
+                      </div>
+                    </button>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </>
         )}
-      >
+      </div>
+
+      {/* Assets panel */}
+      <div className={ASSETS_PANEL_CLASS}>
         {loading ? (
           <div className="m-auto text-sm text-white/60">Loading assets…</div>
         ) : (
           <div
             className={cn(
-              "flex h-full w-max flex-row items-center gap-2",
+              "flex h-full w-max flex-row items-center gap-3",
               "md:h-auto md:w-full md:flex-col md:items-stretch md:gap-0",
               isCharacterSectionActive &&
                 isSkinCategory &&
@@ -246,8 +260,8 @@ const AssetsBox = () => {
             {isCharacterSectionActive && (
               <div
                 className={cn(
-                  "flex h-full flex-row flex-nowrap items-center gap-2.5",
-                  "md:h-auto md:w-full md:flex-col md:items-stretch md:gap-3",
+                  "flex h-full flex-row flex-nowrap items-center gap-3",
+                  "md:h-auto md:w-full md:flex-col md:items-stretch md:gap-3.5",
                   isSkinCategory &&
                     "max-md:w-full max-md:flex-col max-md:items-stretch",
                 )}
@@ -259,8 +273,8 @@ const AssetsBox = () => {
                   <div
                     className={cn(
                       "shrink-0",
-                      "max-md:w-full max-md:border-t max-md:border-white/10 max-md:pt-3",
-                      "md:mt-3 md:w-full md:border-t md:border-white/10 md:pt-3",
+                      "max-md:w-full max-md:border-t max-md:border-white/[0.08] max-md:pt-3",
+                      "md:mt-1 md:w-full md:border-t md:border-white/[0.08] md:pt-3.5",
                     )}
                   >
                     <SectionHeader>Skin Color</SectionHeader>
@@ -268,14 +282,14 @@ const AssetsBox = () => {
                   </div>
                 )}
 
-                <div className="md:w-full">
+                <div className="md:w-full md:border-t md:border-white/[0.08] md:pt-3.5">
                   <SectionHeader
                     onReset={() => resetMorphSet(CHARACTER_GLOBAL_MORPHS)}
                     resetLabel="Reset body shape"
                   >
                     Body Shape
                   </SectionHeader>
-                  <div className="flex flex-col gap-1.5 max-md:w-44">
+                  <div className="flex flex-col gap-2 max-md:w-44">
                     {CHARACTER_GLOBAL_MORPHS.map((key) => (
                       <MorphSlider
                         key={key}
@@ -290,7 +304,7 @@ const AssetsBox = () => {
             )}
 
             {lockedGroups[currentCategory?.name] && (
-              <p className="px-3 py-2 text-xs text-amber-300/90 max-md:shrink-0">
+              <p className="px-2 py-2 text-xs text-amber-300/90 max-md:shrink-0">
                 Hidden by{" "}
                 {lockedGroups[currentCategory.name]
                   .map((asset) => `${asset.name} (${asset.categoryName})`)
@@ -301,8 +315,8 @@ const AssetsBox = () => {
             {isCurrentCategoryVisible && !isSkinCategory && (
               <div
                 className={cn(
-                  "flex flex-row flex-nowrap items-center gap-2 max-md:w-max",
-                  "md:grid md:w-full md:grid-cols-[repeat(auto-fill,minmax(56px,1fr))] md:items-stretch",
+                  "flex flex-row flex-nowrap items-center gap-2.5 max-md:w-max",
+                  "md:grid md:w-full md:grid-cols-[repeat(auto-fill,minmax(60px,1fr))] md:gap-2 md:items-stretch",
                   isCharacterSectionActive && "md:mt-3",
                 )}
               >
@@ -359,16 +373,16 @@ const AssetButton = ({ children, onClick, selected, label }) => (
     <motion.button
       type="button"
       onClick={onClick}
-      whileHover={{ scale: 1.04 }}
-      whileTap={{ scale: 0.96 }}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
       transition={ASSET_SPRING}
       className={cn(
-        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg border text-white/80 transition-colors",
+        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg border p-1.5 text-white/80 transition-colors",
         "h-[72px] w-[72px]",
         "md:h-auto md:w-full md:aspect-square",
         selected
-          ? "border-white/70 bg-white/12 shadow-[0_0_22px_rgba(255,255,255,0.25)] ring-1 ring-white/60"
-          : "border-white/10 bg-white/[0.04] hover:border-white/25 hover:bg-white/[0.08]",
+          ? "border-white/70 bg-white/[0.10] shadow-[0_0_22px_rgba(255,255,255,0.22)] ring-1 ring-white/55"
+          : "border-white/[0.08] bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06]",
       )}
     >
       {children}

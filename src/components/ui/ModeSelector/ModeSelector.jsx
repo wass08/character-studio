@@ -19,8 +19,8 @@ const ModeSelector = () => {
   return (
     <div
       className={cn(
-        "glass-panel absolute top-4 left-1/2 z-30 flex -translate-x-1/2 flex-row items-center gap-1 rounded-full p-1",
-        "max-md:right-3 max-md:left-auto max-md:translate-x-0 max-md:flex-col max-md:rounded-2xl",
+        "glass-panel absolute top-5 left-1/2 z-30 flex -translate-x-1/2 flex-row items-center gap-1 rounded-full p-1.5",
+        "max-md:top-20 max-md:right-5 max-md:left-auto max-md:translate-x-0 max-md:rounded-2xl",
       )}
     >
       {MODES.map((m) => {
@@ -30,7 +30,7 @@ const ModeSelector = () => {
             key={m.id}
             type="button"
             onClick={() => setMode(m.id)}
-            className={`relative inline-flex items-center justify-center px-4 py-1.5 text-xs font-medium tracking-tight transition-colors ${
+            className={`relative inline-flex items-center justify-center px-5 py-2 text-xs font-medium tracking-tight transition-colors ${
               active ? "text-white" : "text-white/60 hover:text-white/85"
             }`}
           >

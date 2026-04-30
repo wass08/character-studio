@@ -103,9 +103,9 @@ const ShapeKeyControls = () => {
   return (
     <div
       className={cn(
-        "glass-panel thin-scrollbar absolute z-30 flex max-h-[clamp(120px,38vh,300px)] flex-col gap-2 overflow-hidden rounded-xl p-3 text-white",
-        "right-[clamp(20px,3.5vw,256px)] top-1/2 w-[clamp(280px,28vw,360px)] -translate-y-1/2",
-        "max-md:fixed max-md:top-auto max-md:right-2 max-md:left-2 max-md:bottom-[calc(50vh+8px)] max-md:w-auto max-md:max-h-[28vh] max-md:translate-y-0",
+        "glass-panel thin-scrollbar absolute z-30 flex max-h-[clamp(140px,40vh,320px)] flex-col gap-3 overflow-hidden rounded-xl p-4 text-white",
+        "right-[clamp(20px,3.5vw,256px)] top-1/2 w-[clamp(300px,28vw,380px)] -translate-y-1/2",
+        "max-md:fixed max-md:top-auto max-md:right-2 max-md:left-2 max-md:bottom-[calc(55vh+8px)] max-md:w-auto max-md:max-h-[28vh] max-md:translate-y-0",
       )}
     >
       {universal.length > 0 && (
@@ -166,16 +166,16 @@ const MorphGroup = ({
   children,
 }) => (
   <div className="flex min-h-0 w-full flex-col">
-    <div className="mb-2 flex items-center justify-between">
+    <div className="mb-2.5 flex items-center justify-between">
       <button
         type="button"
         onClick={onToggle}
-        className="flex items-center gap-1.5 text-left transition-opacity hover:opacity-80"
+        className="flex items-center gap-2 text-left transition-opacity hover:opacity-80"
       >
         <motion.span
           animate={{ rotate: isOpen ? 0 : -90 }}
           transition={{ duration: 0.2 }}
-          className="inline-flex h-3 w-3 items-center justify-center text-white/80"
+          className="inline-flex h-3 w-3 items-center justify-center text-white/70"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -192,7 +192,7 @@ const MorphGroup = ({
             />
           </svg>
         </motion.span>
-        <h3 className="text-[10px] font-semibold tracking-[0.12em] text-white/85 uppercase">
+        <h3 className="text-[10px] font-semibold tracking-[0.14em] text-white/70 uppercase">
           {title}
         </h3>
       </button>
@@ -200,7 +200,7 @@ const MorphGroup = ({
         <button
           type="button"
           onClick={onReset}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-white/55 transition-colors hover:bg-white/10 hover:text-white"
         >
           <ResetIcon />
         </button>
@@ -216,7 +216,7 @@ const MorphGroup = ({
           transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
           className="overflow-hidden"
         >
-          <div className="thin-scrollbar flex max-h-[clamp(80px,14vh,150px)] flex-col gap-1.5 overflow-y-auto pr-1">
+          <div className="thin-scrollbar flex max-h-[clamp(80px,14vh,170px)] flex-col gap-2 overflow-y-auto pr-1">
             {children}
           </div>
         </motion.div>
@@ -245,24 +245,30 @@ const ResetIcon = () => (
 export const MorphSlider = ({ label, value, onChange }) => {
   const numericValue = value || 0;
   const displayValue = numericValue.toFixed(2);
+  const fillWidth = 4 + numericValue * 92; // clamp to [4%, 96%]
 
   return (
-    <div className="relative flex h-7 items-center rounded-md border border-white/10 bg-white/[0.06] px-2.5">
+    <div
+      className="group relative flex h-8 items-center rounded-md border border-white/[0.06] bg-white/[0.03] px-3 transition-colors hover:border-white/15 hover:bg-white/[0.06] focus-within:border-white/15 focus-within:bg-white/[0.06]"
+      onMouseLeave={(e) => e.currentTarget.querySelector("input")?.blur()}
+    >
       <div
-        className="pointer-events-none absolute inset-y-0 left-0 rounded-md bg-white/15"
-        style={{ width: `${numericValue * 100}%` }}
+        className="pointer-events-none absolute inset-y-0 left-0 rounded-md bg-white/[0.06] transition-colors group-hover:bg-white/15 group-focus-within:bg-white/15"
+        style={{ width: `${fillWidth}%` }}
       />
-      <span className="pointer-events-none relative z-[1] flex-1 truncate text-[10px] font-normal tracking-wide text-white/85 select-none">
+      <span className="pointer-events-none relative z-[1] flex-1 truncate text-[10px] font-medium tracking-wide text-white/45 transition-colors select-none group-hover:text-white/90 group-focus-within:text-white/90">
         {label}
       </span>
-      <span className="pointer-events-none relative z-[1] min-w-[2.4ch] text-right text-[10px] font-normal tracking-wide text-white/75 select-none">
+      <span className="pointer-events-none relative z-[1] min-w-[2.4ch] text-right text-[10px] font-normal tracking-wide text-white/80 opacity-0 transition-opacity select-none group-hover:opacity-100 group-focus-within:opacity-100">
         {displayValue}
       </span>
       <input
         className={cn(
-          "absolute inset-0 z-[2] h-full w-full cursor-pointer appearance-none bg-transparent",
-          "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-[3px] [&::-webkit-slider-thumb]:rounded [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer",
-          "[&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:w-[3px] [&::-moz-range-thumb]:rounded [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:cursor-pointer",
+          "absolute inset-y-0 left-[4%] right-[4%] z-[2] cursor-pointer appearance-none bg-transparent",
+          "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-[2px] [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:bg-white/35 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:transition-colors",
+          "group-hover:[&::-webkit-slider-thumb]:bg-white group-focus-within:[&::-webkit-slider-thumb]:bg-white",
+          "[&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-[2px] [&::-moz-range-thumb]:rounded-sm [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white/35 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:transition-colors",
+          "group-hover:[&::-moz-range-thumb]:bg-white group-focus-within:[&::-moz-range-thumb]:bg-white",
         )}
         type="range"
         min="0"

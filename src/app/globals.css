@@ -1,14 +1,5 @@
 @import "tailwindcss";
 
-*,
-body,
-html {
-  padding: 0;
-  margin: 0;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -39,10 +30,14 @@ html {
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-inter);
+@layer base {
+  html,
+  body {
+    overflow: hidden;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-inter);
+  }
 }
 
 @utility glass-panel {

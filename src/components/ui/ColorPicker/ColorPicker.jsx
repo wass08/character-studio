@@ -149,9 +149,9 @@ const ColorPicker = ({ inline = false }) => {
   const containerClass = inline
     ? "flex w-full flex-col text-white"
     : cn(
-        "glass-panel thin-scrollbar absolute z-30 flex flex-col overflow-hidden rounded-xl p-3 text-white",
-        "right-[clamp(20px,3.5vw,256px)] top-[40%] w-[clamp(180px,17vw,240px)] h-[clamp(180px,28vh,260px)] -translate-y-1/2",
-        "max-md:fixed max-md:top-auto max-md:bottom-[228px] max-md:left-2 max-md:right-2 max-md:translate-y-0 max-md:w-auto max-md:h-[20vh]",
+        "glass-panel thin-scrollbar absolute z-30 flex flex-col overflow-hidden rounded-xl p-4 text-white",
+        "right-[clamp(20px,3.5vw,256px)] top-[40%] w-[clamp(200px,18vw,260px)] h-[clamp(200px,30vh,280px)] -translate-y-1/2",
+        "max-md:fixed max-md:top-auto max-md:bottom-[238px] max-md:left-2 max-md:right-2 max-md:translate-y-0 max-md:w-auto max-md:h-[22vh]",
       );
 
   const scrollClass = inline

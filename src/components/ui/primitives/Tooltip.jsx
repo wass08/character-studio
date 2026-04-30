@@ -7,7 +7,7 @@ export const Tooltip = ({
   children,
   side = "right",
   align = "center",
-  sideOffset = 8,
+  sideOffset = 10,
 }) => {
   if (!label) return children;
 
@@ -19,7 +19,7 @@ export const Tooltip = ({
           side={side}
           align={align}
           sideOffset={sideOffset}
-          className="glass-panel z-[1000] rounded-md px-2.5 py-1.5 text-xs font-medium tracking-tight text-panel-fg shadow-xl select-none data-[state=delayed-open]:data-[side=bottom]:animate-in data-[state=delayed-open]:data-[side=top]:animate-in data-[state=delayed-open]:data-[side=left]:animate-in data-[state=delayed-open]:data-[side=right]:animate-in"
+          className="glass-panel pointer-events-none z-[1000] rounded-md px-3 py-1.5 text-[11px] font-medium tracking-tight text-white/90 shadow-xl select-none"
         >
           {label}
           <RadixTooltip.Arrow className="fill-[rgba(18,18,22,0.55)]" />
