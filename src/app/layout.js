@@ -1,4 +1,5 @@
 import { Inter } from "next/font/google";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import "./globals.css";
 
 const inter = Inter({
@@ -14,8 +15,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${inter.variable} antialiased`}>
-        {children}
+      <body className={`${inter.variable} antialiased`}>
+        <Tooltip.Provider delayDuration={150} skipDelayDuration={300}>
+          {children}
+        </Tooltip.Provider>
       </body>
     </html>
   );

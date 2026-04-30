@@ -1,22 +1,22 @@
 "use client";
 import React from "react";
 
-import "../Button.css";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
+import { IconButton } from "../../primitives/IconButton";
 
 const ScreenshotButton = () => {
   const screenshot = useConfiguratorStore((state) => state.screenshot);
 
   return (
-    <>
-      <button onClick={screenshot} className="screenshot-button">
+    <div className="absolute right-[clamp(140px,14vw,194px)] top-[clamp(14px,5vh,48px)] z-30">
+      <IconButton onClick={screenshot} label="Screenshot" side="bottom">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
           strokeWidth={1.5}
           stroke="currentColor"
-          className="size-6"
+          className="h-5 w-5"
         >
           <path
             strokeLinecap="round"
@@ -29,8 +29,8 @@ const ScreenshotButton = () => {
             d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"
           />
         </svg>
-      </button>
-    </>
+      </IconButton>
+    </div>
   );
 };
 

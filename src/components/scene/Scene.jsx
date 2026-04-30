@@ -1,9 +1,9 @@
 "use client";
-import { Canvas, useThree } from "@react-three/fiber";
-import { ContactShadows, Environment, SoftShadows } from "@react-three/drei";
-import { useEffect, useRef } from "react";
-import { Leva } from "leva";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
+import { Environment } from "@react-three/drei";
+import { Canvas, useThree } from "@react-three/fiber";
+import { Leva } from "leva";
+import { useEffect } from "react";
 import Avatar from "./Avatar";
 import Backdrop from "./Backdrop";
 import { CameraManager } from "./CameraManager";
@@ -53,7 +53,7 @@ const SceneContent = () => {
     <>
       <Leva hidden />
       <CameraManager />
-      <color attach="background" args={["#424242"]} />
+      <color attach="background" args={["#222237"]} />
       <Environment
         background={false}
         environmentIntensity={0.5}

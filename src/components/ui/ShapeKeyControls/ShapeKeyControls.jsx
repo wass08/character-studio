@@ -4,8 +4,9 @@ import {
   useConfiguratorStore,
 } from "@/stores/useConfiguratorStore";
 import React, { useMemo, useState } from "react";
-
-import "./ShapeKeyControls.css";
+import { AnimatePresence, motion } from "motion/react";
+import { Tooltip } from "../primitives/Tooltip";
+import { cn } from "../primitives/cn";
 
 export const CHARACTER_GLOBAL_MORPHS = [
   "Body Size",
@@ -26,7 +27,6 @@ const ShapeKeyControls = () => {
   const setMorphValue = useConfiguratorStore((state) => state.setMorphValue);
   const resetMorphSet = useConfiguratorStore((state) => state.resetMorphSet);
 
-  // Toggle states for minimizing/maximizing components
   const [isUniversalOpen, setIsUniversalOpen] = useState(true);
   const [isSpecificOpen, setIsSpecificOpen] = useState(true);
 
@@ -101,80 +101,55 @@ const ShapeKeyControls = () => {
   if (universal.length === 0 && activeSpecificMorphs.length === 0) return null;
 
   return (
-    <div className="shape-key-container">
-      {/* Universal Morphs Section */}
+    <div
+      className={cn(
+        "glass-panel thin-scrollbar absolute z-30 flex max-h-[clamp(120px,38vh,300px)] flex-col gap-2 overflow-hidden rounded-xl p-3 text-white",
+        "right-[clamp(20px,3.5vw,256px)] top-1/2 w-[clamp(280px,28vw,360px)] -translate-y-1/2",
+        "max-md:fixed max-md:top-auto max-md:right-2 max-md:left-2 max-md:bottom-[calc(50vh+8px)] max-md:w-auto max-md:max-h-[28vh] max-md:translate-y-0",
+      )}
+    >
       {universal.length > 0 && (
-        <div className="morph-group">
-          <div className="shape-key-header">
-            <div
-              className="header-toggle"
-              onClick={() => setIsUniversalOpen(!isUniversalOpen)}
-            >
-              <ChevronIcon isOpen={isUniversalOpen} />
-              <h3>Section Adjustments</h3>
-            </div>
-            <button
-              className="reset-button"
-              onClick={() => resetMorphSet(universal)}
-              title="Reset Section"
-            >
-              <ResetIcon />
-            </button>
-          </div>
-          {isUniversalOpen && (
-            <div className="morph-scroll">
-              {universal.map((key) => (
-                <MorphSlider
-                  key={key}
-                  label={key}
-                  value={morphValues[key]}
-                  onChange={(v) => setMorphValue(key, v)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        <MorphGroup
+          title="Section Adjustments"
+          isOpen={isUniversalOpen}
+          onToggle={() => setIsUniversalOpen((v) => !v)}
+          onReset={() => resetMorphSet(universal)}
+          resetLabel="Reset section"
+        >
+          {universal.map((key) => (
+            <MorphSlider
+              key={key}
+              label={key}
+              value={morphValues[key]}
+              onChange={(v) => setMorphValue(key, v)}
+            />
+          ))}
+        </MorphGroup>
       )}
 
-      {/* Divider */}
       {universal.length > 0 && activeSpecificMorphs.length > 0 && (
-        <div className="morph-section-divider" />
+        <div className="h-px w-full shrink-0 bg-white/10" />
       )}
 
-      {/* Specific Morphs Section */}
       {activeSpecificMorphs.length > 0 && (
-        <div className="morph-group">
-          <div className="shape-key-header">
-            <div
-              className="header-toggle"
-              onClick={() => setIsSpecificOpen(!isSpecificOpen)}
-            >
-              <ChevronIcon isOpen={isSpecificOpen} />
-              <h3>{currentCategory?.name || currentCategory}</h3>
-            </div>
-            <button
-              className="reset-button"
-              onClick={() =>
-                resetMorphSet(activeSpecificMorphs.map((s) => s.key))
-              }
-              title="Reset Category"
-            >
-              <ResetIcon />
-            </button>
-          </div>
-          {isSpecificOpen && (
-            <div className="morph-scroll">
-              {activeSpecificMorphs.map(({ key }) => (
-                <MorphSlider
-                  key={key}
-                  label={key}
-                  value={morphValues[key]}
-                  onChange={(v) => setMorphValue(key, v)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        <MorphGroup
+          title={currentCategory?.name || currentCategory}
+          isOpen={isSpecificOpen}
+          onToggle={() => setIsSpecificOpen((v) => !v)}
+          onReset={() =>
+            resetMorphSet(activeSpecificMorphs.map((s) => s.key))
+          }
+          resetLabel="Reset category"
+        >
+          {activeSpecificMorphs.map(({ key }) => (
+            <MorphSlider
+              key={key}
+              label={key}
+              value={morphValues[key]}
+              onChange={(v) => setMorphValue(key, v)}
+            />
+          ))}
+        </MorphGroup>
       )}
     </div>
   );
@@ -182,21 +157,72 @@ const ShapeKeyControls = () => {
 
 export default ShapeKeyControls;
 
-const ChevronIcon = ({ isOpen }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    strokeWidth={2.5}
-    stroke="currentColor"
-    className={`chevron-icon ${isOpen ? "open" : "closed"}`}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-    />
-  </svg>
+const MorphGroup = ({
+  title,
+  isOpen,
+  onToggle,
+  onReset,
+  resetLabel,
+  children,
+}) => (
+  <div className="flex min-h-0 w-full flex-col">
+    <div className="mb-2 flex items-center justify-between">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex items-center gap-1.5 text-left transition-opacity hover:opacity-80"
+      >
+        <motion.span
+          animate={{ rotate: isOpen ? 0 : -90 }}
+          transition={{ duration: 0.2 }}
+          className="inline-flex h-3 w-3 items-center justify-center text-white/80"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2.5}
+            stroke="currentColor"
+            className="h-3 w-3"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+            />
+          </svg>
+        </motion.span>
+        <h3 className="text-[10px] font-semibold tracking-[0.12em] text-white/85 uppercase">
+          {title}
+        </h3>
+      </button>
+      <Tooltip label={resetLabel} side="top">
+        <button
+          type="button"
+          onClick={onReset}
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <ResetIcon />
+        </button>
+      </Tooltip>
+    </div>
+    <AnimatePresence initial={false}>
+      {isOpen && (
+        <motion.div
+          key="content"
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+          className="overflow-hidden"
+        >
+          <div className="thin-scrollbar flex max-h-[clamp(80px,14vh,150px)] flex-col gap-1.5 overflow-y-auto pr-1">
+            {children}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
 );
 
 const ResetIcon = () => (
@@ -204,9 +230,9 @@ const ResetIcon = () => (
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
-    strokeWidth={1.5}
+    strokeWidth={1.8}
     stroke="currentColor"
-    className="size-6 reset-icon"
+    className="h-3.5 w-3.5"
   >
     <path
       strokeLinecap="round"
@@ -221,24 +247,30 @@ export const MorphSlider = ({ label, value, onChange }) => {
   const displayValue = numericValue.toFixed(2);
 
   return (
-    <div className="slider-item">
-      <div className="slider-track-wrapper">
-        <div
-          className="slider-fill"
-          style={{ width: `${numericValue * 100}%` }}
-        />
-        <span className="slider-label-inline">{label}</span>
-        <span className="slider-value-inline">{displayValue}</span>
-        <input
-          className="slider-input"
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={numericValue}
-          onChange={(e) => onChange(parseFloat(e.target.value))}
-        />
-      </div>
+    <div className="relative flex h-7 items-center rounded-md border border-white/10 bg-white/[0.06] px-2.5">
+      <div
+        className="pointer-events-none absolute inset-y-0 left-0 rounded-md bg-white/15"
+        style={{ width: `${numericValue * 100}%` }}
+      />
+      <span className="pointer-events-none relative z-[1] flex-1 truncate text-[10px] font-normal tracking-wide text-white/85 select-none">
+        {label}
+      </span>
+      <span className="pointer-events-none relative z-[1] min-w-[2.4ch] text-right text-[10px] font-normal tracking-wide text-white/75 select-none">
+        {displayValue}
+      </span>
+      <input
+        className={cn(
+          "absolute inset-0 z-[2] h-full w-full cursor-pointer appearance-none bg-transparent",
+          "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-[3px] [&::-webkit-slider-thumb]:rounded [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer",
+          "[&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:w-[3px] [&::-moz-range-thumb]:rounded [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:cursor-pointer",
+        )}
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        value={numericValue}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+      />
     </div>
   );
 };
