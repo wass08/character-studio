@@ -21,6 +21,31 @@
   --color-track: rgba(255, 255, 255, 0.08);
   --color-track-fill: rgba(255, 255, 255, 0.22);
   --color-accent: rgba(255, 255, 255, 0.95);
+
+  --animate-tooltip-in: tooltip-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-tooltip-out: tooltip-out 120ms ease-in;
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes tooltip-out {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(2px);
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -37,6 +62,15 @@
     background: var(--background);
     color: var(--foreground);
     font-family: var(--font-inter);
+  }
+}
+
+@layer base {
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
   }
 }
 

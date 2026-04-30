@@ -9,7 +9,7 @@ export const HeightSlider = () => {
   const max = 2.0;
   const numericValue = height || 0;
   const ratio = (numericValue - min) / (max - min);
-  const fillWidth = 4 + ratio * 92; // clamp to [4%, 96%]
+  const fillWidth = `calc(2px + ${ratio} * (100% - 4px))`;
   const displayValue = numericValue.toFixed(2);
 
   return (
@@ -18,12 +18,12 @@ export const HeightSlider = () => {
       onPointerDown={(e) => e.stopPropagation()}
     >
       <div
-        className="group relative flex h-8 items-center rounded-md border border-white/[0.06] bg-white/[0.03] px-3 transition-colors hover:border-white/15 hover:bg-white/[0.06] focus-within:border-white/15 focus-within:bg-white/[0.06]"
+        className="group relative flex h-10 items-center overflow-hidden rounded-md border border-white/[0.05] bg-black/25 px-3 transition-colors hover:border-white/15 hover:bg-black/30 focus-within:border-white/15 focus-within:bg-black/30"
         onMouseLeave={(e) => e.currentTarget.querySelector("input")?.blur()}
       >
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 rounded-md bg-white/[0.06] transition-colors group-hover:bg-white/15 group-focus-within:bg-white/15"
-          style={{ width: `${fillWidth}%` }}
+          className="pointer-events-none absolute inset-y-0 left-0 rounded-md bg-white/[0.04] transition-colors group-hover:bg-white/[0.10] group-focus-within:bg-white/[0.10]"
+          style={{ width: fillWidth }}
         />
         <span className="pointer-events-none relative z-[1] flex-1 truncate text-[10px] font-medium tracking-wide text-white/45 transition-colors select-none group-hover:text-white/90 group-focus-within:text-white/90">
           Height
@@ -33,7 +33,7 @@ export const HeightSlider = () => {
         </span>
         <input
           className={cn(
-            "absolute inset-y-0 left-[4%] right-[4%] z-[2] cursor-pointer appearance-none bg-transparent",
+            "absolute inset-y-0 left-[2px] right-[2px] z-[2] cursor-pointer appearance-none bg-transparent",
             "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-[2px] [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:bg-white/35 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:transition-colors",
             "group-hover:[&::-webkit-slider-thumb]:bg-white group-focus-within:[&::-webkit-slider-thumb]:bg-white",
             "[&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-[2px] [&::-moz-range-thumb]:rounded-sm [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white/35 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:transition-colors",

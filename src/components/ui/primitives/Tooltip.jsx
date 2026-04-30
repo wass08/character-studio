@@ -19,7 +19,7 @@ export const Tooltip = ({
           side={side}
           align={align}
           sideOffset={sideOffset}
-          className="glass-panel pointer-events-none z-[1000] rounded-md px-3 py-1.5 text-[11px] font-medium tracking-tight text-white/90 shadow-xl select-none"
+          className="glass-panel pointer-events-none z-[1000] origin-[var(--radix-tooltip-content-transform-origin)] rounded-md px-3 py-1.5 text-[11px] font-medium tracking-tight text-white/90 shadow-xl select-none data-[state=delayed-open]:animate-tooltip-in data-[state=instant-open]:animate-tooltip-in"
         >
           {label}
           <RadixTooltip.Arrow className="fill-[rgba(18,18,22,0.55)]" />
