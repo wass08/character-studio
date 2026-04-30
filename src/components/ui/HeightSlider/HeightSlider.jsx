@@ -18,7 +18,7 @@ export const HeightSlider = () => {
       onPointerDown={(e) => e.stopPropagation()}
     >
       <div
-        className="group relative flex h-10 items-center overflow-hidden rounded-md border border-white/[0.05] bg-black/25 px-3 transition-colors hover:border-white/15 hover:bg-black/30 focus-within:border-white/15 focus-within:bg-black/30"
+        className="group relative flex h-10 shrink-0 items-center overflow-hidden rounded-md border border-white/[0.05] bg-black/25 px-3 transition-colors hover:border-white/15 hover:bg-black/30 focus-within:border-white/15 focus-within:bg-black/30"
         onMouseLeave={(e) => e.currentTarget.querySelector("input")?.blur()}
       >
         <div

@@ -103,9 +103,7 @@ const ShapeKeyControls = () => {
   return (
     <div
       className={cn(
-        "glass-panel thin-scrollbar absolute z-30 flex max-h-[clamp(140px,40vh,320px)] flex-col gap-3 overflow-hidden rounded-xl p-4 text-white",
-        "right-[clamp(20px,3.5vw,256px)] top-1/2 w-[clamp(300px,28vw,380px)] -translate-y-1/2",
-        "max-md:fixed max-md:top-auto max-md:right-2 max-md:left-2 max-md:bottom-[calc(55vh+8px)] max-md:w-auto max-md:max-h-[28vh] max-md:translate-y-0",
+        "glass-panel thin-scrollbar flex w-full min-h-0 flex-1 flex-col gap-3 overflow-y-auto rounded-xl p-4 text-white",
       )}
     >
       {universal.length > 0 && (
@@ -216,9 +214,7 @@ const MorphGroup = ({
           transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
           className="overflow-hidden"
         >
-          <div className="thin-scrollbar flex max-h-[clamp(80px,14vh,170px)] flex-col gap-2 overflow-y-auto pr-1">
-            {children}
-          </div>
+          <div className="flex flex-col gap-2">{children}</div>
         </motion.div>
       )}
     </AnimatePresence>
@@ -249,7 +245,7 @@ export const MorphSlider = ({ label, value, onChange }) => {
 
   return (
     <div
-      className="group relative flex h-10 items-center overflow-hidden rounded-md border border-white/[0.05] bg-black/25 px-3 transition-colors hover:border-white/15 hover:bg-black/30 focus-within:border-white/15 focus-within:bg-black/30"
+      className="group relative flex h-10 shrink-0 items-center overflow-hidden rounded-md border border-white/[0.05] bg-black/25 px-3 transition-colors hover:border-white/15 hover:bg-black/30 focus-within:border-white/15 focus-within:bg-black/30"
       onMouseLeave={(e) => e.currentTarget.querySelector("input")?.blur()}
     >
       <div
