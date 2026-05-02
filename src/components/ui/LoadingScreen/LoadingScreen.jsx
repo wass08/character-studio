@@ -1,10 +1,7 @@
-import React, { useRef } from "react";
+"use client";
 
-import { gsap } from "gsap";
-import { useGSAP } from "@gsap/react";
+import { motion } from "motion/react";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
-
-gsap.registerPlugin(useGSAP);
 
 const LoadingScreen = () => {
   const loading = useConfiguratorStore((state) => state.loading);
@@ -12,43 +9,39 @@ const LoadingScreen = () => {
     (state) => state.setIntroFinished,
   );
 
-  const container = useRef();
-  const textRef = useRef();
-
-  useGSAP(
-    () => {
-      if (!loading) {
-        const tl = gsap.timeline({
-          onComplete: () => setIntroFinished(true),
-        });
-
-        tl.to(textRef.current, {
-          y: -20,
-          opacity: 0,
-          duration: 0.5,
-          ease: "power2.in",
-        }).to(
-          container.current,
-          { opacity: 0, duration: 0.8, ease: "power2.out" },
-          "-=0.2",
-        );
-      }
-    },
-    { dependencies: [loading], scope: container },
-  );
-
   return (
-    <div
-      ref={container}
-      className="fixed inset-0 z-[999999] flex items-center justify-center bg-black text-white"
+    <motion.div
+      initial={{ opacity: 1 }}
+      animate={{ opacity: loading ? 1 : 0 }}
+      transition={{
+        duration: 0.8,
+        delay: loading ? 0 : 0.3,
+        ease: [0.4, 0, 0.6, 1],
+      }}
+      onAnimationComplete={() => {
+        if (!loading) setIntroFinished(true);
+      }}
+      className="fixed inset-0 z-[999999] flex items-center justify-center bg-black"
     >
-      <div
-        ref={textRef}
-        className="text-sm font-medium tracking-[0.3em] text-white/85 uppercase"
+      <motion.div
+        initial={{ y: 0, opacity: 1 }}
+        animate={{ y: loading ? 0 : -20, opacity: loading ? 1 : 0 }}
+        transition={{ duration: 0.5, ease: [0.4, 0, 0.7, 1] }}
+        className="flex flex-col items-center justify-center gap-2"
       >
-        Loading
-      </div>
-    </div>
+        <img
+          src="/images/character-icon.svg"
+          alt=""
+          aria-hidden="true"
+          className="h-20 w-auto animate-loading-pulse select-none"
+        />
+        <img
+          src="/images/logo-white.svg"
+          alt="Wawasensei"
+          className="w-40 select-none"
+        />
+      </motion.div>
+    </motion.div>
   );
 };
 
