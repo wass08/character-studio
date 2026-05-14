@@ -1,6 +1,7 @@
 import PocketBase from "pocketbase";
 import { MeshStandardMaterial } from "three";
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 const pocketBaseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL;
 
@@ -39,6 +40,22 @@ export const PHOTO_POSES = {
 export const UI_MODES = {
   PHOTO: "photo",
   CUSTOMIZE: "customize",
+  EXPORT: "export",
+};
+
+export const COMPRESSION = {
+  NONE: "none",
+  DRACO: "draco",
+  MESHOPT: "meshopt",
+};
+
+const DEFAULT_EXPORT_SETTINGS = {
+  animations: true,
+  visemes: false,
+  arkit: false,
+  tpose: true,
+  optimize: true,
+  compression: COMPRESSION.DRACO,
 };
 
 export const GENDERS = {
@@ -48,7 +65,9 @@ export const GENDERS = {
   NONE: "none", // In case we don't want to start with a default gender
 };
 
-export const useConfiguratorStore = create((set, get) => ({
+export const useConfiguratorStore = create(
+  persist(
+    (set, get) => ({
   loading: true,
   introFinished: false,
   setIntroFinished: (value) => set({ introFinished: value }),
@@ -137,10 +156,22 @@ export const useConfiguratorStore = create((set, get) => ({
       return { morphValues: newValues };
     }),
   customization: {},
-  download: () => {},
+  download: async () => null,
   setDownload: (download) => set({ download }),
   screenshot: () => {},
   setScreenshot: (screenshot) => set({ screenshot }),
+
+  exportSettings: { ...DEFAULT_EXPORT_SETTINGS },
+  setExportSetting: (key, value) =>
+    set((state) => ({
+      exportSettings: { ...state.exportSettings, [key]: value },
+    })),
+  exporting: false,
+  setExporting: (exporting) => set({ exporting }),
+  estimating: false,
+  setEstimating: (estimating) => set({ estimating }),
+  estimatedSize: null,
+  setEstimatedSize: (estimatedSize) => set({ estimatedSize }),
   updateColor: (categoryName, colorObj, slotName = null) => {
     if (!categoryName) return;
 
@@ -338,4 +369,23 @@ export const useConfiguratorStore = create((set, get) => ({
 
     set({ lockedGroups });
   },
-}));
+    }),
+    {
+      name: "character-studio-prefs",
+      version: 1,
+      partialize: (state) => ({ exportSettings: state.exportSettings }),
+      migrate: (persisted, version) => {
+        if (!persisted?.exportSettings) return persisted;
+        if (version < 1 && "draco" in persisted.exportSettings) {
+          // Old boolean flag → new enum. Default to Draco (the new default)
+          // when the old flag was on, "none" when it was off.
+          persisted.exportSettings.compression = persisted.exportSettings.draco
+            ? COMPRESSION.DRACO
+            : COMPRESSION.NONE;
+          delete persisted.exportSettings.draco;
+        }
+        return persisted;
+      },
+    },
+  ),
+);
