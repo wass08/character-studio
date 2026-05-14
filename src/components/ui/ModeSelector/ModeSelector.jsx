@@ -10,6 +10,7 @@ const PILL_SPRING = { type: "spring", stiffness: 380, damping: 32 };
 const MODES = [
   { id: UI_MODES.CUSTOMIZE, label: "Customize" },
   { id: UI_MODES.PHOTO, label: "Photobooth" },
+  { id: UI_MODES.EXPORT, label: "Export" },
 ];
 
 const ModeSelector = () => {

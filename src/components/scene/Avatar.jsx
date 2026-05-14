@@ -1,11 +1,43 @@
 import React, { Suspense, useRef, useEffect, useLayoutEffect } from "react";
 import { useAnimations, useGLTF } from "@react-three/drei";
-import { NodeIO } from "@gltf-transform/core";
-import { dedup, draco, prune, quantize } from "@gltf-transform/functions";
 import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { Asset } from "./Asset";
-import { GLTFExporter } from "three-stdlib";
+import { GLTFExporter, SkeletonUtils } from "three-stdlib";
 import { SkinManager } from "./SkinManager";
+
+// ───────── Web Worker bridge ─────────
+// Heavy gltf-transform work (bake morphs, strip bones, optimize, Draco) runs
+// in a worker so the main thread stays free for the renderer.
+let exportWorker = null;
+let nextWorkerRequestId = 0;
+const workerPending = new Map();
+
+function getExportWorker() {
+  if (exportWorker) return exportWorker;
+  exportWorker = new Worker(new URL("./exportWorker.js", import.meta.url), {
+    type: "module",
+  });
+  exportWorker.onmessage = (e) => {
+    const { id, ok, result, error } = e.data;
+    const handler = workerPending.get(id);
+    if (!handler) return;
+    workerPending.delete(id);
+    if (ok) handler.resolve(result);
+    else handler.reject(new Error(error));
+  };
+  exportWorker.onerror = (e) => {
+    console.error("[export worker]", e.message || e);
+  };
+  return exportWorker;
+}
+
+function runExportPipeline(glb, options) {
+  return new Promise((resolve, reject) => {
+    const id = ++nextWorkerRequestId;
+    workerPending.set(id, { resolve, reject });
+    getExportWorker().postMessage({ id, glb, options }, [glb.buffer]);
+  });
+}
 
 export default function Model(props) {
   const group = useRef();
@@ -56,43 +88,6 @@ export default function Model(props) {
   }, [actions, pose]);
 
   useEffect(() => {
-    function download() {
-      const exporter = new GLTFExporter();
-      exporter.parse(
-        group.current,
-        async function (result) {
-          console.log("Export Result:", result);
-          console.log("Result Byte Length:", result.byteLength);
-          const io = new NodeIO();
-
-          // Read.
-          const document = await io.readBinary(new Uint8Array(result)); // Uint8Array → Document
-          await document.transform(
-            // Remove unused nodes, textures, or other data.
-            prune(),
-            // Remove duplicate vertex or texture data, if any.
-            dedup(),
-            // Compress mesh geometry with Draco.
-            draco(),
-            // Quantize mesh geometry.
-            quantize(),
-          );
-
-          // Write.
-          const glb = await io.writeBinary(document); // Document → Uint8Array
-
-          save(
-            new Blob([glb], { type: "application/octet-stream" }),
-            `avatar_${+new Date()}.glb`,
-          );
-        },
-        function (error) {
-          console.error(error);
-        },
-        { binary: true },
-      );
-    }
-
     const link = document.createElement("a");
     link.style.display = "none";
     document.body.appendChild(link); // Firefox workaround, see #6594
@@ -102,8 +97,58 @@ export default function Model(props) {
       link.download = filename;
       link.click();
     }
+    async function download(opts = {}) {
+      const {
+        animations: includeAnimations = true,
+        visemes: includeVisemes = false,
+        arkit: includeArkit = false,
+        tpose = true,
+        optimize = true,
+        compression = "draco",
+        dryRun = false,
+      } = opts;
+
+      if (!group.current) return null;
+
+      // Snapshot the live avatar into a detached hierarchy. SkeletonUtils.clone
+      // builds a fresh skeleton with new bone instances, so anything we do to
+      // the clone (T-pose snap) is invisible to the live renderer.
+      const exportRoot = SkeletonUtils.clone(group.current);
+      if (tpose) {
+        exportRoot.traverse((obj) => {
+          if (obj.isSkinnedMesh) obj.skeleton?.pose();
+        });
+      }
+
+      // Serialize the scene to a raw GLB on the main thread (GLTFExporter
+      // needs THREE.Object3D access). Everything past this point — morph
+      // baking, bone stripping, optimize passes, Draco compression — runs in
+      // a Web Worker so the renderer keeps animating smoothly.
+      const exporter = new GLTFExporter();
+      const rawGlb = await new Promise((resolve, reject) => {
+        exporter.parse(exportRoot, resolve, reject, {
+          binary: true,
+          animations: includeAnimations ? animations : [],
+        });
+      });
+
+      const processed = await runExportPipeline(new Uint8Array(rawGlb), {
+        visemes: includeVisemes,
+        arkit: includeArkit,
+        optimize,
+        compression,
+      });
+
+      if (dryRun) return processed.byteLength;
+      save(
+        new Blob([processed], { type: "application/octet-stream" }),
+        `avatar_${+new Date()}.glb`,
+      );
+      return processed.byteLength;
+    }
+
     setDownload(download);
-  }, []);
+  }, [animations]);
 
   if (!nodes?.root || !nodes?.["MCH-eyes_parent"] || !nodes?.Plane002) {
     return null;

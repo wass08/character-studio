@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 
 import AssetsBox from "./AssetsBox/AssetsBox";
+import ExportBox from "./ExportBox/ExportBox";
 import TopActions from "./Buttons/TopActions";
 import ColorPicker from "./ColorPicker/ColorPicker";
 import { UI_MODES, useConfiguratorStore } from "@/stores/useConfiguratorStore";
@@ -66,6 +67,8 @@ const UI = () => {
       )}
 
       {mode === UI_MODES.PHOTO && <PosesBox />}
+
+      {mode === UI_MODES.EXPORT && <ExportBox />}
     </>
   );
 };
