@@ -361,6 +361,7 @@ const AssetsBox = () => {
                     onClick={() => changeAsset(currentCategory.name, asset)}
                     selected={asset.id === selectedAssetId}
                     label={asset.name}
+                    backgroundColor={asset.thumbnailBg}
                   >
                     <img
                       src={
@@ -383,7 +384,7 @@ const AssetsBox = () => {
 
 export default AssetsBox;
 
-const AssetButton = ({ children, onClick, selected, label }) => (
+const AssetButton = ({ children, onClick, selected, label, backgroundColor }) => (
   <Tooltip label={label} side="top">
     <motion.button
       type="button"
@@ -391,13 +392,17 @@ const AssetButton = ({ children, onClick, selected, label }) => (
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       transition={ASSET_SPRING}
+      style={backgroundColor ? { backgroundColor } : undefined}
       className={cn(
         "relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg border p-1.5 text-white/80 transition-colors",
         "h-[72px] w-[72px]",
         "md:h-auto md:w-full md:aspect-square",
         selected
-          ? "border-white/70 bg-white/[0.10] shadow-[0_0_22px_rgba(255,255,255,0.22)] ring-1 ring-white/55"
-          : "border-white/[0.08] bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06]",
+          ? "border-white/70 shadow-[0_0_22px_rgba(255,255,255,0.22)] ring-1 ring-white/55"
+          : "border-white/[0.08] hover:border-white/25",
+        // Only fall back to the glass tint when no per-asset color is set,
+        // otherwise it muddies bright/light backgrounds.
+        !backgroundColor && (selected ? "bg-white/[0.10]" : "bg-white/[0.03] hover:bg-white/[0.06]"),
       )}
     >
       {children}
