@@ -41,6 +41,7 @@ export const UI_MODES = {
   PHOTO: "photo",
   CUSTOMIZE: "customize",
   EXPORT: "export",
+  MY_CHARACTERS: "my_characters",
 };
 
 export const COMPRESSION = {
@@ -85,6 +86,7 @@ export const useConfiguratorStore = create(
       pose: PHOTO_POSES.Idle,
       activeSectionId: null,
       currentCategory: null,
+      isDirty: true,
     });
   },
   mode: UI_MODES.CUSTOMIZE,
@@ -106,7 +108,8 @@ export const useConfiguratorStore = create(
   assets: [],
   lockedGroups: {},
   height: 1,
-  setHeight: (height) => set({ height }),
+  setHeight: (height) => set({ height, isDirty: true }),
+  isDirty: false,
   skin: new MeshStandardMaterial({
     color: DEFAULT_SKIN_COLOR,
     roughness: 1,
@@ -124,10 +127,9 @@ export const useConfiguratorStore = create(
 
   detectedMorphsByCategory: {},
   setMorphValue: (key, value) => {
-    if (value === 0) console.trace("morphValue set to 0 for", key);
-
     set((state) => ({
       morphValues: { ...state.morphValues, [key]: value },
+      isDirty: true,
     }));
   },
   registerMorphs: (categoryName, keys) =>
@@ -138,14 +140,12 @@ export const useConfiguratorStore = create(
       },
     })),
   resetAllMorphs: () => {
-    console.trace("resetAllMorphs called"); // add this
-
     const currentValues = get().morphValues;
     const resetValues = {};
     Object.keys(currentValues).forEach((key) => {
       resetValues[key] = 0;
     });
-    set({ morphValues: resetValues });
+    set({ morphValues: resetValues, isDirty: true });
   },
   resetMorphSet: (keys) =>
     set((state) => {
@@ -153,13 +153,171 @@ export const useConfiguratorStore = create(
       keys.forEach((key) => {
         newValues[key] = 0;
       });
-      return { morphValues: newValues };
+      return { morphValues: newValues, isDirty: true };
     }),
   customization: {},
   download: async () => null,
   setDownload: (download) => set({ download }),
   screenshot: () => {},
   setScreenshot: (screenshot) => set({ screenshot }),
+  // Returns a Blob of the current frame instead of triggering a download.
+  capturePhoto: async () => null,
+  setCapturePhoto: (capturePhoto) => set({ capturePhoto }),
+  // Returns a Blob of a close-up face thumbnail.
+  captureFaceThumbnail: async () => null,
+  setCaptureFaceThumbnail: (captureFaceThumbnail) =>
+    set({ captureFaceThumbnail }),
+
+  // Loaded/saved character tracking
+  currentCharacterId: null,
+  currentCharacterName: null,
+  setCurrentCharacter: ({ id, name }) =>
+    set({ currentCharacterId: id, currentCharacterName: name }),
+  saving: false,
+  // Bumped after every successful character save — components can subscribe
+  // to refresh listings.
+  charactersChangedAt: 0,
+  photosChangedAt: 0,
+  setMainCharacter: async (characterId) => {
+    const userId = pb.authStore.record?.id;
+    if (!userId) throw new Error("Not signed in");
+    const updated = await pb.collection("users").update(userId, {
+      mainCharacter: characterId || null,
+    });
+    // Mirror the change locally so UI updates without waiting for onChange.
+    pb.authStore.save(pb.authStore.token, updated);
+    return updated;
+  },
+  loadCharacter: async (record) => {
+    // Switch gender first (this clears state + triggers refetch via AssetsBox).
+    if (record.gender && get().gender !== record.gender) {
+      set({
+        gender: record.gender,
+        loading: true,
+        categories: [],
+        sections: [],
+        customization: {},
+        pose: PHOTO_POSES.Idle,
+        activeSectionId: null,
+        currentCategory: null,
+      });
+    }
+    // Ensure categories are loaded before resolving assetIds in saved customization.
+    if (get().categories.length === 0) {
+      await get().fetchCategories();
+    }
+    const categories = get().categories;
+    const saved = record.customization || {};
+    const customization = {};
+    categories.forEach((category) => {
+      const slot = saved[category.name];
+      const asset = slot?.assetId
+        ? category.assets.find((a) => a.id === slot.assetId) || null
+        : null;
+      customization[category.name] = {
+        asset,
+        color: slot?.color ?? (category.name === "Skin" ? DEFAULT_SKIN_COLOR : null),
+        colors: slot?.colors || {},
+      };
+    });
+    set({
+      customization,
+      morphValues: record.morphValues || {},
+      height: typeof record.height === "number" ? record.height : 1,
+      currentCharacterId: record.id,
+      currentCharacterName: record.name,
+      isDirty: false,
+    });
+    const skinColor = customization.Skin?.color;
+    if (skinColor) get().updateSkin(skinColor);
+    get().applyLockedAssets();
+  },
+  serializeCustomization: () => {
+    const customization = get().customization;
+    const out = {};
+    Object.entries(customization).forEach(([name, slot]) => {
+      out[name] = {
+        assetId: slot?.asset?.id || null,
+        color: slot?.color || null,
+        colors: slot?.colors || {},
+      };
+    });
+    return out;
+  },
+  saveCharacter: async ({ name } = {}) => {
+    if (get().saving) return null;
+    set({ saving: true });
+    try {
+      const userId = pb.authStore.record?.id;
+      if (!userId) throw new Error("Not signed in");
+
+      const captureFaceThumbnail = get().captureFaceThumbnail;
+      const thumbBlob = captureFaceThumbnail
+        ? await captureFaceThumbnail().catch(() => null)
+        : null;
+
+      const formData = new FormData();
+      formData.append("user", userId);
+      formData.append(
+        "name",
+        name || get().currentCharacterName || "Untitled",
+      );
+      formData.append("gender", get().gender);
+      formData.append("height", String(get().height));
+      formData.append("pose", get().pose);
+      formData.append("customization", JSON.stringify(get().serializeCustomization()));
+      formData.append("morphValues", JSON.stringify(get().morphValues));
+      if (thumbBlob) {
+        formData.append(
+          "thumbnail",
+          thumbBlob,
+          `thumb_${Date.now()}.png`,
+        );
+      }
+
+      const id = get().currentCharacterId;
+      const record = id
+        ? await pb.collection("CharacterStudioCharacters").update(id, formData)
+        : await pb.collection("CharacterStudioCharacters").create(formData);
+
+      set({
+        currentCharacterId: record.id,
+        currentCharacterName: record.name,
+        charactersChangedAt: Date.now(),
+        isDirty: false,
+      });
+      return record;
+    } finally {
+      set({ saving: false });
+    }
+  },
+  capturingPhoto: false,
+  savePhoto: async () => {
+    if (get().capturingPhoto) return null;
+    set({ capturingPhoto: true });
+    try {
+      const userId = pb.authStore.record?.id;
+      if (!userId) throw new Error("Not signed in");
+      const capturePhoto = get().capturePhoto;
+      if (!capturePhoto) throw new Error("Camera not ready");
+      const blob = await capturePhoto();
+      if (!blob) throw new Error("Failed to capture photo");
+      const formData = new FormData();
+      formData.append("user", userId);
+      formData.append("pose", get().pose || "");
+      if (get().currentCharacterId) {
+        formData.append("character", get().currentCharacterId);
+      }
+      formData.append("image", blob, `photo_${Date.now()}.png`);
+      const record = await pb
+        .collection("CharacterStudioPhotos")
+        .create(formData);
+      set({ photosChangedAt: Date.now() });
+      return record;
+    } finally {
+      set({ capturingPhoto: false });
+    }
+  },
 
   exportSettings: { ...DEFAULT_EXPORT_SETTINGS },
   setExportSetting: (key, value) =>
@@ -194,6 +352,7 @@ export const useConfiguratorStore = create(
             asset: currentCategoryData.asset || null,
           },
         },
+        isDirty: true,
       };
     });
 
@@ -282,6 +441,7 @@ export const useConfiguratorStore = create(
           asset,
         },
       },
+      isDirty: true,
     }));
     get().applyLockedAssets();
   },
@@ -338,6 +498,7 @@ export const useConfiguratorStore = create(
       customization,
       morphValues,
       height: randomHeight,
+      isDirty: true,
     });
     get().applyLockedAssets();
   },

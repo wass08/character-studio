@@ -108,6 +108,7 @@ const AssetsBox = () => {
     setActiveSectionId,
     lockedGroups,
     customization,
+    randomize,
   } = useConfiguratorStore();
 
   const prevGenderRef = useRef(null);
@@ -208,6 +209,17 @@ const AssetsBox = () => {
               </Tooltip>
             );
           })}
+          <Tooltip label="Randomize" side="top">
+            <button
+              onClick={randomize}
+              className={cn(
+                TAB_BUTTON_CLASS,
+                "text-white/55 hover:text-white",
+              )}
+            >
+              <RandomizeIcon />
+            </button>
+          </Tooltip>
         </div>
 
         {!isSkinCategory && visibleCategories.length > 0 && (
@@ -351,7 +363,10 @@ const AssetsBox = () => {
                     label={asset.name}
                   >
                     <img
-                      src={pb.files.getURL(asset, asset.thumbnail)}
+                      src={
+                        asset.r2ThumbnailUrl ||
+                        pb.files.getURL(asset, asset.thumbnail)
+                      }
                       alt={asset.name || "asset"}
                       className="h-full w-full object-contain"
                     />
@@ -388,6 +403,23 @@ const AssetButton = ({ children, onClick, selected, label }) => (
       {children}
     </motion.button>
   </Tooltip>
+);
+
+const RandomizeIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className="h-6 w-6 md:h-7 md:w-7"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3-3 3"
+    />
+  </svg>
 );
 
 const ResetIcon = () => (

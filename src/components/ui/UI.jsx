@@ -13,6 +13,11 @@ import ModeSelector from "./ModeSelector/ModeSelector";
 import LoadingScreen from "./LoadingScreen/LoadingScreen";
 import Logo from "./Logo/Logo";
 import HideUIButton from "./Buttons/HideUIButton/HideUIButton";
+import AuthDialog from "./AuthDialog/AuthDialog";
+import AuthBootstrapper from "./AuthBootstrapper";
+import MyCharactersBox from "./MyCharactersBox/MyCharactersBox";
+import UserMenu from "./UserMenu/UserMenu";
+import PhotoGalleryBox from "./PhotoGalleryBox/PhotoGalleryBox";
 import { cn } from "./primitives/cn";
 
 const showColorPicker = (isSkin, currentCategory, hasAsset) =>
@@ -41,8 +46,13 @@ const UI = () => {
     <>
       <Logo />
       {!introFinished && <LoadingScreen />}
-      <TopActions />
       <ModeSelector />
+      <div className="absolute top-5 right-5 z-30 flex items-center gap-2">
+        <UserMenu />
+        <TopActions />
+      </div>
+      <AuthDialog />
+      <AuthBootstrapper />
 
       <HideUIButton isHidden={isHidden} setIsHidden={setIsHidden} />
 
@@ -66,9 +76,16 @@ const UI = () => {
         </div>
       )}
 
-      {mode === UI_MODES.PHOTO && <PosesBox />}
+      {mode === UI_MODES.PHOTO && (
+        <>
+          <PosesBox />
+          <PhotoGalleryBox />
+        </>
+      )}
 
       {mode === UI_MODES.EXPORT && <ExportBox />}
+
+      {mode === UI_MODES.MY_CHARACTERS && <MyCharactersBox />}
     </>
   );
 };

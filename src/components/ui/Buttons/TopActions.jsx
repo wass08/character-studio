@@ -1,61 +1,126 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import { motion } from "motion/react";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
-import { IconButton } from "../primitives/IconButton";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { Tooltip } from "../primitives/Tooltip";
+import SaveDialog from "../SaveDialog/SaveDialog";
+import { toast } from "../primitives/Toast";
 
-const ScreenshotIcon = () => (
+const SaveIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    fill="none"
     viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="currentColor"
+    fill="currentColor"
     className="h-5 w-5"
   >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"
-    />
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"
-    />
+    <path d="M17.586 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V6.414a2 2 0 0 0-.586-1.414l-2.414-2.414A2 2 0 0 0 17.586 3ZM7.5 5h7v3a1 1 0 0 1-1 1H8.5a1 1 0 0 1-1-1V5Zm10 14h-11v-5.5a1.5 1.5 0 0 1 1.5-1.5h8a1.5 1.5 0 0 1 1.5 1.5V19Z" />
   </svg>
 );
 
-const RandomizeIcon = () => (
+const Spinner = () => (
   <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
+    className="h-5 w-5 animate-spin"
     viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="currentColor"
-    className="h-5 w-5"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
   >
+    <circle
+      cx="12"
+      cy="12"
+      r="9"
+      stroke="currentColor"
+      strokeOpacity="0.25"
+      strokeWidth="2.5"
+    />
     <path
+      d="M21 12a9 9 0 0 0-9-9"
+      stroke="currentColor"
+      strokeWidth="2.5"
       strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3-3 3"
     />
   </svg>
 );
 
 const TopActions = () => {
-  const screenshot = useConfiguratorStore((state) => state.screenshot);
-  const randomize = useConfiguratorStore((state) => state.randomize);
+  const saveCharacter = useConfiguratorStore((state) => state.saveCharacter);
+  const saving = useConfiguratorStore((state) => state.saving);
+  const isDirty = useConfiguratorStore((state) => state.isDirty);
+  const currentCharacterId = useConfiguratorStore(
+    (state) => state.currentCharacterId,
+  );
+  const currentCharacterName = useConfiguratorStore(
+    (state) => state.currentCharacterName,
+  );
+
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const setLoginDialogOpen = useAuthStore((s) => s.setLoginDialogOpen);
+
+  const [nameDialogOpen, setNameDialogOpen] = useState(false);
+
+  const onSave = async () => {
+    if (!isLoggedIn) {
+      setLoginDialogOpen(true);
+      return;
+    }
+    if (!currentCharacterId) {
+      setNameDialogOpen(true);
+      return;
+    }
+    try {
+      await saveCharacter();
+      toast.success(`Saved "${currentCharacterName}"`);
+    } catch (err) {
+      toast.error(err?.message || "Failed to save");
+    }
+  };
+
+  const onNameSubmit = async (name) => {
+    try {
+      await saveCharacter({ name });
+      setNameDialogOpen(false);
+      toast.success(`Saved "${name}"`);
+    } catch (err) {
+      toast.error(err?.message || "Failed to save");
+    }
+  };
+
+  // Disabled when signed in, viewing an existing character, and nothing
+  // changed since load/save. New (unsaved) characters and signed-out users
+  // can always click — the button routes them through the right flow.
+  const clean = isLoggedIn && currentCharacterId && !isDirty;
+  const disabled = saving || clean;
+  const tooltipLabel = clean
+    ? "No changes to save"
+    : currentCharacterId
+      ? `Update "${currentCharacterName}"`
+      : "Save character";
 
   return (
-    <div className="glass-panel absolute top-5 right-5 z-30 flex flex-row items-center gap-1 rounded-xl p-1.5">
-      <IconButton onClick={screenshot} label="Screenshot" side="bottom">
-        <ScreenshotIcon />
-      </IconButton>
-      <IconButton onClick={randomize} label="Randomize" side="bottom">
-        <RandomizeIcon />
-      </IconButton>
-    </div>
+    <>
+      <Tooltip label={tooltipLabel} side="bottom">
+        <motion.button
+          type="button"
+          onClick={onSave}
+          disabled={disabled}
+          whileHover={{ scale: disabled ? 1 : 1.04 }}
+          whileTap={{ scale: disabled ? 1 : 0.96 }}
+          transition={{ type: "spring", stiffness: 420, damping: 26 }}
+          aria-label="Save character"
+          className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/90 px-4 text-sm font-medium tracking-tight text-zinc-900 shadow-[0_0_22px_rgba(255,255,255,0.18)] ring-1 ring-white/40 transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+        >
+          {saving ? <Spinner /> : <SaveIcon />}
+          <span>Save</span>
+        </motion.button>
+      </Tooltip>
+
+      <SaveDialog
+        open={nameDialogOpen}
+        onOpenChange={setNameDialogOpen}
+        onSubmit={onNameSubmit}
+      />
+    </>
   );
 };
 
