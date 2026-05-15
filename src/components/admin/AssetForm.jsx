@@ -2,21 +2,42 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Camera, Star, Trash2 } from "lucide-react";
 import { pb } from "@/stores/useConfiguratorStore";
 import { uploadToR2 } from "@/lib/r2Upload";
 import { toast } from "@/components/ui/primitives/Toast";
 import { Spinner } from "@/components/ui/primitives/Spinner";
 import AssetPreview from "./AssetPreview";
+import BlendshapeSection from "./BlendshapeSection";
+import { THUMBNAIL_BG_COLORS } from "./thumbnailBackgrounds";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
-const FIELD =
-  "rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm focus:border-white/35 focus:outline-none";
-const LABEL = "text-xs text-white/55";
+const ANY_GENDER = "__any__";
 
 const blank = {
   name: "",
   group: "",
   gender: "",
   modelFile: null,
+  thumbnailBg: "",
+};
+
+const startingAssetField = (genderName) => {
+  if (genderName === "man") return "startingAssetMan";
+  if (genderName === "woman") return "startingAssetWoman";
+  return null;
 };
 
 const AssetForm = ({ asset = null }) => {
@@ -28,24 +49,12 @@ const AssetForm = ({ asset = null }) => {
   const [capturing, setCapturing] = useState(false);
   const [localModelUrl, setLocalModelUrl] = useState(null);
   const [thumbnailUrl, setThumbnailUrl] = useState(null);
+  const [isDefault, setIsDefault] = useState(false);
+  const [lookupsLoaded, setLookupsLoaded] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [detectedMorphs, setDetectedMorphs] = useState([]);
   const previewRef = useRef(null);
 
-  // Hydrate form from asset (edit mode).
-  useEffect(() => {
-    if (!asset) return;
-    setForm({
-      name: asset.name || "",
-      group: asset.group || "",
-      gender: asset.gender || "",
-      modelFile: null,
-    });
-    setThumbnailUrl(
-      asset.r2ThumbnailUrl ||
-        (asset.thumbnail ? pb.files.getURL(asset, asset.thumbnail) : null),
-    );
-  }, [asset]);
-
-  // Load groups + genders.
   useEffect(() => {
     Promise.all([
       pb.collection("CharacterStudioGroups").getFullList({ sort: "+position" }),
@@ -65,10 +74,32 @@ const AssetForm = ({ asset = null }) => {
       .catch((err) => {
         if (err?.isAbort) return;
         toast.error(err?.message || "Failed to load form data");
-      });
+      })
+      .finally(() => setLookupsLoaded(true));
   }, []);
 
-  // Manage local object URL for previewing an unsaved model file.
+  // Radix Select latches onto its initial `value`. If it mounts with "" and
+  // we later push a real id, the trigger keeps showing the placeholder. Hold
+  // back the whole form until lookups + asset data are merged, so the Selects
+  // mount with their final values in one shot.
+  useEffect(() => {
+    if (!lookupsLoaded) return;
+    if (asset) {
+      setForm({
+        name: asset.name || "",
+        group: asset.group || "",
+        gender: asset.gender || "",
+        modelFile: null,
+        thumbnailBg: asset.thumbnailBg || "",
+      });
+      setThumbnailUrl(
+        asset.r2ThumbnailUrl ||
+          (asset.thumbnail ? pb.files.getURL(asset, asset.thumbnail) : null),
+      );
+    }
+    setHydrated(true);
+  }, [asset, lookupsLoaded]);
+
   useEffect(() => {
     if (!form.modelFile) {
       if (localModelUrl) {
@@ -89,16 +120,39 @@ const AssetForm = ({ asset = null }) => {
     return null;
   }, [localModelUrl, asset]);
 
+  // Reset detected morphs when the model source changes — the Model effect
+  // in AssetPreview will repopulate from the newly-loaded scene.
+  useEffect(() => {
+    setDetectedMorphs([]);
+  }, [modelUrl]);
+
+  const selectedGroup = useMemo(
+    () => groups.find((g) => g.id === form.group) || null,
+    [groups, form.group],
+  );
+  const selectedGenderName = useMemo(() => {
+    if (asset?.expand?.gender?.name) return asset.expand.gender.name;
+    return genders.find((g) => g.id === form.gender)?.name || null;
+  }, [asset, form.gender, genders]);
+  const defaultField = startingAssetField(selectedGenderName);
+  const canBeDefault = Boolean(selectedGroup && defaultField);
+
+  useEffect(() => {
+    if (!asset || !selectedGroup || !defaultField) {
+      setIsDefault(false);
+      return;
+    }
+    setIsDefault(selectedGroup[defaultField] === asset.id);
+  }, [asset, selectedGroup, defaultField]);
+
   const snapshot = async () => {
     if (!previewRef.current) return;
     setCapturing(true);
     try {
       const blob = await previewRef.current.capture(512);
       const previewUrl = URL.createObjectURL(blob);
-      // Clean up previous local preview URL.
       if (thumbnailUrl?.startsWith("blob:")) URL.revokeObjectURL(thumbnailUrl);
       setThumbnailUrl(previewUrl);
-      // Attach blob to form so save() picks it up.
       const file = new File([blob], `thumb-${Date.now()}.png`, {
         type: "image/png",
       });
@@ -132,6 +186,7 @@ const AssetForm = ({ asset = null }) => {
       payload.append("group", form.group);
       if (form.gender) payload.append("gender", form.gender);
       else if (asset) payload.append("gender", "");
+      payload.append("thumbnailBg", form.thumbnailBg || "");
 
       if (form.modelFile) {
         const r2Url = await uploadToR2(form.modelFile, "assets/models");
@@ -151,6 +206,19 @@ const AssetForm = ({ asset = null }) => {
             .update(asset.id, payload)
         : await pb.collection("CharacterStudioAssets").create(payload);
 
+      if (canBeDefault && selectedGroup && defaultField) {
+        const wasDefault = selectedGroup[defaultField] === record.id;
+        if (isDefault && !wasDefault) {
+          await pb
+            .collection("CharacterStudioGroups")
+            .update(selectedGroup.id, { [defaultField]: record.id });
+        } else if (!isDefault && wasDefault) {
+          await pb
+            .collection("CharacterStudioGroups")
+            .update(selectedGroup.id, { [defaultField]: "" });
+        }
+      }
+
       toast.success(asset ? "Asset updated" : "Asset created");
       router.push(`/admin/${record.id}`);
     } catch (err) {
@@ -160,149 +228,255 @@ const AssetForm = ({ asset = null }) => {
     }
   };
 
+  if (!hydrated) {
+    return (
+      <div className="mx-auto max-w-6xl px-6 py-12 text-center text-sm text-muted-foreground">
+        Loading…
+      </div>
+    );
+  }
+
   return (
     <form
       onSubmit={save}
       className="mx-auto grid max-w-6xl gap-6 px-6 py-8 md:grid-cols-[2fr_3fr]"
     >
-      <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-        <h2 className="text-sm font-semibold tracking-tight">
-          {asset ? "Asset details" : "New asset"}
-        </h2>
-
-        <label className="flex flex-col gap-1">
-          <span className={LABEL}>Name</span>
-          <input
-            required
-            type="text"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className={FIELD}
-          />
-        </label>
-
-        <label className="flex flex-col gap-1">
-          <span className={LABEL}>Group</span>
-          <select
-            required
-            value={form.group}
-            onChange={(e) => setForm((f) => ({ ...f, group: e.target.value }))}
-            className={FIELD}
-          >
-            <option value="">Select group…</option>
-            {groups.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="flex flex-col gap-1">
-          <span className={LABEL}>Gender</span>
-          <select
-            value={form.gender}
-            onChange={(e) => setForm((f) => ({ ...f, gender: e.target.value }))}
-            className={FIELD}
-          >
-            <option value="">Any</option>
-            {genders.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="flex flex-col gap-1">
-          <span className={LABEL}>
-            Model file (.glb){!asset && " · required"}
-          </span>
-          <input
-            type="file"
-            accept=".glb,.gltf,model/gltf-binary"
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                modelFile: e.target.files?.[0] || null,
-              }))
-            }
-            className="text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:text-white"
-          />
-          {asset && !form.modelFile && (
-            <span className="text-[11px] text-white/40">
-              Leave empty to keep the current file.
-            </span>
-          )}
-        </label>
-
-        <div className="mt-2 flex flex-col gap-1">
-          <span className={LABEL}>Thumbnail</span>
-          <div className="flex items-center gap-3">
-            <div className="h-20 w-20 overflow-hidden rounded-lg border border-white/10 bg-black/30">
-              {thumbnailUrl ? (
-                <img
-                  src={thumbnailUrl}
-                  alt="thumbnail"
-                  className="h-full w-full object-contain"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-[10px] text-white/35">
-                  none
-                </div>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={snapshot}
-              disabled={!modelUrl || capturing}
-              className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-xs ring-1 ring-white/15 transition-colors hover:bg-white/15 disabled:opacity-60"
-            >
-              {capturing && <Spinner className="h-3.5 w-3.5" />}
-              <span>Take snapshot</span>
-            </button>
-          </div>
-          <span className="text-[11px] text-white/40">
-            Frame the model in the preview, then snapshot to set the thumbnail.
-          </span>
-        </div>
-
-        <button
-          type="submit"
-          disabled={busy}
-          className="mt-3 inline-flex items-center justify-center gap-2 rounded-lg bg-white/15 px-4 py-2.5 text-sm font-medium ring-1 ring-white/25 transition-colors hover:bg-white/20 disabled:opacity-60"
-        >
-          {busy && <Spinner />}
-          <span>{asset ? "Save changes" : "Create asset"}</span>
-        </button>
-
-        {asset && (
-          <button
-            type="button"
-            onClick={async () => {
-              if (!confirm(`Delete "${asset.name}"?`)) return;
-              try {
-                await pb.collection("CharacterStudioAssets").delete(asset.id);
-                toast.success("Asset deleted");
-                router.push("/admin");
-              } catch (err) {
-                toast.error(err?.message || "Delete failed");
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">
+            {asset ? "Asset details" : "New asset"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="asset-name">Name</Label>
+            <Input
+              id="asset-name"
+              required
+              type="text"
+              value={form.name}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, name: e.target.value }))
               }
-            }}
-            className="text-xs text-rose-400/70 hover:text-rose-300"
-          >
-            Delete asset
-          </button>
-        )}
-      </div>
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>Group</Label>
+            <Select
+              value={form.group}
+              onValueChange={(v) => setForm((f) => ({ ...f, group: v }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select group…">
+                  {groups.find((g) => g.id === form.group)?.name}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {groups.map((g) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>Gender</Label>
+            <Select
+              value={form.gender || ANY_GENDER}
+              onValueChange={(v) =>
+                setForm((f) => ({ ...f, gender: v === ANY_GENDER ? "" : v }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue>
+                  {form.gender
+                    ? genders.find((g) => g.id === form.gender)?.name
+                    : "Any"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ANY_GENDER}>Any</SelectItem>
+                {genders.map((g) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="asset-file">
+              Model file (.glb){!asset && " · required"}
+            </Label>
+            <Input
+              id="asset-file"
+              type="file"
+              accept=".glb,.gltf,model/gltf-binary"
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  modelFile: e.target.files?.[0] || null,
+                }))
+              }
+            />
+            {asset && !form.modelFile && (
+              <span className="text-[11px] text-muted-foreground">
+                Leave empty to keep the current file.
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label>Thumbnail</Label>
+            <div className="flex items-center gap-3">
+              <div
+                className="h-20 w-20 overflow-hidden rounded-lg border border-border"
+                style={{
+                  backgroundColor: form.thumbnailBg || "rgba(0,0,0,0.3)",
+                }}
+              >
+                {thumbnailUrl ? (
+                  <img
+                    src={thumbnailUrl}
+                    alt="thumbnail"
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">
+                    none
+                  </div>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={snapshot}
+                disabled={!modelUrl || capturing}
+              >
+                {capturing ? (
+                  <Spinner className="h-3.5 w-3.5" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
+                Take snapshot
+              </Button>
+            </div>
+            <span className="text-[11px] text-muted-foreground">
+              Frame the model in the preview, then snapshot to set the
+              thumbnail.
+            </span>
+
+            <div className="mt-1 flex flex-col gap-1.5">
+              <Label className="text-xs text-muted-foreground">
+                Background
+              </Label>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, thumbnailBg: "" }))}
+                  title="No background"
+                  aria-label="No background"
+                  className={cn(
+                    "relative h-7 w-7 overflow-hidden rounded-md ring-1 transition",
+                    form.thumbnailBg === ""
+                      ? "ring-2 ring-foreground"
+                      : "ring-border hover:ring-foreground/40",
+                  )}
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(45deg, rgba(255,255,255,0.18) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.18) 75%), linear-gradient(45deg, rgba(255,255,255,0.18) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.18) 75%)",
+                    backgroundSize: "8px 8px",
+                    backgroundPosition: "0 0, 4px 4px",
+                    backgroundColor: "#1a1a22",
+                  }}
+                />
+                {THUMBNAIL_BG_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() =>
+                      setForm((f) => ({ ...f, thumbnailBg: color }))
+                    }
+                    title={color}
+                    aria-label={`Background ${color}`}
+                    className={cn(
+                      "h-7 w-7 rounded-md ring-1 transition",
+                      form.thumbnailBg === color
+                        ? "ring-2 ring-foreground"
+                        : "ring-border hover:ring-foreground/40",
+                    )}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {canBeDefault && (
+            <label className="flex cursor-pointer items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm">
+              <Checkbox
+                checked={isDefault}
+                onCheckedChange={(v) => setIsDefault(Boolean(v))}
+              />
+              <Star className="h-3.5 w-3.5 text-muted-foreground" />
+              <span>
+                Default for {selectedGenderName} ·{" "}
+                <span className="text-muted-foreground">
+                  {selectedGroup?.name}
+                </span>
+              </span>
+            </label>
+          )}
+
+          <Button type="submit" disabled={busy} className="mt-2">
+            {busy && <Spinner />}
+            <span>{asset ? "Save changes" : "Create asset"}</span>
+          </Button>
+
+          {asset && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                if (!confirm(`Delete "${asset.name}"?`)) return;
+                try {
+                  await pb
+                    .collection("CharacterStudioAssets")
+                    .delete(asset.id);
+                  toast.success("Asset deleted");
+                  router.push("/admin");
+                } catch (err) {
+                  toast.error(err?.message || "Delete failed");
+                }
+              }}
+              className="self-start text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete asset
+            </Button>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold tracking-tight">Preview</h2>
-        <AssetPreview ref={previewRef} url={modelUrl} height={480} />
-        <p className="text-[11px] text-white/40">
-          Drag to rotate, scroll to zoom. The snapshot uses the current
-          camera angle.
+        <AssetPreview
+          ref={previewRef}
+          url={modelUrl}
+          height={480}
+          backgroundColor={form.thumbnailBg || null}
+          onMorphsDetected={setDetectedMorphs}
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Drag to rotate, scroll to zoom. The snapshot uses the current camera
+          angle.
         </p>
+        {modelUrl && <BlendshapeSection morphs={detectedMorphs} />}
       </div>
     </form>
   );
