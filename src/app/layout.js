@@ -1,5 +1,6 @@
 import { Inter } from "next/font/google";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import { ToastProvider } from "@/components/ui/primitives/Toast";
 import "./globals.css";
 
 const inter = Inter({
@@ -21,7 +22,7 @@ export default function RootLayout({ children }) {
           skipDelayDuration={300}
           disableHoverableContent
         >
-          {children}
+          <ToastProvider>{children}</ToastProvider>
         </Tooltip.Provider>
       </body>
     </html>

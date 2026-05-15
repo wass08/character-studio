@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "motion/react";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 
@@ -8,6 +9,15 @@ const LoadingScreen = () => {
   const setIntroFinished = useConfiguratorStore(
     (state) => state.setIntroFinished,
   );
+
+  // Safety net: even if the motion onAnimationComplete callback doesn't fire
+  // (it skips when the animation target equals the initial), make sure the
+  // intro screen always hands off once loading clears.
+  useEffect(() => {
+    if (loading) return;
+    const t = setTimeout(() => setIntroFinished(true), 1300);
+    return () => clearTimeout(t);
+  }, [loading, setIntroFinished]);
 
   return (
     <motion.div

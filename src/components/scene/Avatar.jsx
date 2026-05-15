@@ -171,9 +171,10 @@ export default function Model(props) {
 
           {Object.keys(customization).map((key) => {
             const asset = customization[key]?.asset;
-            if (!asset?.url) return null;
+            if (!asset) return null;
 
-            const url = pb.files.getURL(asset, asset.url);
+            const url = asset.r2Url || (asset.url ? pb.files.getURL(asset, asset.url) : null);
+            if (!url) return null;
             const isImage = url.match(/\.(png|jpg|jpeg)$/i);
 
             if (isImage) return null;

@@ -28,8 +28,9 @@ export const SkinManager = () => {
   const overlayUrls = Object.values(customization)
     .map((item) => {
       const asset = item.asset;
-      if (!asset || !asset.url) return null;
-      const url = pb.files.getURL(asset, asset.url);
+      if (!asset) return null;
+      const url = asset.r2Url || (asset.url ? pb.files.getURL(asset, asset.url) : null);
+      if (!url) return null;
       return url.match(/\.(png|jpg|jpeg|webp)$/i) ? url : null;
     })
     .filter(Boolean);
