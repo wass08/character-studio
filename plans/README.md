@@ -106,12 +106,14 @@ Living plans, in current priority order. Update `status`, `priority`, and `last_
 
 | Order | Plan | Status | Priority | Notes |
 |---:|---|---|---|---|
-| 1 | [Hub launch](app-hub-launch.md) | implemented | p0 | Landing hub + play surfaces + character pages shipped on `feat/hub`. |
+| 1 | [Beta production](app-beta-production.md) | in_progress | p0 | Charter — characters-first studio. Sub-plans materialise via `start-plan` as workstreams are picked up. |
+| 1.1 | [Nav + positioning + Mii-wall](app-nav-and-positioning.md) | planned | p0 | First sub-plan of the beta charter. Locks vocabulary; blocks the renames in shadcn/mobile work. |
 
 ## Reference and follow-up plans
 
 | Plan | Status | Archive | Notes |
 |---|---|---|---|
+| [Hub launch](app-hub-launch.md) | implemented | active | Implementation record for `feat/hub` (commit `458ef16`). Kept active as the worked example of the wiki-sync contract. |
 | [To-dos](meta-todos.md) | backlog | active | Parking lot for ideas out of scope for current work. |
 
 ## How plans fit with the wiki
