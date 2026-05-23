@@ -132,6 +132,30 @@ export const useConfiguratorStore = create(
       isDirty: true,
     }));
   },
+  // Ephemeral viseme update from the lipsync driver. Zeroes every viseme_*
+  // key and sets `activeKey` to `intensity` in one shot — avoids 15 separate
+  // re-renders per viseme change and never marks the character dirty.
+  setVisemes: (activeKey, intensity = 1) =>
+    set((state) => {
+      const next = { ...state.morphValues };
+      let changed = false;
+      Object.keys(next).forEach((k) => {
+        if (k.startsWith("viseme")) {
+          const target = k === activeKey ? intensity : 0;
+          if (next[k] !== target) {
+            next[k] = target;
+            changed = true;
+          }
+        }
+      });
+      // Make sure the active key exists even if the avatar's morph list
+      // hadn't been touched yet.
+      if (activeKey && !(activeKey in next)) {
+        next[activeKey] = intensity;
+        changed = true;
+      }
+      return changed ? { morphValues: next } : {};
+    }),
   registerMorphs: (categoryName, keys) =>
     set((state) => ({
       detectedMorphsByCategory: {
@@ -534,7 +558,13 @@ export const useConfiguratorStore = create(
     {
       name: "character-studio-prefs",
       version: 1,
-      partialize: (state) => ({ exportSettings: state.exportSettings }),
+      partialize: (state) => ({
+        exportSettings: state.exportSettings,
+        // Keep the user's active character across reloads and route changes
+        // so the chip + experiences don't reset to "No character" on refresh.
+        currentCharacterId: state.currentCharacterId,
+        currentCharacterName: state.currentCharacterName,
+      }),
       migrate: (persisted, version) => {
         if (!persisted?.exportSettings) return persisted;
         if (version < 1 && "draco" in persisted.exportSettings) {

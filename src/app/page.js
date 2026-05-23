@@ -1,12 +1,23 @@
-import Scene from "@/components/scene/Scene";
-import UI from "@/components/ui/UI";
+import HubHeader from "@/components/shell/HubHeader";
+import HubHero from "@/components/hub/HubHero";
+import FeaturedRow from "@/components/hub/FeaturedRow";
+import ExperiencesGrid from "@/components/hub/ExperiencesGrid";
+import LivingWall from "@/components/hub/LivingWall";
+
+export const metadata = {
+  title: "Character Studio",
+  description: "Build, play with, and share characters.",
+};
 
 export default function Home() {
   return (
-    <div className="h-screen w-full bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex h-screen w-full flex-col bg-white dark:bg-black">
-        <Scene />
-        <UI />
+    <div className="min-h-screen hub-bg text-white">
+      <HubHeader />
+      <main>
+        <HubHero />
+        <FeaturedRow />
+        <ExperiencesGrid />
+        <LivingWall />
       </main>
     </div>
   );

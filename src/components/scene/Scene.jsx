@@ -29,7 +29,7 @@ const composeWithLogo = (sourceCanvas) =>
     logo.src = "/images/wawasensei-white.png";
   });
 
-const SceneContent = () => {
+const SceneContent = ({ children }) => {
   const gender = useConfiguratorStore((state) => state.gender);
 
   const gl = useThree((state) => state.gl);
@@ -146,14 +146,15 @@ const SceneContent = () => {
       <directionalLight position={[0.8, 2, -4]} intensity={0.8} color="#fff2e7" />
 
       <Avatar key={gender} />
+      {children}
     </>
   );
 };
 
-const Scene = () => {
+const Scene = ({ children }) => {
   return (
     <Canvas shadows camera={{ fov: 40 }} gl={{ preserveDrawingBuffer: true }}>
-      <SceneContent />
+      <SceneContent>{children}</SceneContent>
     </Canvas>
   );
 };

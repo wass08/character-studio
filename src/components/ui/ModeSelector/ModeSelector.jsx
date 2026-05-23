@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { motion } from "motion/react";
 import { useConfiguratorStore, UI_MODES } from "@/stores/useConfiguratorStore";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -9,10 +10,10 @@ import { Tooltip } from "../primitives/Tooltip";
 
 const PILL_SPRING = { type: "spring", stiffness: 380, damping: 32 };
 
+// Modes that stay inside the editor. Photo / My-Characters moved to
+// their own routes (/play/playground, /me).
 const MODES = [
   { id: UI_MODES.CUSTOMIZE, label: "Customize" },
-  { id: UI_MODES.PHOTO, label: "Photobooth" },
-  { id: UI_MODES.MY_CHARACTERS, label: "My Characters", requiresAuth: true },
   { id: UI_MODES.EXPORT, label: "Export" },
 ];
 
@@ -29,6 +30,13 @@ const ModeSelector = () => {
         "max-md:top-20 max-md:right-5 max-md:left-auto max-md:translate-x-0 max-md:rounded-2xl",
       )}
     >
+      <Link
+        href="/"
+        className="inline-flex items-center px-3 py-2 text-xs font-medium tracking-tight text-white/55 transition-colors hover:text-white/90"
+        aria-label="Back to hub"
+      >
+        ← Hub
+      </Link>
       {MODES.map((m) => {
         const active = mode === m.id;
         const disabled = m.requiresAuth && !isLoggedIn;
