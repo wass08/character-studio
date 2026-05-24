@@ -1,15 +1,27 @@
 "use client";
-import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { Environment } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Leva } from "leva";
-import { useEffect } from "react";
+import { type ReactNode, useEffect } from "react";
 import * as THREE from "three";
+import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import Avatar from "./Avatar";
 import Backdrop from "./Backdrop";
 import { CameraManager } from "./CameraManager";
 
-const composeWithLogo = (sourceCanvas) =>
+type ScreenshotFn = () => Promise<void>;
+type CaptureFn = () => Promise<Blob | null>;
+
+type StoreSlice = {
+  gender: string;
+  setScreenshot: (fn: ScreenshotFn) => void;
+  setCapturePhoto: (fn: CaptureFn) => void;
+  setCaptureFaceThumbnail: (fn: CaptureFn) => void;
+};
+
+const composeWithLogo = (
+  sourceCanvas: HTMLCanvasElement,
+): Promise<Blob | null> =>
   new Promise((resolve) => {
     const out = document.createElement("canvas");
     out.width = sourceCanvas.width;
@@ -29,24 +41,25 @@ const composeWithLogo = (sourceCanvas) =>
     logo.src = "/images/wawasensei-white.png";
   });
 
-const SceneContent = ({ children }) => {
-  const gender = useConfiguratorStore((state) => state.gender);
+const SceneContent = ({ children }: { children?: ReactNode }) => {
+  const gender = useConfiguratorStore((state: StoreSlice) => state.gender);
 
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
-  const camera = useThree((state) => state.camera);
-  const setScreenshot = useConfiguratorStore((state) => state.setScreenshot);
+  const setScreenshot = useConfiguratorStore(
+    (state: StoreSlice) => state.setScreenshot,
+  );
   const setCapturePhoto = useConfiguratorStore(
-    (state) => state.setCapturePhoto,
+    (state: StoreSlice) => state.setCapturePhoto,
   );
   const setCaptureFaceThumbnail = useConfiguratorStore(
-    (state) => state.setCaptureFaceThumbnail,
+    (state: StoreSlice) => state.setCaptureFaceThumbnail,
   );
 
   useEffect(() => {
     // Triggers a PNG download of the current view with the logo overlay.
-    const screenshot = async () => {
-      const blob = await composeWithLogo(gl.domElement);
+    const screenshot: ScreenshotFn = async () => {
+      const blob = await composeWithLogo(gl.domElement as HTMLCanvasElement);
       if (!blob) return;
       const link = document.createElement("a");
       const date = new Date();
@@ -61,7 +74,8 @@ const SceneContent = ({ children }) => {
     };
 
     // Same image, returned as a Blob for uploading.
-    const capturePhoto = async () => composeWithLogo(gl.domElement);
+    const capturePhoto: CaptureFn = async () =>
+      composeWithLogo(gl.domElement as HTMLCanvasElement);
 
     setScreenshot(screenshot);
     setCapturePhoto(capturePhoto);
@@ -74,7 +88,7 @@ const SceneContent = ({ children }) => {
     // multisample render targets, which need a manual blit-resolve
     // path that varies by three.js version. Contract documented in
     // wiki/architecture/data-model.md `## Thumbnail capture`.
-    const captureFaceThumbnail = async () => {
+    const captureFaceThumbnail: CaptureFn = async () => {
       const head = scene.getObjectByName("DEF-head");
       if (!head) return null;
       const headPos = new THREE.Vector3();
@@ -125,15 +139,17 @@ const SceneContent = ({ children }) => {
       }
       bigCtx.putImageData(imageData, 0, 0);
 
-      const out = document.createElement("canvas");
-      out.width = OUT;
-      out.height = OUT;
-      const outCtx = out.getContext("2d");
+      const outCanvas = document.createElement("canvas");
+      outCanvas.width = OUT;
+      outCanvas.height = OUT;
+      const outCtx = outCanvas.getContext("2d");
       if (!outCtx) return null;
       outCtx.imageSmoothingEnabled = true;
       outCtx.imageSmoothingQuality = "high";
       outCtx.drawImage(big, 0, 0, OUT, OUT);
-      return new Promise((resolve) => out.toBlob(resolve, "image/png"));
+      return new Promise<Blob | null>((resolve) =>
+        outCanvas.toBlob(resolve, "image/png"),
+      );
     };
     setCaptureFaceThumbnail(captureFaceThumbnail);
   }, [gl, scene, setCaptureFaceThumbnail]);
@@ -151,9 +167,7 @@ const SceneContent = ({ children }) => {
       />
 
       <ambientLight intensity={0.55} />
-      <hemisphereLight
-        args={["#fff4ec", "#3a3a4a", 0.55]}
-      />
+      <hemisphereLight args={["#fff4ec", "#3a3a4a", 0.55]} />
       <directionalLight
         position={[-3, 5, -3]}
         intensity={1.2}
@@ -164,9 +178,17 @@ const SceneContent = ({ children }) => {
         color="#ffebe3"
       />
       <Backdrop />
-      <directionalLight position={[-5, 5, 5]} intensity={1.5} color="#ffebe3" />
+      <directionalLight
+        position={[-5, 5, 5]}
+        intensity={1.5}
+        color="#ffebe3"
+      />
       {/* Camera-facing fill so faces aren't lit only from behind. */}
-      <directionalLight position={[0.8, 2, -4]} intensity={0.8} color="#fff2e7" />
+      <directionalLight
+        position={[0.8, 2, -4]}
+        intensity={0.8}
+        color="#fff2e7"
+      />
 
       <Avatar key={gender} />
       {children}
@@ -174,7 +196,7 @@ const SceneContent = ({ children }) => {
   );
 };
 
-const Scene = ({ children }) => {
+const Scene = ({ children }: { children?: ReactNode }) => {
   return (
     <Canvas shadows camera={{ fov: 40 }} gl={{ preserveDrawingBuffer: true }}>
       <SceneContent>{children}</SceneContent>

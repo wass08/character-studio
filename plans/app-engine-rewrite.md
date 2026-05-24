@@ -172,11 +172,14 @@ Shipped 2026-05-23. Typed the store slice (skin material + customization map), t
 
 Shipped 2026-05-23. Typed the `CAMERA_CONFIGS` record + `Triplet` helper for `[x,y,z]` constants + the store slice (currentCategory, height, mode). `controls` ref typed via the `CameraControls` class. `useControls` callbacks now narrow the optional ref + pass a `THREE.Vector3()` to `getPosition`/`getTarget` (was untyped). No behavior change.
 
-### Phases 4a, 5a, 7a, 8a (remaining TS conversions)
+### Phase 7a — Scene TS ✅
 
-Open. Each is heavier and earns its own session:
+Shipped 2026-05-23. Typed the `composeWithLogo` signature (`HTMLCanvasElement → Promise<Blob | null>`) and the three store-setter callbacks (`ScreenshotFn`, `CaptureFn`) so the engine surface declares its IO contract. Typed `SceneContent`'s `children` as `ReactNode`. Promise + canvas + RenderTarget surfaces typed inline — `gl.domElement` cast to `HTMLCanvasElement` (R3F's `WebGLRenderer.domElement` is typed as the broader DOM `HTMLCanvasElement | OffscreenCanvas` union). Captured the explicit `Promise<Blob | null>` return so `toBlob`'s callback type narrows correctly. No behavior change.
 
-- **Phase 7a (Scene.tsx)** — 185 LOC, 5 store refs. Owns the screenshot + thumbnail capture; the captureFaceThumbnail rig from app-thumbnails lives here. Typing the WebGLRenderer.readRenderTargetPixels + RenderTarget surfaces needs care.
+### Phases 4a, 5a, 8a (remaining)
+
+Heavier, deferred for focused sessions:
+
 - **Phase 4a (Asset.tsx)** — 131 LOC, 8 store refs. The store coupling is heavy; the natural moment to introduce CharacterContext for the (b) decoupling work. Doing (a) without (b) here is possible but the result is a tangle.
 - **Phase 5a (Avatar.tsx)** — 201 LOC, 6 store refs, plus the worker bridge to exportWorker. Same CharacterContext question.
 - **Phase 8a (exportWorker.ts)** — 432 LOC, 0 store refs. Skipped on first pass: the worker is loaded via `new URL("./exportWorker.js", import.meta.url)` in Avatar.jsx; Next.js's worker bundling is sensitive to the literal extension. Conversion needs either a careful URL update in Avatar + verification that turbopack still emits the worker chunk, or a defer-until-Avatar-converts strategy. Low value (no store, no React, library code) — leave for last.
