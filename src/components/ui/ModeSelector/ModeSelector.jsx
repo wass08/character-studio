@@ -27,16 +27,23 @@ const ModeSelector = () => {
   return (
     <div
       className={cn(
-        "glass-panel absolute top-5 left-1/2 z-30 flex -translate-x-1/2 flex-row items-center gap-1 rounded-full p-1.5",
-        "max-md:top-20 max-md:right-5 max-md:left-auto max-md:translate-x-0 max-md:rounded-2xl",
+        // Mobile-first layout: pill anchored top-right under the
+        // TopActions row. Tailwind v4 doesn't always let `max-md:`
+        // overrides win against base positioning utilities when both
+        // `left` and `right` get set, so the desktop layout overrides
+        // via `md:` instead. See wiki/architecture/app-structure.md
+        // ## Responsive conventions for the rule.
+        "glass-panel absolute top-20 right-5 z-30 flex flex-row items-center gap-1 rounded-2xl p-1.5",
+        "md:top-5 md:right-auto md:left-1/2 md:-translate-x-1/2 md:rounded-full",
       )}
     >
       <Link
         href="/studio"
-        className="inline-flex items-center px-3 py-2 text-xs font-medium tracking-tight text-white/55 transition-colors hover:text-white/90"
+        className="inline-flex items-center px-2 py-2 text-xs font-medium tracking-tight text-white/55 transition-colors hover:text-white/90 md:px-3"
         aria-label="Back to studio"
       >
-        ← Studio
+        <span className="md:hidden">←</span>
+        <span className="hidden md:inline">← Studio</span>
       </Link>
       {MODES.map((m) => {
         const active = mode === m.id;
@@ -53,7 +60,7 @@ const ModeSelector = () => {
             type="button"
             variant="ghost"
             onClick={onClick}
-            className={`relative h-auto rounded-full px-5 py-2 text-xs font-medium tracking-tight transition-colors hover:bg-transparent ${
+            className={`relative h-auto rounded-full px-3 py-1.5 text-xs font-medium tracking-tight transition-colors hover:bg-transparent md:px-5 md:py-2 ${
               active
                 ? "text-white"
                 : disabled
@@ -65,7 +72,7 @@ const ModeSelector = () => {
               <motion.div
                 layoutId="active-mode-pill"
                 transition={PILL_SPRING}
-                className="absolute inset-0 rounded-full bg-white/15 ring-1 ring-white/25 shadow-[0_0_18px_rgba(255,255,255,0.15)] max-md:rounded-xl"
+                className="absolute inset-0 rounded-xl bg-white/15 ring-1 ring-white/25 shadow-[0_0_18px_rgba(255,255,255,0.15)] md:rounded-full"
               />
             )}
             <span className="relative">{m.label}</span>

@@ -111,6 +111,7 @@ Living plans, in current priority order. Update `status`, `priority`, and `last_
 | 1.2 | [shadcn-everywhere](app-shadcn-everywhere.md) | **implemented** | p1 | All 5 phases shipped. Zero direct Radix imports outside `src/components/ui/`, zero hand-rolled buttons in JSX, shims for Dialog/Tooltip/Toast/IconButton over shadcn, wiki `## UI primitives` section landed. |
 | 1.3 | [Engine rewrite — TS + WebGPU/TSL](app-engine-rewrite.md) | draft | p1 | Big foundation. Refactors the singleton-store coupling on the way through, which unblocks plaza polish. Phase 0 (discovery) writes the success criteria. |
 | 1.4 | [Thumbnails](app-thumbnails.md) | **implemented** | p2 | Phase 1: 512² stored, 1024² supersampled, head+shoulders framing. Phases 2-3 deferred behind engine rewrite. |
+| 1.5 | [Editor mobile](app-editor-mobile.md) | **implemented** | p2 | ModeSelector mobile-first refactor; tighter mobile padding; ## Responsive conventions wiki section locks the mobile-first rule for positioning utilities. |
 
 ## Reference and follow-up plans
 

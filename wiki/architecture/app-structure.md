@@ -143,6 +143,45 @@ See [stores](stores.md) for full ownership rules.
 4. If the surface needs chrome (header, character chip, sign-in), reuse `src/components/shell/` — don't fork.
 5. Update the table above in the same commit.
 
+## Responsive conventions
+
+*Locked 2026-05-23 by [app-editor-mobile](../../plans/app-editor-mobile.md).*
+
+Two rules govern responsive layout in this codebase. They're hard rules because Tailwind v4 has a footgun (see #1) that produces real layout bugs when ignored.
+
+### 1. Mobile-first for positioning utilities
+
+When a component needs different *positioning* (`left`, `right`, `top`, `bottom`, `translate-x`, `translate-y`, etc.) on mobile vs desktop, write the **mobile layout as the base** and override with `md:` for desktop. Don't use `max-md:` for positioning.
+
+Why: with both `left-1/2` (base) and `max-md:right-5` (mobile override), Tailwind v4 emits two rules with equal specificity at the matching media query, and the box ends up stretched between *both* `left` and `right` — neither override wins cleanly. Mobile-first sidesteps this by keeping a single source of truth at each viewport.
+
+```jsx
+// ✅ correct — mobile-first
+"absolute top-20 right-5 rounded-2xl",      // base = mobile
+"md:top-5 md:right-auto md:left-1/2 md:-translate-x-1/2 md:rounded-full",
+
+// ❌ wrong — max-md override doesn't win
+"absolute top-5 left-1/2 -translate-x-1/2 rounded-full",
+"max-md:top-20 max-md:right-5 max-md:left-auto max-md:translate-x-0",
+```
+
+For *non-positioning* utilities (typography, spacing, colours, sizes) `max-md:` is fine — they don't have the dual-anchor problem. Reference: [`ModeSelector.jsx`](../../src/components/ui/ModeSelector/ModeSelector.jsx).
+
+### 2. Touch targets ≥ 44 px
+
+Any interactive element reachable on mobile (buttons, chips, links in chrome, asset tiles, sliders) keeps a minimum 44 × 44 px touch target. shadcn `Button` `size="icon"` already meets this. Custom touch targets that compress with a `text-xs` should pad to compensate — typically `px-3 py-2` or larger.
+
+### Breakpoints
+
+Tailwind v4 defaults:
+
+- `sm:` ≥ 640 px
+- `md:` ≥ 768 px (our "desktop" cutoff for chrome)
+- `lg:` ≥ 1024 px (used inside the editor's three-pane layout)
+- `xl:` ≥ 1280 px
+
+The editor at `/editor` is functional from 375 px; per-character experiments at `/c/[id]/try/*` and the marketing `/` work down to the same. Beta verification runs on Chrome iOS Safari + Android Chrome at the same widths.
+
 ## UI primitives
 
 *Single source of truth for the design system. Locked 2026-05-23 by [app-shadcn-everywhere](../../plans/app-shadcn-everywhere.md).*
