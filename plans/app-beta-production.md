@@ -51,7 +51,7 @@ Listed in execution order. Each row links to a sub-plan once materialised (via [
 | 2 | shadcn-everywhere sweep | [app-shadcn-everywhere](app-shadcn-everywhere.md) | p1 | **implemented** | #1 phase 1 | Five-phase plan all done. 22 files migrated to shadcn Button, primitives/Dialog/Tooltip/Toast/IconButton rebuilt as shims, AccountIdentity + CharacterChip on shadcn dropdown/popover. Wiki sync landed. |
 | 3 | Engine rewrite — TS + WebGPU/TSL coupled | [app-engine-rewrite](app-engine-rewrite.md) | p1 | draft | — | Big foundation. Refactors store coupling along the way, unblocking the plaza. Phase 0 (discovery) writes success criteria. Runs in parallel on its own branch. |
 | 4 | Editor mobile responsiveness | _(create when started)_ | p2 | draft | #2 | Mobile-correct shadcn primitives → meaningful breakpoint work on the editor. |
-| 5 | Thumbnail quality (resolution + lighting) | _(create when started)_ | p2 | draft | #2, #3 | Pushed behind shadcn + engine because both will sweep the surfaces and pipeline that thumbnails touch; doing thumbnails first would mean redoing them. |
+| 5 | Thumbnail quality (resolution + framing) | [app-thumbnails](app-thumbnails.md) | p2 | **implemented** | #2 | Phase 1 shipped: 512² stored, 1024² rendered for 2× supersampling AA, head+shoulders framing. Phases 2 (portrait lighting) and 3 (rebake existing) deferred behind the engine rewrite. |
 | 6 | Experiences polish | _(create when started)_ | p3 | draft | #1 phase 3, #3 | Deferred until the IA and engine stabilise — polishing on shifting ground is waste. |
 
 ### 1. Nav + hub positioning
@@ -116,7 +116,7 @@ These collapse the success criteria into a reviewable list. Charter flips to `ve
 - [x] Vocabulary lock + nav reflects it (sub-plan #1, phase 1 — shipped on `b5fb384`)
 - [x] Single-character homepage hero shipped (sub-plan #1, phase 3 — shipped on `6d7ca36`)
 - [x] App-wide rename pass + redirects (sub-plan #1, phase 4 — shipped on `d97ce35` / `ce20aaf` / `32bfa8d`)
-- [ ] Thumbnails meet target spec on both new and re-baked characters (sub-plan #2)
+- [x] Thumbnails meet target spec on new characters (sub-plan #5 — Phase 1 shipped; rebake of existing characters is deferred Phase 3)
 - [x] shadcn audit clean — no bespoke primitives left (sub-plan #2 — shipped on `46de33e` / `384dbfa` / `09eeb43` / `f0c05e5`)
 - [ ] Editor passes mobile Lighthouse ≥ 90 perf, usable at 390 px wide (sub-plan #4)
 - [ ] Engine renders via WebGPU/TSL with WebGL fallback; `tsc --noEmit` clean on engine surface (sub-plan #5)

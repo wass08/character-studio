@@ -68,21 +68,32 @@ const SceneContent = ({ children }) => {
   }, [gl, setScreenshot, setCapturePhoto]);
 
   useEffect(() => {
-    // Renders a 256×256 close-up of the avatar's head off-screen.
+    // Renders a 1024×1024 head-and-shoulders portrait off-screen then
+    // downsamples to 512×512 via canvas — cheap 2× supersampling AA
+    // for silhouettes (hair, ears). The portable alternative to
+    // multisample render targets, which need a manual blit-resolve
+    // path that varies by three.js version. Contract documented in
+    // wiki/architecture/data-model.md `## Thumbnail capture`.
     const captureFaceThumbnail = async () => {
       const head = scene.getObjectByName("DEF-head");
       if (!head) return null;
       const headPos = new THREE.Vector3();
       head.getWorldPosition(headPos);
 
-      const SIZE = 256;
+      const OUT = 512; // stored size
+      const SS = 2; // supersample factor
+      const SIZE = OUT * SS;
       const rt = new THREE.WebGLRenderTarget(SIZE, SIZE, {
         format: THREE.RGBAFormat,
         type: THREE.UnsignedByteType,
       });
-      const cam = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
-      cam.position.set(headPos.x, headPos.y + 0.04, headPos.z - 0.95);
-      cam.lookAt(headPos.x, headPos.y - 0.02, headPos.z);
+      // Head + shoulders framing: camera slightly above and 1.55m
+      // behind the head, looking a bit below so the upper torso enters
+      // the bottom third of the frame. fov 30 gives ~0.83m of visible
+      // height at the head plane — enough for hair top + collarbone.
+      const cam = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+      cam.position.set(headPos.x, headPos.y + 0.08, headPos.z - 1.55);
+      cam.lookAt(headPos.x, headPos.y - 0.22, headPos.z);
 
       const prevRT = gl.getRenderTarget();
       gl.setRenderTarget(rt);
@@ -95,12 +106,15 @@ const SceneContent = ({ children }) => {
       rt.dispose();
 
       // readRenderTargetPixels returns pixels with Y flipped vs. canvas.
-      const canvas = document.createElement("canvas");
-      canvas.width = SIZE;
-      canvas.height = SIZE;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return null;
-      const imageData = ctx.createImageData(SIZE, SIZE);
+      // First copy the raw render into an intermediate canvas at SIZE,
+      // then drawImage-downsample into the OUT canvas — the browser's
+      // 2D scaler does a high-quality box filter that's our SS step.
+      const big = document.createElement("canvas");
+      big.width = SIZE;
+      big.height = SIZE;
+      const bigCtx = big.getContext("2d");
+      if (!bigCtx) return null;
+      const imageData = bigCtx.createImageData(SIZE, SIZE);
       for (let y = 0; y < SIZE; y++) {
         const srcRow = (SIZE - 1 - y) * SIZE * 4;
         const dstRow = y * SIZE * 4;
@@ -109,8 +123,17 @@ const SceneContent = ({ children }) => {
           dstRow,
         );
       }
-      ctx.putImageData(imageData, 0, 0);
-      return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      bigCtx.putImageData(imageData, 0, 0);
+
+      const out = document.createElement("canvas");
+      out.width = OUT;
+      out.height = OUT;
+      const outCtx = out.getContext("2d");
+      if (!outCtx) return null;
+      outCtx.imageSmoothingEnabled = true;
+      outCtx.imageSmoothingQuality = "high";
+      outCtx.drawImage(big, 0, 0, OUT, OUT);
+      return new Promise((resolve) => out.toBlob(resolve, "image/png"));
     };
     setCaptureFaceThumbnail(captureFaceThumbnail);
   }, [gl, scene, setCaptureFaceThumbnail]);

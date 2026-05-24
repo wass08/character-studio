@@ -33,7 +33,7 @@ Owns a saved character (config blob, thumbnail, ownership, flags).
 | `user` | relation → `users` | Owner. Required for create. |
 | `name` | string | Display name shown on chips and `/c/:id`. |
 | `config` | json | The full configurator state — gender, asset picks, colours, animations. Read into `useConfiguratorStore` on load. |
-| `thumbnail` | file | Square PNG generated client-side; rendered on hub cards and the chip. |
+| `thumbnail` | file | Square 512² PNG generated client-side via the thumbnail rig (see below); rendered on homepage cards, `/studio`, and the character chip. |
 | `featured` | bool | Hand-curated for the FeaturedRow. |
 | `hidden` | bool | Owner-hides; excluded from list/view rules below. |
 
@@ -41,6 +41,24 @@ Rules (set by the script):
 
 - `listRule` / `viewRule`: `hidden != true` — public browsing of the wall and `/c/:id`.
 - create/update/delete: owner-only (default `@request.auth.id = user`).
+
+#### Thumbnail capture
+
+*The rig that bakes `record.thumbnail` on save. Locked 2026-05-23 by [app-thumbnails](../../plans/app-thumbnails.md).*
+
+Lives in [`src/components/scene/Scene.jsx`](../../src/components/scene/Scene.jsx) — the `captureFaceThumbnail` callback installed onto the configurator store via `setCaptureFaceThumbnail`. Called by the save flow.
+
+| Aspect | Value | Why |
+|---|---|---|
+| Stored size | 512×512 PNG | Hits the 256² wall cards and 512² featured cards crisply on high-DPR displays. |
+| Render size | 1024×1024 | 2× supersampling — the browser's 2D `drawImage` downscale acts as a high-quality box filter for cheap AA, portable across three.js versions (avoids the multisample-buffer resolve path). |
+| Framing | Head + shoulders | Camera 1.55 m behind the head bone (`DEF-head`), slightly above (`+0.08`), looking 0.22 m below the head bone. fov 30°. Visible height at the head plane ≈ 0.83 m — enough for hair top + collarbone. |
+| Lighting | Inherits the editor scene's lights | Portrait-specific lights are [Phase 2 of the plan](../../plans/app-thumbnails.md#phase-2--portrait-lighting-deferred-post-engine-rewrite), deferred behind the engine rewrite. |
+| Background | The editor scene's `#222237` clear colour | Same deferral. |
+
+Rebake-existing thumbnails for older characters is [Phase 3](../../plans/app-thumbnails.md#phase-3--rebake-existing-characters-deferred), deferred until the rig has been validated in production.
+
+The capture path itself (`gl.readRenderTargetPixels` → canvas downscale → `toBlob`) will be replaced when the engine rewrite ships WebGPU; the *rig* (camera + framing + lighting decisions above) carries through unchanged.
 
 ### `CharacterStudioVoicePresets`
 
