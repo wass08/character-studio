@@ -1,10 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { LogOut, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { cn } from "@/lib/utils";
 
@@ -39,8 +44,8 @@ const AccountIdentity = () => {
   const display = user?.name || user?.email?.split("@")[0] || "You";
 
   return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <Button
           type="button"
           variant="ghost"
@@ -50,40 +55,38 @@ const AccountIdentity = () => {
         >
           <span className="max-w-[120px] truncate">{display}</span>
         </Button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          align="end"
-          sideOffset={6}
-          className="z-50 w-48 overflow-hidden rounded-xl border border-white/10 bg-zinc-950/95 p-1 text-sm text-white/90 shadow-2xl backdrop-blur-xl"
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        sideOffset={6}
+        className="w-48 overflow-hidden rounded-xl border-white/10 bg-zinc-950/95 p-1 text-sm text-white/90 shadow-2xl backdrop-blur-xl"
+      >
+        <DropdownMenuItem
+          onSelect={() => router.push("/me")}
+          className="cursor-pointer rounded-lg px-3 py-2 text-xs focus:bg-white/[0.06] focus:text-white"
         >
-          <DropdownMenu.Item
-            onSelect={() => router.push("/me")}
-            className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-xs outline-none hover:bg-white/[0.06] focus:bg-white/[0.06]"
+          <User className="h-3.5 w-3.5 text-white/55" />
+          My characters
+        </DropdownMenuItem>
+        {isAdmin && (
+          <DropdownMenuItem
+            onSelect={() => router.push("/admin")}
+            className="cursor-pointer rounded-lg px-3 py-2 text-xs focus:bg-white/[0.06] focus:text-white"
           >
-            <User className="h-3.5 w-3.5 text-white/55" />
-            My characters
-          </DropdownMenu.Item>
-          {isAdmin && (
-            <DropdownMenu.Item
-              onSelect={() => router.push("/admin")}
-              className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-xs outline-none hover:bg-white/[0.06] focus:bg-white/[0.06]"
-            >
-              <Settings className="h-3.5 w-3.5 text-white/55" />
-              Admin
-            </DropdownMenu.Item>
-          )}
-          <div className="my-1 border-t border-white/5" />
-          <DropdownMenu.Item
-            onSelect={logout}
-            className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-xs text-white/75 outline-none hover:bg-white/[0.06] focus:bg-white/[0.06]"
-          >
-            <LogOut className="h-3.5 w-3.5 text-white/55" />
-            Sign out
-          </DropdownMenu.Item>
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+            <Settings className="h-3.5 w-3.5 text-white/55" />
+            Admin
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuSeparator className="my-1 bg-white/5" />
+        <DropdownMenuItem
+          onSelect={logout}
+          className="cursor-pointer rounded-lg px-3 py-2 text-xs text-white/75 focus:bg-white/[0.06] focus:text-white"
+        >
+          <LogOut className="h-3.5 w-3.5 text-white/55" />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

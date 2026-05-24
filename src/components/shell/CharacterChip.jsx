@@ -3,9 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import * as Popover from "@radix-ui/react-popover";
 import { ChevronDown, Plus, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { cn } from "@/lib/utils";
@@ -101,8 +105,8 @@ const CharacterChip = () => {
   };
 
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
-      <Popover.Trigger asChild>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <Button
           type="button"
           variant="ghost"
@@ -127,14 +131,13 @@ const CharacterChip = () => {
           </span>
           <ChevronDown className="h-3 w-3 text-white/55" />
         </Button>
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content
-          side="bottom"
-          align="end"
-          sideOffset={8}
-          className="z-50 w-72 overflow-hidden rounded-xl border border-white/10 bg-zinc-950/95 p-1.5 text-sm text-white/90 shadow-2xl backdrop-blur-xl"
-        >
+      </PopoverTrigger>
+      <PopoverContent
+        side="bottom"
+        align="end"
+        sideOffset={8}
+        className="w-72 overflow-hidden rounded-xl border-white/10 bg-zinc-950/95 p-1.5 text-sm text-white/90 shadow-2xl backdrop-blur-xl"
+      >
           <Link
             href={`/c/${currentCharacterId}`}
             onClick={() => setOpen(false)}
@@ -197,9 +200,8 @@ const CharacterChip = () => {
           >
             See all characters <span className="text-white/40">→</span>
           </Link>
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+      </PopoverContent>
+    </Popover>
   );
 };
 
