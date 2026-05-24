@@ -1,7 +1,7 @@
 ---
 plan_id: app-shadcn-everywhere
 title: shadcn-everywhere — unify the design language
-status: planned
+status: in_progress
 kind: living-plan
 priority: p1
 last_reviewed: 2026-05-23
@@ -38,17 +38,15 @@ Sub-plan of [app-beta-production](app-beta-production.md). Lock the design langu
 
 The hub-launch ([app-hub-launch](app-hub-launch.md)) installed shadcn for the admin shell. The rest of the app is a mix: some shadcn primitives, some hand-rolled (`src/components/ui/primitives/`), some Radix imported directly without the shadcn wrapper. This phase audits and converges.
 
-## Phase 1 — Audit & taxonomy
+## Phase 1 — Audit & taxonomy ✅
 
-Goal: a complete inventory before any migration starts. Each row is a UI primitive (button, dialog, etc.); for each, list every call site, its current implementation, and the matching shadcn target.
+- [x] Survey installed shadcn primitives: read `components.json` and `src/components/ui/` for what's already in.
+- [x] Survey bespoke primitives in `src/components/ui/primitives/` (`Dialog.jsx`, `IconButton.jsx`, `Spinner.jsx`, `Toast.jsx`, `Tooltip.jsx`).
+- [x] Grep for hand-rolled `<button>`, `<select>`, `<dialog>`, `<details>`, native form inputs across `src/components/**` and `src/app/**`.
+- [x] Grep for direct `@radix-ui/react-*` imports outside of shadcn-wrapped files.
+- [x] Output the audit as a table — see [`## Audit`](#audit) below.
 
-- [ ] Survey installed shadcn primitives: read `components.json` and `src/components/ui/` for what's already in.
-- [ ] Survey bespoke primitives in `src/components/ui/primitives/` (`Dialog.jsx`, `IconButton.jsx`, `Spinner.jsx`, `Toast.jsx`, `Tooltip.jsx`). For each, note whether it's a shadcn re-export, a Radix wrap, or fully hand-rolled.
-- [ ] Grep for hand-rolled `<button>`, `<select>`, `<dialog>`, `<details>`, native form inputs across `src/components/**` and `src/app/**`. Capture file:line per occurrence.
-- [ ] Grep for direct `@radix-ui/react-*` imports outside of shadcn-wrapped files — those bypass the design system.
-- [ ] Output the audit as a table in this file under `## Audit` below.
-
-**Owner**: Claude (mechanical but needs judgment on what counts as "bespoke" vs intentional).
+**Owner**: Claude.
 
 ## Phase 2 — Install missing shadcn primitives
 
@@ -86,7 +84,80 @@ After all migrations, validate that the system is internally consistent.
 
 ## Audit
 
-_Filled in phase 1. Each row: primitive · current implementation · target shadcn primitive · call-site count · migration owner._
+*Captured 2026-05-23.*
+
+### Already installed shadcn primitives
+
+`components.json` is New York style, JSX (no TS yet), zinc base, CSS vars, lucide icons. Installed under `src/components/ui/`:
+
+| Primitive | Status |
+|---|---|
+| `badge` | installed, in use |
+| `button` | installed, only 10 call sites (all admin) — bulk of the app still hand-rolls |
+| `card` | installed, in use (admin) |
+| `checkbox` | installed, in use (admin) |
+| `input` | installed, in use (admin) |
+| `label` | installed, in use (admin) |
+| `select` | installed, in use (admin) |
+
+### Bespoke primitives that need to converge on shadcn
+
+Under `src/components/ui/primitives/`:
+
+| File | Implementation | Migration target | Call-site count |
+|---|---|---|---|
+| [Dialog.jsx](../src/components/ui/primitives/Dialog.jsx) | Radix `react-dialog` wrapped with glass-panel styling | shadcn `dialog` (install) | 2 surfaces (AuthDialog, SaveDialog) |
+| [Tooltip.jsx](../src/components/ui/primitives/Tooltip.jsx) | Radix `react-tooltip` wrapped, `label` prop API | shadcn `tooltip` (install); the simple `label` API stays as a thin wrapper around the shadcn primitives | 9 direct call sites + via IconButton |
+| [Toast.jsx](../src/components/ui/primitives/Toast.jsx) | Radix `react-toast` + custom Zustand store, `toast.success/error/default` API | shadcn `sonner` (install) — keep the `toast()` callsite API by exporting a thin shim | 11 call sites |
+| [IconButton.jsx](../src/components/ui/primitives/IconButton.jsx) | `motion.button` + bespoke Tooltip | rebuild on shadcn `Button` (`size="icon"`) + shadcn Tooltip; keep motion animation as a wrapper | many (used across editor chrome) |
+| [Spinner.jsx](../src/components/ui/primitives/Spinner.jsx) | Inline SVG with `animate-spin` | keep — no shadcn equivalent for arbitrary spinners; this is fine as-is (just move out of `primitives/`?) | 5 call sites |
+
+### Radix direct imports outside shadcn wrappers
+
+These bypass the design system and must be replaced with installed shadcn wrappers:
+
+| File:line | Radix package | Migration target |
+|---|---|---|
+| `src/app/layout.js:2` | `react-tooltip` (Provider) | shadcn `TooltipProvider` |
+| `src/components/shell/AccountIdentity.jsx:5` | `react-dropdown-menu` | shadcn `dropdown-menu` (install) |
+| `src/components/shell/CharacterChip.jsx:6` | `react-popover` | shadcn `popover` (install) |
+
+Allowed Radix imports (used *inside* shadcn primitives — fine to keep):
+
+- `src/components/ui/checkbox.jsx`, `select.jsx`, `button.jsx` (Slot), `label.jsx` — these are the shadcn wrappers themselves.
+
+### Hand-rolled HTML primitives
+
+Counted via `rg -c '<button' src/ -g '*.jsx' -g '*.js'`:
+
+| Element | Total | Top callers |
+|---|---|---|
+| `<button>` | **35** across 17 files | AssetsBox (4), MyCharactersPage (4), AuthDialog (3), CharacterChip (3), ShapeKeyControls (2), MyCharactersBox (2), ExportBox (2), AccountIdentity (2), NoCharacterOverlay (2), LipsyncView (2), CharacterPageView (2), AssetForm (2), + 5 singletons |
+| `<motion.button>` | **12** across 10 files | mixed — anywhere we want spring-press animations |
+| `<input>` (native) | **5** | LipsyncView (text), AuthDialog (OTP), HeightSlider (range — keep, no shadcn slider yet), ShapeKeyControls (morph numeric — same), SaveDialog (name) |
+
+### Primitives to install before migration (phase 2)
+
+```bash
+bunx shadcn@latest add dialog tooltip dropdown-menu popover sonner slider
+```
+
+(`switch` and `textarea` and `form` can be added later when first needed; not on the critical path.)
+
+### Migration order (phase 3)
+
+1. **Buttons** — biggest surface (~47 incl. motion). Per-file sweep replacing `<button>`/`<motion.button>` with `<Button>` (variants: `default`/`ghost`/`outline`/`secondary`/`destructive`; sizes: `default`/`sm`/`icon`). Wrap with `motion.div` for press animation where it mattered; or use shadcn `asChild` with the `motion` element.
+2. **Tooltips** — 9+ call sites converge from `primitives/Tooltip` to a thin shim over shadcn `Tooltip*`. Keep the `label` prop ergonomics.
+3. **Dialogs** — 2 surfaces (`AuthDialog`, `SaveDialog`) migrate from `primitives/Dialog` to shadcn `Dialog*`. Glass-panel styling moves into `globals.css` as a utility or onto `DialogContent` className.
+4. **Toasts** — `primitives/Toast` → shadcn `sonner`. Keep the call-site `toast()` API via a wrapper so 11 call sites don't churn.
+5. **Dropdowns + popovers** — Shell components (`AccountIdentity`, `CharacterChip`) move off Radix-direct to shadcn `dropdown-menu` + `popover`.
+6. **IconButton** — last because it depends on Button + Tooltip both being migrated. Rebuild on the new primitives, preserve motion press animation.
+
+### Out of scope for this sub-plan
+
+- Native `<input type="range">` in HeightSlider / ShapeKeyControls — shadcn `slider` exists but the morph-value sliders have custom drag behaviour worth keeping; revisit during mobile pass.
+- Form-level state (`react-hook-form` + shadcn `form`) — not used in the codebase; not adding it preemptively.
+- Switches — not currently in the codebase as a primitive that needs migration; install when first needed.
 
 ## Wiki sync
 
