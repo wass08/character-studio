@@ -1,6 +1,6 @@
 import { Inter } from "next/font/google";
 import GlobalChrome from "@/components/shell/GlobalChrome";
-import { ToastProvider } from "@/components/ui/primitives/Toast";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
@@ -23,10 +23,9 @@ export default function RootLayout({ children }) {
           skipDelayDuration={300}
           disableHoverableContent
         >
-          <ToastProvider>
-            {children}
-            <GlobalChrome />
-          </ToastProvider>
+          {children}
+          <GlobalChrome />
+          <Toaster />
         </TooltipProvider>
       </body>
     </html>
