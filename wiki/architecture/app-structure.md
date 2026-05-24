@@ -94,7 +94,7 @@ The homepage at `/` is a marketing page that sells *making a character*. Same pa
 
 ### Hero stage — which character renders
 
-`HeroStage` mounts a thin R3F canvas (display-mode lighting; no orbit controls / leva / screenshot helpers — those are editor concerns) and renders the editor's existing `<Avatar />` from [`src/components/scene/`](../../src/components/scene/Avatar.jsx). The character it shows is whatever sits in `useConfiguratorStore` at first paint:
+`HeroStage` mounts a thin R3F canvas (display-mode lighting; no orbit controls / leva / screenshot helpers — those are editor concerns) and renders the editor's existing `<Avatar />` from [`src/components/scene/`](../../src/components/scene/Avatar.tsx). The character it shows is whatever sits in `useConfiguratorStore` at first paint:
 
 1. **Signed-in user with a `mainCharacter`** — `AuthBootstrapper` (mounted globally) loads it before HeroStage mounts. Their character is the hero.
 2. **Anonymous user with a persisted `currentCharacterId`** — `AuthBootstrapper` re-fetches it. Their last-viewed character is the hero.

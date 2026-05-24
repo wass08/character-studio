@@ -46,7 +46,7 @@ Rules (set by the script):
 
 *The rig that bakes `record.thumbnail` on save. Locked 2026-05-23 by [app-thumbnails](../../plans/app-thumbnails.md).*
 
-Lives in [`src/components/scene/Scene.jsx`](../../src/components/scene/Scene.jsx) — the `captureFaceThumbnail` callback installed onto the configurator store via `setCaptureFaceThumbnail`. Called by the save flow.
+Lives in [`src/components/scene/Scene.tsx`](../../src/components/scene/Scene.tsx) — the `captureFaceThumbnail` callback installed onto the configurator store via `setCaptureFaceThumbnail`. Called by the save flow.
 
 | Aspect | Value | Why |
 |---|---|---|
@@ -67,7 +67,7 @@ Audio clips used by `/play/lipsync`.
 | Field | Type | Notes |
 |---|---|---|
 | `label` | string | Human label shown in the voice picker. |
-| `audio` | file | MP3/WAV. Played by [LipsyncDriver](../../src/components/scene/LipsyncDriver.jsx) and analysed by [`lib/lipsync.js`](../../src/lib/lipsync.js). |
+| `audio` | file | MP3/WAV. Played by [LipsyncDriver](../../src/components/scene/LipsyncDriver.tsx) and analysed by [`lib/lipsync.ts`](../../src/lib/lipsync.ts). |
 | `gender` | select | `man` / `woman` / `other` — filtered against the active character's gender. |
 
 Public read, admin-only write.
