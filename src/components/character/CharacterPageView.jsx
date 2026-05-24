@@ -25,10 +25,13 @@ import {
 import { useAuthStore } from "@/stores/useAuthStore";
 import { toast } from "@/components/ui/primitives/Toast";
 
+// Experiments live under the character's own page (/c/[id]/try/[slug])
+// per the locked vocabulary — they're features of a character, not a
+// peer section. The href is built per render from `record.id`.
 const TRY_LINKS = [
-  { href: "/play/playground", label: "Playground", icon: Camera },
-  { href: "/play/lipsync", label: "Lipsync", icon: MessagesSquare },
-  { href: "/play/platformer", label: "Platformer", icon: ArrowRight },
+  { slug: "playground", label: "Playground", icon: Camera },
+  { slug: "lipsync", label: "Lipsync", icon: MessagesSquare },
+  { slug: "platformer", label: "Platformer", icon: ArrowRight },
 ];
 
 const CharacterPageView = ({ id }) => {
@@ -122,7 +125,7 @@ const CharacterPageView = ({ id }) => {
             href="/"
             className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-sm font-medium ring-1 ring-white/20 hover:bg-white/15"
           >
-            Back to hub
+            Back home
           </Link>
         </div>
       </main>
@@ -166,7 +169,7 @@ const CharacterPageView = ({ id }) => {
                 <div className="mt-5 flex flex-wrap gap-2">
                   {isOwner ? (
                     <Link
-                      href={`/create/${record.id}`}
+                      href={`/editor/${record.id}`}
                       className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-semibold tracking-tight text-zinc-950 transition-colors hover:bg-white/90"
                     >
                       <Pencil className="h-3.5 w-3.5" /> Edit
@@ -193,15 +196,15 @@ const CharacterPageView = ({ id }) => {
 
                 <div className="mt-5">
                   <div className="mb-2 text-[10px] font-semibold tracking-[0.18em] text-white/45 uppercase">
-                    Try in
+                    Try {record.name} in
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {TRY_LINKS.map((t) => {
                       const Icon = t.icon;
                       return (
                         <Link
-                          key={t.href}
-                          href={t.href}
+                          key={t.slug}
+                          href={`/c/${record.id}/try/${t.slug}`}
                           className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.02] px-2.5 py-1.5 text-[11px] font-medium tracking-tight text-white/75 transition-colors hover:border-white/30 hover:text-white"
                         >
                           <Icon className="h-3 w-3" />
