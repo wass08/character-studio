@@ -13,14 +13,17 @@ import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
  * just don't mount it, so this never runs unnecessarily.
  */
 const LipsyncDriver = () => {
-  const setVisemes = useConfiguratorStore((s) => s.setVisemes);
-  const lastViseme = useRef(null);
+  const setVisemes = useConfiguratorStore(
+    (s: { setVisemes: (key: string | null, weight: number) => void }) =>
+      s.setVisemes,
+  );
+  const lastViseme = useRef<string | null>(null);
 
   useFrame(() => {
     const m = getLipsync();
     if (!m) return;
     m.processAudio();
-    const viseme = m.viseme;
+    const viseme = m.viseme as string | null;
     if (viseme !== lastViseme.current) {
       lastViseme.current = viseme;
       // Only push lipsync visemes — never the resting "viseme_sil" with a 1.0

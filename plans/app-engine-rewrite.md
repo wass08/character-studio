@@ -127,11 +127,48 @@ Shipped with this plan-file commit:
 - [x] Success criteria written (see frontmatter).
 - [ ] **Spike: convert Backdrop.jsx end-to-end** — *deferred to Phase 1 ship.* The reason: a TS+TSL+WebGPU conversion needs real-hardware verification (WebGPU adapter init succeeds, materials render identically, no driver-specific glitches). That verification requires running the editor on at least one WebGPU-capable browser and at least one WebGL-fallback browser — not something that lints clean and is "done"; it needs eyeballing. Phase 0 ships the design; the spike is the first real-code phase.
 
-## Phases 1–8 — file conversions (open)
+## Phases 1–8 — file conversions
 
-Each phase ships one file (or pair) converted end-to-end per the order above. The first phase to land is the spike from Phase 0 design — pick Backdrop.jsx, do the full conversion in a worktree, run it on Chrome (WebGPU) and Safari (WebGL fallback), measure perf + bundle delta, then commit + write up the recipe as the canonical reference for Phases 2-8.
+Each phase ships one file (or pair) converted end-to-end per the order above. The conversion itself splits into **two layers**:
 
-When Phase 1 lands, the success criteria above can be tightened (replace the "within a tolerable perceptual delta" eyeball with a measured numeric tolerance).
+- **(a) TS conversion** — rename `.jsx` → `.tsx` (or `.js` → `.ts`), add types, fix any inference gaps. Low-risk; verifiable via `bun run build`. Can be done in-session without hardware.
+- **(b) TSL/WebGPU conversion** — replace classic Three materials with TSL node materials; the renderer-switch factory lives in Scene.jsx (Phase 7). Needs **real-hardware verification** on a WebGPU-capable browser + a WebGL-fallback browser; not "done" when lint passes.
+
+Phases land their (a) layer first as fast inline work; (b) follows in a hardware-verification session.
+
+### Phase 1a — Backdrop TS ✅
+
+Shipped 2026-05-23.
+
+- `src/components/scene/Backdrop.tsx` (was `.jsx`). Typed via `ThreeElements["group"]` for the props and a literal `BackdropGLTF` extending drei's `GLTF` for the GLTF nodes/materials. Cast through `unknown` per drei TS docs.
+- `tsconfig.json` added (noEmit, allowJs, strict basics: noImplicitAny + strictNullChecks). Scoped via `include` to the engine surface so the TS check doesn't drag the rest of the codebase.
+- `bun add -d typescript @types/three @types/react @types/react-dom @types/node` — TS toolchain installed.
+- `bun run build` clean. Next.js auto-handles `.tsx` via SWC; no config change needed.
+
+### Phase 1b — Backdrop TSL/WebGPU
+
+- [ ] Convert the floor's `<meshStandardMaterial>` to a TSL `MeshStandardNodeMaterial`. (Stool + plant materials come from the GLB and don't need TSL conversion.)
+- [ ] Add the renderer-switch factory in Scene.jsx (Phase 7 normally, but the spike justifies landing the minimum factory now).
+- [ ] Verify on Chrome (WebGPU adapter init succeeds, material renders correctly) and Safari (WebGL fallback path, material renders correctly).
+- [ ] Measure perf + bundle delta. Tighten the plan's "perceptual delta — eyeball it" success criterion to a numeric tolerance based on the measurement.
+
+### Phase 2a — Lipsync TS ✅
+
+Shipped 2026-05-23.
+
+- `src/lib/lipsync.ts` (was `.js`). Typed the singleton + return type.
+- `src/components/scene/LipsyncDriver.tsx` (was `.jsx`). Typed the store selector parameter inline (the store stays `.js` per the TypeScript boundary decision; consumers get the narrow type they need at the call site).
+- `bun run build` clean.
+
+### Phase 2b — Lipsync TSL/WebGPU
+
+Lipsync has no rendering — it polls the analyser and pushes morph values. Nothing to convert to TSL. **No (b) phase**; Phase 2 is TS-only end-to-end.
+
+### Phases 3a–8a (TS) and 3b–7b (TSL/WebGPU)
+
+To execute in subsequent sessions. (a) layers can be done inline; (b) layers need the hardware-verification session.
+
+When the renderer-switch factory lands (Phase 1b or Phase 7b — TBD when picked up), the engine plan's open questions on adapter requirements and worker WebGPU get answered.
 
 ## Phase 9 — Wiki sync & close (deferred)
 
