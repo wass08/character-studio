@@ -1,12 +1,12 @@
 ---
 plan_id: app-shadcn-everywhere
 title: shadcn-everywhere — unify the design language
-status: in_progress
-kind: living-plan
+status: implemented
+kind: implementation-record
 priority: p1
 last_reviewed: 2026-05-23
 goal: "Every button, dialog, popover, select, dropdown, switch, tooltip, and toast in the app uses a shadcn primitive — no bespoke React-only or hand-rolled equivalents remain. Locks the design language before mobile responsiveness and thumbnails ship on top of it."
-readiness: ready
+readiness: reference
 success_criteria:
   - "Audit (phase 1) lists every visible primitive in src/components/** with its current implementation and the matching shadcn target."
   - "Migration (phase 2) replaces every bespoke primitive call site. `rg` for hand-rolled <button> / <dialog> / native <select> / custom popover returns only intentional matches (file-level disablers documented inline)."
@@ -21,10 +21,11 @@ related_wiki:
   - wiki/architecture/app-structure.md
 wiki_sync:
   required: true
-  done: false
+  done: true
   pages:
-    - wiki/architecture/app-structure.md  # new ## UI primitives section documenting the shadcn baseline
-  notes: "On completion: document the shadcn baseline (which primitives we use, when to add a new one, the components.json contract, theme tokens)."
+    - wiki/architecture/app-structure.md  # new ## UI primitives section + rules + Toast + Dialog notes
+    - wiki/architecture/README.md         # index row updated to surface the new section
+  notes: "Documented the shadcn baseline as the ## UI primitives section of app-structure.md. Includes the four rules every PR must follow, the variant table, the asChild motion-preservation pattern, the toast shim, the dialog shim/raw split, and 'adding a primitive' recipe."
 archive:
   eligible: false
   reason: "Active sub-plan of app-beta-production."
@@ -161,4 +162,15 @@ bunx shadcn@latest add dialog tooltip dropdown-menu popover sonner slider
 
 ## Wiki sync
 
-_Filled before flipping `status: implemented`._
+Landed 2026-05-23. [wiki/architecture/app-structure.md](../wiki/architecture/app-structure.md) gained a new `## UI primitives` section at the bottom covering:
+
+- The folder map: `src/components/ui/` (shadcn-generated), `primitives/` (project shims), `<feature>/` (compound UI).
+- Four hard rules: no hand-rolled equivalents; no `@radix-ui/*` direct imports outside `src/components/ui/`; `asChild` is the pattern for motion-preserving buttons; variant table for picking `default`/`ghost`/`outline`/`destructive`/`link` and sizes.
+- Theme tokens come from `globals.css` CSS vars — override per call site only when the surface needs glass-panel / branded styling the default theme doesn't carry.
+- "Adding a primitive" 4-step recipe (`bunx shadcn@latest add`, optional shim, migrate everything in same PR, update rules if a new convention).
+- Toast section: `toast` is a re-export of sonner; portal mounts in `layout.js`; `toast.success/error` API unchanged.
+- Dialog section: two shapes — `primitives/Dialog.jsx` (friendlier API + glass-panel + no close-X) vs raw `ui/dialog.jsx` (full primitives when DialogFooter/Header/close-X needed).
+
+Also updated [wiki/architecture/README.md](../wiki/architecture/README.md) index row for `app-structure` to flag the new section.
+
+[plans/app-beta-production.md](app-beta-production.md) beta-gate checklist now ticks "shadcn audit clean".

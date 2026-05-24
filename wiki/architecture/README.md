@@ -6,7 +6,7 @@ Canonical rules for code in `src/`. Read on demand from `AGENTS.md` and from any
 
 | Page | Covers |
 |---|---|
-| [app-structure](app-structure.md) | Next.js App Router layout — which surface owns which route, where chrome is mounted, server vs client components |
+| [app-structure](app-structure.md) | Next.js App Router layout — which surface owns which route, where chrome is mounted, server vs client components, **vocabulary**, **UI primitives (shadcn)** |
 | [stores](stores.md) | Zustand stores (`useConfiguratorStore`, `useAuthStore`) — what each owns, hydration rules, derived selectors |
 | [data-model](data-model.md) | PocketBase collections (`CharacterStudioCharacters`, voices, users) and the asset/S3 contract |
 | [creating-rules](creating-rules.md) | How to add or update a page in this folder |
