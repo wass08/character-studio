@@ -109,11 +109,35 @@ Architecture **not yet verified**:
 - Head/face assets render (likely related — they may animate but be stuck at bind position).
 - Tooltip positioning (depends on head bone being correctly transformed).
 
-## Phase 3 — Ship on `/`
+## Phase 3 — Ship on `/` (pivoted design)
 
-- [ ] Replace [HubHero](../src/components/hub/HubHero.jsx) + [LivingWall](../src/components/hub/LivingWall.jsx) with the prototype. Keep [FeaturedRow](../src/components/hub/FeaturedRow.jsx) and [ExperiencesGrid](../src/components/hub/ExperiencesGrid.jsx) for now — they get renamed in phase 4 but the components stay.
-- [ ] Empty-state: if the random pool returns < 3 characters, render a seeded set of demo characters owned by a known curator account (decide the account in phase 1 vocabulary work).
+**Pivot rationale (2026-05-23):** The multi-character `/lab/wall` prototype proved the canvas pattern works but exposed two real engineering investigations (animation mixer not driving cloned bones, head/face assets not resolving). Rather than block the homepage on those, phase 3 ships a *simpler* hero: **one big animated character + 2D card gallery below**. The multi-character "plaza" feeling becomes phase 6, scoped as polish once the engine rewrite has refactored the store coupling that made cloned-skeleton animation hard.
+
+This pivot works because the editor's `Avatar.jsx` + `useConfiguratorStore` pipeline already animates correctly. We reuse it for the homepage hero by pre-loading a featured character into the store. No multi-character canvas needed for v1.
+
+### Hero design (single live character)
+
+- [ ] Add a new `src/components/home/HeroStage.jsx` (or rename `hub/HubHero.jsx` in phase 4) that mounts the editor's `<Scene>` with a *display-mode* camera config (no orbit controls, no leva, no screenshot helpers) and renders the `<Avatar />` already in the editor scene.
+- [ ] On first paint, pre-load a curator-owned featured character into `useConfiguratorStore` via `loadCharacter(record)`. Cache by ID in localStorage so the same hero character returns next visit (or randomise from the featured pool — decide based on how it feels).
+- [ ] Signed-in users see *their main character* in the hero instead of the demo, when one exists. Falls back to the curator character if not.
+- [ ] Hover/idle interaction: keep the existing idle animation. No tooltip. Maybe a soft auto-rotation. The character does the heavy lifting visually.
+- [ ] Layout: hero stage takes ~60% viewport height on desktop, 40% on mobile. Marketing copy ("Create your character" CTA) sits beside the stage on desktop, above it on mobile.
+
+### Below the hero (2D, existing)
+
+- [ ] Keep [FeaturedRow](../src/components/hub/FeaturedRow.jsx) and [LivingWall](../src/components/hub/LivingWall.jsx) — the 2D card grids already work, already use the locked vocabulary, already feel like "social proof". The wall doesn't need to be 3D to do its job.
+- [ ] Remove [ExperiencesGrid](../src/components/hub/ExperiencesGrid.jsx) from `/`. Experiences are now subordinated to characters per the locked vocabulary; they're reached from a character page (`/c/[id]`), not from the homepage.
+- [ ] Empty-state: if `FeaturedRow` is empty, hide it (already does); if `LivingWall` is empty, render the "Need at least N characters" dashed-border placeholder used in `/lab/wall`.
+
+### Curator account decision
+
+The featured-character pool needs at least one curator-owned character that's stable enough to ship as the homepage hero. Open question from phase 1; resolve in this phase.
+
+### Ship checklist
+
 - [ ] OG image / metadata refresh on `/` to match the new positioning.
+- [ ] Lighthouse perf ≥ 85 on mobile (one 3D character + cards should pass).
+- [ ] Manual smoke: signed-out lands on demo hero; signed-in lands on their main; both see featured row + wall below.
 - [ ] Capture a perf trace + a screenshot for the wiki sync.
 
 ## Phase 4 — Rename pass
@@ -125,17 +149,45 @@ Architecture **not yet verified**:
 
 **Owner**: Codex executes the sweep against the vocabulary table from phase 1. Claude reviews.
 
-## Phase 5 — Wiki sync & close
+## Phase 5 — Wiki sync & close (single-hero scope)
 
-- [ ] Update `wiki/architecture/app-structure.md`: surface ↔ route table reflects renamed routes; new `## Vocabulary` section at the top; new `## Homepage wall` section documenting the component contract (props, perf budget, fallback rules).
-- [ ] Update `plans/app-beta-production.md` beta-gate checklist to mark items 1 + 2 done.
-- [ ] Flip `wiki_sync.done: true`, `status: implemented`, `readiness: reference`, `last_reviewed: <today>` here.
+- [ ] Update `wiki/architecture/app-structure.md`: surface ↔ route table reflects renamed routes; the `## Vocabulary` section is already in place from phase 1; add a new `## Homepage` section documenting the single-hero contract (which character loads, fallback rules, signed-in vs signed-out, layout).
+- [ ] Update `plans/app-beta-production.md` beta-gate checklist to mark item 1 done. Beta-gate item 2 ("Mii-style homepage wall shipped") needs rewording — the v1 ships a single-character hero, not the wall. Update the criterion to reflect that.
+- [ ] Flip `wiki_sync.done: true`, `status: implemented`, `readiness: reference`, `last_reviewed: <today>` here (single-hero scope only — phase 6 remains open).
+
+## Phase 6 — Plaza polish (deferred) 🅿️
+
+Picks up where the `/lab/wall` prototype paused. Tracked here so it doesn't fall off the radar, but explicitly *not* required for beta. Earliest sensible start: after the [engine rewrite](app-beta-production.md#5-engine-rewrite--ts--webgpultsl-coupled) refactors the store-coupled character pipeline (`Avatar` / `Asset` / `SkinManager`) so per-character config-driven rendering doesn't need workaround clones.
+
+### What's known to be broken on `/lab/wall`
+
+- **Animation mixer doesn't drive the cloned bones.** `useAnimations` likely registers against the `<group>` ref before the bones-mounted primitive child synchronously appears beneath it. Needs either an explicit child ref to `useAnimations`, or a structural change so the bones are children of `group` at first render.
+- **Head / face assets don't render** despite their `assetId`s resolving. Probably the same bone-binding root cause — face meshes are skinned to head bones that exist in the clone but aren't being driven.
+- **No `Wave` / `Look` clips** in the Animations.glb (46 clips, none match). Either ship new clips or pick alternatives from the existing library (`Rig|Idle_Talking_Loop`, `Rig|Interact`, `Rig|Dance_Loop`).
+- **Hover tooltip** is coded but unverified (depends on head bone being transformed correctly).
+- **Only 3 characters in the DB** — can't validate the ≥ 6 character target.
+
+### What this phase ships
+
+- [ ] Fix the animation + heads issue (one investigation, likely one fix).
+- [ ] Add or pick one-shot clips so the stagger isn't a no-op.
+- [ ] Verify hover tooltip with the head bone correctly transformed.
+- [ ] Scale to ≥ 6 characters (requires either more characters in the DB or seeded demos).
+- [ ] Perf pass: lock 16ms desktop / 33ms mobile mid-tier; share materials, instance where possible, consider LOD if 6+ characters blow the budget.
+- [ ] Decide where the wall *lives* once it works: a `/gallery` destination, a secondary section on `/`, or a hover-promoted state on a single character's card. Re-decide with the wall actually rendering.
+- [ ] Update [wiki/architecture/app-structure.md](../wiki/architecture/app-structure.md) `## Homepage` (and possibly a new `## Plaza` section) when this ships.
+
+### Why this is deferred
+
+- The single-character hero in phase 3 already delivers "alive feeling" on the homepage without the multi-character investigation.
+- The engine rewrite sub-plan will refactor `Avatar`/`Asset`/`SkinManager` to drop the singleton-store dependency. Doing that refactor first means the wall can be built on the new pipeline, not the workaround clones.
+- Polishing now would touch code that the rewrite is about to replace.
 
 ## Open questions
 
-- Which curator account hosts the seeded demo characters for empty-state fallback?
-- WebGPU/TSL or stay on WebGL for the wall? The [engine rewrite](app-beta-production.md#5-engine-rewrite--ts--webgpultsl-coupled) sub-plan covers the renderer switch; if the wall ships before that lands, it ships on WebGL and gets ported in the rewrite (touched twice, but acceptable for one component).
-- Should the wall characters be clickable → `/c/:id`? Probably yes; confirm in phase 2 design.
+- Which curator account hosts the featured character for the homepage hero (phase 3)? Same account would seed any demo characters for empty-state fallbacks.
+- For phase 3: signed-in users — show *their main character* or always *the featured demo* in the hero? Current plan says main if exists; confirm with first run.
+- For phase 6: WebGPU/TSL or stay on WebGL for the multi-character wall? The [engine rewrite](app-beta-production.md#5-engine-rewrite--ts--webgpultsl-coupled) covers the renderer switch; the polish phase should land *after* it.
 
 ## Wiki sync
 

@@ -8,8 +8,8 @@ last_reviewed: 2026-05-23
 goal: "Ship a public beta of character-studio: characters-first IA, polished hub with a live 3D wall of community characters, mobile-responsive editor, WebGPU/TS engine, shadcn UI everywhere, fixed thumbnails."
 readiness: ready
 success_criteria:
-  - "Homepage shows a live 3D wall of randomly-picked community characters, animated and name-tooltipped on hover — verified on /."
-  - "Top-level nav reads 'Characters' as the product; 'Experiences' is a way to try a character, not a sibling — verified by chrome on every route."
+  - "Homepage shows one big live 3D character (the user's main if signed-in, a curator-featured demo otherwise) above the existing 2D card gallery — verified on /. Multi-character 'plaza' wall is post-beta polish (see [app-nav-and-positioning phase 6](app-nav-and-positioning.md#phase-6--plaza-polish-deferred-))."
+  - "Top-level chrome subordinates experiences to characters (no 'Experiences' as a sibling) — verified by chrome on every route."
   - "Editor at /create works fluidly on a 390 px-wide viewport — verified by manual run + Lighthouse mobile audit ≥ 90 perf."
   - "Engine code (scene, drivers, materials) is TypeScript and renders via WebGPU/TSL where supported, with a WebGL fallback — verified by `tsc --noEmit` clean + Chrome `chrome://gpu` showing WebGPU active."
   - "All chrome and editor panels use shadcn primitives; no bespoke button/dialog/popover left — verified by grep audit in the wiki sync."
@@ -39,7 +39,7 @@ The hub launch ([app-hub-launch](app-hub-launch.md)) gave us routes, chrome, and
 
 **The product is characters.** Experiences (lipsync, platformer, playground, future ones) are how you try a character — not parallel destinations. Every IA, label, and visual cue should make that obvious within five seconds on the homepage.
 
-Reference inspiration for the homepage: the Nintendo Mii plaza — a wall of characters waving, idling, looking around, named on hover. That feeling is the bar.
+Long-term inspiration for the homepage: the Nintendo Mii plaza — a wall of characters waving, idling, looking around, named on hover. That feeling is the bar — and the [`/lab/wall`](../src/app/lab/wall/page.js) prototype proved the canvas pattern works. But the beta v1 ships a *simpler* hero: **one big live 3D character** doing the heavy lifting visually, with the 2D card gallery for community proof below. Reasoning: the engine rewrite refactors the store-coupled character pipeline, after which the multi-character plaza becomes much cheaper to ship. Polishing the plaza on workaround clones before the rewrite would mean touching that code twice. See [app-nav-and-positioning phase 6](app-nav-and-positioning.md#phase-6--plaza-polish-deferred-) for the deferred plaza work.
 
 ## Workstreams
 
@@ -47,7 +47,7 @@ Listed in execution order. Each row links to a sub-plan once materialised (via [
 
 | # | Workstream | Sub-plan | Priority | Status | Depends on | Why this order |
 |---:|---|---|---|---|---|---|
-| 1 | Nav + hub positioning + Mii-wall vision | [app-nav-and-positioning](app-nav-and-positioning.md) | p0 | planned | — | Sets vocabulary every other UI plan inherits; blocks renames. |
+| 1 | Nav + positioning + single-hero homepage (plaza polish deferred to phase 6) | [app-nav-and-positioning](app-nav-and-positioning.md) | p0 | in_progress | — | Phase 1 done (vocabulary lock). Phase 2 paused on /lab/wall prototype — pivoted to a single-character hero for v1. Plaza polish is phase 6, gated by the engine rewrite. |
 | 2 | Thumbnail quality (resolution + lighting) | _(create when started)_ | p1 | draft | — | Small, self-contained, makes the wall and `/me` feel serious immediately. |
 | 3 | shadcn-everywhere sweep | _(create when started)_ | p1 | draft | #1 | Lock the design language before doing the mobile pass so we don't migrate twice. |
 | 4 | Editor mobile responsiveness | _(create when started)_ | p2 | draft | #3 | Mobile-correct shadcn primitives → meaningful breakpoint work on the editor. |
@@ -119,8 +119,8 @@ Lipsync, platformer, playground all need polish — gameplay tuning, camera, con
 
 These collapse the success criteria into a reviewable list. Charter flips to `verification` when all are ticked, `implemented` when verified on a deployed beta build.
 
-- [ ] Vocabulary lock + nav reflects it (sub-plan #1)
-- [ ] Mii-style homepage wall shipped (sub-plan #1)
+- [x] Vocabulary lock + nav reflects it (sub-plan #1, phase 1 — shipped on `b5fb384`)
+- [ ] Single-character homepage hero shipped (sub-plan #1, phase 3 — pivoted from "Mii-style wall" after the multi-character prototype hit deferred polish; the plaza is post-beta in phase 6)
 - [ ] Thumbnails meet target spec on both new and re-baked characters (sub-plan #2)
 - [ ] shadcn audit clean — no bespoke primitives left (sub-plan #3)
 - [ ] Editor passes mobile Lighthouse ≥ 90 perf, usable at 390 px wide (sub-plan #4)
