@@ -47,12 +47,12 @@ Listed in execution order. Each row links to a sub-plan once materialised (via [
 
 | # | Workstream | Sub-plan | Priority | Status | Depends on | Why this order |
 |---:|---|---|---|---|---|---|
-| 1 | Nav + positioning + single-hero homepage (plaza polish deferred to phase 6) | [app-nav-and-positioning](app-nav-and-positioning.md) | p0 | in_progress | — | Phase 1 done (vocabulary lock). Phase 2 paused on /lab/wall prototype — pivoted to a single-character hero for v1. Plaza polish is phase 6, gated by the engine rewrite. |
-| 2 | Thumbnail quality (resolution + lighting) | _(create when started)_ | p1 | draft | — | Small, self-contained, makes the wall and `/me` feel serious immediately. |
-| 3 | shadcn-everywhere sweep | _(create when started)_ | p1 | draft | #1 | Lock the design language before doing the mobile pass so we don't migrate twice. |
-| 4 | Editor mobile responsiveness | _(create when started)_ | p2 | draft | #3 | Mobile-correct shadcn primitives → meaningful breakpoint work on the editor. |
-| 5 | Engine rewrite — TS + WebGPU/TSL coupled | _(create when started)_ | p1 | draft | — | Runs in parallel on its own branch; each engine file is touched once (TS + TSL together). |
-| 6 | Experiences polish | _(create when started)_ | p3 | draft | #1, #5 | Deferred until the IA and engine stabilise — polishing on shifting ground is waste. |
+| 1 | Nav + positioning + single-hero homepage (plaza polish deferred to phase 6) | [app-nav-and-positioning](app-nav-and-positioning.md) | p0 | in_progress (paused) | — | Phase 1 done (vocabulary lock). Phase 2 paused on /lab/wall prototype — pivoted to a single-character hero for v1. Plaza polish is phase 6, gated by #5. |
+| 2 | shadcn-everywhere sweep | [app-shadcn-everywhere](app-shadcn-everywhere.md) | p1 | planned | #1 phase 1 | Lock the design language before mobile (#4) and thumbnails (#6) ship on top of it. Audits each bespoke primitive then migrates per-class. |
+| 3 | Engine rewrite — TS + WebGPU/TSL coupled | [app-engine-rewrite](app-engine-rewrite.md) | p1 | draft | — | Big foundation. Refactors store coupling along the way, unblocking the plaza. Phase 0 (discovery) writes success criteria. Runs in parallel on its own branch. |
+| 4 | Editor mobile responsiveness | _(create when started)_ | p2 | draft | #2 | Mobile-correct shadcn primitives → meaningful breakpoint work on the editor. |
+| 5 | Thumbnail quality (resolution + lighting) | _(create when started)_ | p2 | draft | #2, #3 | Pushed behind shadcn + engine because both will sweep the surfaces and pipeline that thumbnails touch; doing thumbnails first would mean redoing them. |
+| 6 | Experiences polish | _(create when started)_ | p3 | draft | #1 phase 3, #3 | Deferred until the IA and engine stabilise — polishing on shifting ground is waste. |
 
 ### 1. Nav + hub positioning
 
@@ -62,19 +62,15 @@ Active sub-plan: [app-nav-and-positioning](app-nav-and-positioning.md). Outcomes
 - The Mii-wall homepage prototype proven (perf, layout, hover affordances).
 - A migration checklist for the rest of the app (every label, every link, every route name).
 
-### 2. Thumbnail quality
+### 2. shadcn-everywhere
 
-Symptoms today: low render resolution, harsh / inconsistent lighting, no consistent framing. Target:
+Sub-plan: [app-shadcn-everywhere](app-shadcn-everywhere.md). Audit `src/components/**` for bespoke UI then migrate per-primitive. The hub launch installed shadcn into the admin shell; this sweep brings the rest of the surface up to the same baseline. Has to land before #4 and #5 so they sit on the locked design language.
 
-- Render at ≥ 512² with MSAA or post-AA, downscale-export to a 256² display asset (or keep 512² if file-size budget allows).
-- A dedicated thumbnail rig (camera, lights, environment, optional ground shadow) shared by the editor, `/me`, and any new automatic rebake.
-- Rebake-existing flow for already-saved characters.
+### 3. Engine rewrite — TS + WebGPU/TSL coupled
 
-Create the sub-plan via `start-plan` and capture exact targets there.
+Sub-plan: [app-engine-rewrite](app-engine-rewrite.md). Per the [decision](#how-we-work-this), TypeScript and WebGPU/TSL ship as one migration — each engine file touched **once**. Scope: `src/components/scene/**`, `src/lib/lipsync.js`, shaders, materials, lighting, post-FX. Runs in parallel on its own branch.
 
-### 3. shadcn-everywhere
-
-Audit `src/components/**` for bespoke UI: any `<button>` that isn't a shadcn `Button`, any custom dialog/popover/select, any tooltip not using the shadcn wrapper. The hub launch installed shadcn into the admin shell; this sweep brings the rest of the surface up to the same baseline.
+The discovery phase (phase 0) writes the success criteria after a spike on a leaf file. The phase also writes the refactor that lets per-character config (not the singleton store) drive rendering — which is what unblocks [app-nav-and-positioning phase 6](app-nav-and-positioning.md#phase-6--plaza-polish-deferred-) (the plaza).
 
 ### 4. Editor mobile
 
@@ -84,19 +80,17 @@ Audit `src/components/**` for bespoke UI: any `<button>` that isn't a shadcn `Bu
 - Canvas takes ≥ 60% of viewport height with the toolbar overlaying it.
 - All gestures keyboard-replaceable / touch-friendly (no hover-only affordances).
 
-Depends on shadcn-everywhere so the primitives already behave correctly at small sizes.
+Depends on #2 (shadcn) so the primitives behave correctly at small sizes before any breakpoint work lands.
 
-### 5. Engine rewrite — TS + WebGPU/TSL coupled
+### 5. Thumbnail quality
 
-Per the [decision](#how-we-work-this), TypeScript and WebGPU/TSL ship as one migration: each engine file gets touched **once** (`.js` → `.ts` + classic Three.js material → TSL node material + WebGL renderer → WebGPU renderer with fallback). Scope:
+Symptoms today: low render resolution, harsh / inconsistent lighting, no consistent framing. Target:
 
-- `src/components/scene/**`, `src/lib/lipsync.js`, shaders, materials, lighting, post-FX.
-- Renderer switch at the `<Canvas>` boundary with a WebGPU support probe and a clear fallback path.
-- Type baseline for `src/stores/**` and a `tsconfig.json` strict enough to be useful without blocking shipping.
+- Render at ≥ 512² with MSAA or post-AA, downscale-export to a 256² display asset (or keep 512² if file-size budget allows).
+- A dedicated thumbnail rig (camera, lights, environment, optional ground shadow) shared by the editor, `/me`, and any new automatic rebake.
+- Rebake-existing flow for already-saved characters.
 
-Out of scope for this rewrite: UI components, route handlers, server code — converted later if/when they earn their TS migration cost.
-
-This workstream can run on its own branch in parallel with #1–#4 because it touches a mostly orthogonal slice.
+**Reordered behind #2 and #3** (2026-05-23) because both will sweep through the surfaces and pipeline this work would touch: shadcn migrates every card that displays a thumbnail; the engine rewrite replaces the `gl.readRenderTargetPixels` capture itself. Doing thumbnails first would mean redoing them when those land. Create the sub-plan via `start-plan` once shadcn is close to done.
 
 ### 6. Experiences polish
 

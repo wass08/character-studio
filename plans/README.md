@@ -107,7 +107,9 @@ Living plans, in current priority order. Update `status`, `priority`, and `last_
 | Order | Plan | Status | Priority | Notes |
 |---:|---|---|---|---|
 | 1 | [Beta production](app-beta-production.md) | in_progress | p0 | Charter — characters-first studio. Sub-plans materialise via `start-plan` as workstreams are picked up. |
-| 1.1 | [Nav + positioning + Mii-wall](app-nav-and-positioning.md) | planned | p0 | First sub-plan of the beta charter. Locks vocabulary; blocks the renames in shadcn/mobile work. |
+| 1.1 | [Nav + positioning](app-nav-and-positioning.md) | in_progress (paused) | p0 | Phase 1 vocabulary lock shipped. Phase 2 paused on `/lab/wall` prototype; phase 3 pivoted to a single-character hero. Plaza polish deferred to phase 6 (gated by 1.3). |
+| 1.2 | [shadcn-everywhere](app-shadcn-everywhere.md) | planned | p1 | Audit + migrate every UI primitive to shadcn. Locks the design language before mobile (1.4) and thumbnails (deferred) ship on top of it. |
+| 1.3 | [Engine rewrite — TS + WebGPU/TSL](app-engine-rewrite.md) | draft | p1 | Big foundation. Refactors the singleton-store coupling on the way through, which unblocks plaza polish. Phase 0 (discovery) writes the success criteria. |
 
 ## Reference and follow-up plans
 
