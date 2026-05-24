@@ -102,13 +102,17 @@ Rules:
 
 ## Resume points (next session)
 
-The whole beta plan is opened. 4 sub-plans shipped end-to-end, 1 in-progress (engine rewrite, 67% TS-converted), 1 deferred (experiences polish). Three concrete pick-up paths, ordered by what's most ready:
+4 sub-plans shipped end-to-end. 1 in-progress: engine rewrite — **TS layer 100% complete (9/9 files), TSL/WebGPU pending hardware**. 1 newly unblocked: experiences polish. Three pick-up paths, ordered by readiness:
 
-1. **Verification pass (user-led)** — run through every shipped route at desktop + mobile, test the redirects (`/me` → `/studio`, `/create/[id]` → `/editor/[id]`, `/play/[experiment]` → `/studio`), save a character + confirm the new 512² thumbnail, click "Try [name] in …" from `/c/[id]`. Issues feed back into the relevant sub-plan's body, not new plans.
-2. **Engine rewrite Phase 4a + 5a + 8a (CharacterContext refactor + Asset/Avatar/exportWorker)** — focused design session. The pattern: introduce a `CharacterContext` so `Asset` and `Avatar` stop reading `useConfiguratorStore` directly (editor wraps the context with the store; hero/plaza wrap it with props). Lands the three remaining TS conversions in one pass. See [app-engine-rewrite.md `### Phases 4a, 5a, 8a (remaining)`](app-engine-rewrite.md).
-3. **Engine rewrite Phase 1b (WebGPU spike on Backdrop)** — only with hardware. Convert Backdrop's floor material to TSL, add the renderer-switch factory in Scene.tsx behind a feature flag, eyeball Chrome (WebGPU) + Safari (WebGL fallback), measure perf + bundle delta.
+1. **Verification pass (user-led)** — run through every shipped route at desktop + mobile, test the redirects (`/me` → `/studio`, `/create/[id]` → `/editor/[id]`, `/play/[experiment]` → `/studio`), save a character + confirm the new 512² thumbnail, click "Try [name] in …" from `/c/[id]`, **and especially: trigger an avatar export** (Editor → Export → Download) to confirm the worker bridge still emits a Draco-compressed GLB after the Phase 8a TS conversion. Issues feed back into the relevant sub-plan's body, not new plans.
+2. **Experiences polish — Phase 1 scope drafting** — newly unblocked by the engine decoupling. Draft a one-paragraph spec for [`LipsyncView.jsx`](../src/components/play/LipsyncView.jsx), [`PlatformerView.jsx`](../src/components/play/PlatformerView.jsx), [`PlaygroundView.jsx`](../src/components/play/PlaygroundView.jsx) — what "shippable" looks like for each, perf/feel target, smallest unblock-launch change set. See [app-experiences-polish.md `### Phase 1`](app-experiences-polish.md#phase-1--define-scope-per-experiment-ready). Pure planning, no engine changes; doesn't depend on the deferred TSL/WebGPU work.
+3. **Engine rewrite Phase 1b (WebGPU spike on Backdrop)** — only with hardware. Convert Backdrop's floor material to TSL, add the renderer-switch factory in Scene.tsx behind a feature flag, eyeball Chrome (WebGPU) + Safari (WebGL fallback), measure perf + bundle delta. The TS scaffolding (Scene.tsx as the renderer-switch home, `useCharacter()` as the data API) is in place. See [app-engine-rewrite.md `### Phases 1b–7b`](app-engine-rewrite.md#phases-1b7b-tslwebgpu).
 
 The "How we work this" section in [app-beta-production.md](app-beta-production.md#how-we-work-this) still applies — Claude designs + reviews, Codex picks up mechanical slices, every shipping commit is one logical change.
+
+### Wiki sync trip-wire for the next agent
+
+When picking up engine work (paths 2 or 3 above), check that `wiki/` references to the engine files still use the **TS extensions** (`Avatar.tsx`, `Asset.tsx`, `Scene.tsx`, `LipsyncDriver.tsx`, `lipsync.ts`, `exportWorker.ts`, `SkinManager.tsx`, `CameraManager.tsx`, `Backdrop.tsx`). The 2026-05-25 sweep updated `wiki/architecture/data-model.md` + `wiki/architecture/app-structure.md`. If a new wiki page lands referencing old `.jsx` / `.js` paths for any of these files, treat it as a regression — Phase 9 (the formal engine wiki page) is still deferred but stale-extension paths are not acceptable in the meantime.
 
 ## Development order
 
@@ -119,10 +123,10 @@ Living plans, in current priority order. Update `status`, `priority`, and `last_
 | 1 | [Beta production](app-beta-production.md) | in_progress | p0 | Charter — characters-first studio. Sub-plans materialise via `start-plan` as workstreams are picked up. |
 | 1.1 | [Nav + positioning](app-nav-and-positioning.md) | **implemented** | p0 | Phases 1, 3, 4, 5 shipped. Vocabulary locked, single-character hero on /, all routes renamed (`/studio`, `/editor`, `/c/[id]/try/[experiment]`) with redirects, legacy components deleted. Phase 2 `/lab/wall` paused as deliberate reference for phase 6 (plaza polish, deferred behind engine rewrite). |
 | 1.2 | [shadcn-everywhere](app-shadcn-everywhere.md) | **implemented** | p1 | All 5 phases shipped. Zero direct Radix imports outside `src/components/ui/`, zero hand-rolled buttons in JSX, shims for Dialog/Tooltip/Toast/IconButton over shadcn, wiki `## UI primitives` section landed. |
-| 1.3 | [Engine rewrite — TS + WebGPU/TSL](app-engine-rewrite.md) | in_progress | p1 | Phase 0 design done. **6 of 9 engine files converted to TS** (Backdrop, lipsync, LipsyncDriver, SkinManager, CameraManager, Scene). Remaining: Asset/Avatar (need CharacterContext refactor), exportWorker (defer until Avatar updates the `new URL()` import). TSL/WebGPU layer reserved for hardware-verification session. |
+| 1.3 | [Engine rewrite — TS + WebGPU/TSL](app-engine-rewrite.md) | in_progress | p1 | Phase 0 design done. **9 of 9 engine files converted to TS** (Backdrop, lipsync, LipsyncDriver, SkinManager, Asset, CameraManager, Avatar, Scene, exportWorker). `CharacterContext` decouples Asset/Avatar/SkinManager from the singleton store (editor still drives via `StoreCharacterProvider`; future plaza wraps with its own provider). TSL/WebGPU `(b)` layer reserved for hardware-verification session. |
 | 1.4 | [Thumbnails](app-thumbnails.md) | **implemented** | p2 | Phase 1: 512² stored, 1024² supersampled, head+shoulders framing. Phases 2-3 deferred behind engine rewrite. |
 | 1.5 | [Editor mobile](app-editor-mobile.md) | **implemented** | p2 | ModeSelector mobile-first refactor; tighter mobile padding; ## Responsive conventions wiki section locks the mobile-first rule for positioning utilities. |
-| 1.6 | [Experiences polish](app-experiences-polish.md) | draft (blocked) | p3 | Skeleton only — deferred behind 1.3 engine rewrite. Per-experiment sub-plans open lazily. |
+| 1.6 | [Experiences polish](app-experiences-polish.md) | draft (ready) | p3 | **Unblocked 2026-05-25** — the engine decoupling that gated it shipped via `CharacterContext`. Phase 1 (define scope per experiment) is the ready slice; per-experiment sub-plans (`app-experiences-{lipsync,platformer,playground}.md`) open lazily as each phase starts. |
 
 ## Reference and follow-up plans
 
