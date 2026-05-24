@@ -1,71 +1,153 @@
 ---
 plan_id: app-engine-rewrite
 title: Engine rewrite — TypeScript + WebGPU/TSL coupled
-status: draft
+status: in_progress
 kind: living-plan
 priority: p1
 last_reviewed: 2026-05-23
 goal: "Convert the 3D engine surface (src/components/scene/, src/lib/lipsync.js, related shaders/materials) to TypeScript and TSL/WebGPU in a single pass per file, with a WebGL fallback for unsupported browsers."
-readiness: needs_criteria
+readiness: planned
 success_criteria:
-  - "TBD — first phase locks the migration strategy, success criteria depend on it."
+  - "Every file in the engine surface (see ## Inventory) is .ts/.tsx, with the project's `tsc --noEmit` clean on those paths only — no errors leak into UI / route / store code that hasn't been migrated."
+  - "Renderer at the <Canvas> boundary picks WebGPU when navigator.gpu is available *and* the WebGPU backend successfully initialises; falls back to WebGL otherwise. The active renderer is exposed in a dev overlay (a debug indicator that doesn't ship to prod by default)."
+  - "Materials produced by the engine surface render identically (within a tolerable perceptual delta — eyeball the editor/hero/play surfaces side-by-side) on WebGPU and WebGL paths. No black/missing materials, no broken skinning, no lipsync regression."
+  - "Bundle delta after the rewrite is within +20% of today's bundle on the homepage route (tracked via `next build` output)."
+  - "The captureFaceThumbnail rebake on WebGPU produces a PNG byte-equivalent (or near-equivalent) to the WebGL path — verified by writing a single character thumbnail under each backend and comparing pixel diff."
 depends_on: []
 related_plans:
   - app-beta-production
-  - app-nav-and-positioning  # unlocks phase 6 (plaza polish) once store coupling is gone
-related_wiki: []
+  - app-nav-and-positioning  # phase 6 (plaza polish) unblocks once the singleton-store coupling lands as a side effect
+  - app-thumbnails           # the gl.readRenderTargetPixels path gets replaced; the rig (camera/framing/sizes) stays
+related_wiki:
+  - wiki/architecture/stores.md
+  - wiki/architecture/app-structure.md
 wiki_sync:
   required: true
   done: false
   pages: []
-  notes: "On completion: new wiki/architecture/engine.md (or extend stores.md) documenting the TSL/WebGPU pipeline, fallback strategy, and where TypeScript boundaries live."
+  notes: "On full-plan completion: new wiki/architecture/engine.md documenting the renderer-switch contract, the TSL material conventions, the TypeScript boundary, and the per-character config-driven render path that lands as a side effect of the refactor."
 archive:
   eligible: false
-  reason: "Active sub-plan of app-beta-production."
+  reason: "Foundational sub-plan; remains active until all phases ship."
 ---
 
 # Engine rewrite — TypeScript + WebGPU/TSL coupled
 
-Sub-plan of [app-beta-production](app-beta-production.md). Each engine file touched **once**: `.js` → `.ts` + classic Three.js material → TSL node material + WebGL renderer → WebGPU renderer with fallback. The coupled approach was decided in the charter to avoid rewriting hot paths twice.
+Sub-plan of [app-beta-production](app-beta-production.md). Each engine file gets touched **once**: `.jsx` → `.ts(x)` + classic Three.js material → TSL node material + WebGL renderer → WebGPU renderer with fallback. Coupled per the charter decision so hot paths aren't rewritten twice.
 
-## Context
+This plan also carries the refactor that decouples the singleton `useConfiguratorStore` from `Avatar` / `Asset` / `SkinManager`. That coupling is what blocked [phase 6 of app-nav-and-positioning](app-nav-and-positioning.md#phase-6--plaza-polish-deferred-) (the multi-character plaza). Both deliverables ship from the same set of file conversions.
 
-Today's engine sits in `src/components/scene/` (`Scene.jsx`, `Avatar.jsx`, `Asset.jsx`, `Backdrop.jsx`, `CameraManager.jsx`, `SkinManager.jsx`, `LipsyncDriver.jsx`, `exportWorker.js`) plus `src/lib/lipsync.js`. It's coupled to `useConfiguratorStore` (the editor singleton) in ways that block multi-character rendering (see [app-nav-and-positioning phase 6](app-nav-and-positioning.md#phase-6--plaza-polish-deferred-)). The rewrite is the natural place to refactor that coupling out: introduce a `Character` context / props-driven render path that the singleton store can fill, but that other surfaces (plaza, hero) can also fill from their own data.
+## Inventory
 
-WebGPU support: ~85% of desktop Chrome / Edge / Firefox, ~70% of mobile Chrome on Android. Safari mobile and older Android still need WebGL. The fallback is non-optional.
+*Captured 2026-05-23.*
 
-## Phase 0 — Discovery (needs_criteria)
+| File | LOC | Store-coupling refs | Owns | Migration notes |
+|---|---:|---:|---|---|
+| `src/components/scene/Backdrop.jsx` | 35 | 0 | Stool + floor plane + plant from a GLB | Pure leaf. Best spike target — no store reads, three meshes. |
+| `src/lib/lipsync.js` | 16 | 0 | Singleton `Lipsync` from `wawa-lipsync` | TS-only conversion; no rendering, no WebGPU. |
+| `src/components/scene/LipsyncDriver.jsx` | 35 | 2 | Per-frame poll of lipsync analyser → morph values | TS + minor refactor; no material changes. |
+| `src/components/scene/SkinManager.jsx` | 54 | 3 | Composes overlay textures + applies skin colour | TS + texture-compose stays as canvas2d; material assignment moves to TSL `MeshStandardNodeMaterial`. |
+| `src/components/scene/Asset.jsx` | 131 | 8 | Per-customization-slot skinned mesh + colour application + morph registration | TS + TSL materials. **Decouple from `useConfiguratorStore`**: accept `entry`, `skeleton`, callbacks via props/context instead of reading the store directly. |
+| `src/components/scene/CameraManager.jsx` | 165 | 4 | Editor-mode camera switching + bone-targeted framing | TS. Renderer-agnostic; no material work. |
+| `src/components/scene/Avatar.jsx` | 201 | 6 | Singleton character render — armature + animations + asset slot iteration + export pipeline | TS + TSL where materials are touched. **Decouple from store**: take a `character` prop with full customization payload; the store wraps it for the editor's case. |
+| `src/components/scene/Scene.jsx` | 185 | 5 | R3F Canvas wrapper + lights + screenshot/thumbnail capture | TS. Renderer-switch lives here (<Canvas gl={...}>). |
+| `src/components/scene/exportWorker.js` | 432 | 0 | Web Worker — gltf-transform pipeline (bake morphs, strip bones, optimize, Draco) | TS-only conversion. Worker context; no WebGPU. |
 
-Before any code moves, lock the migration strategy. This is the first slice; success criteria for the whole plan get written *after* this phase.
+Total: ~1254 LOC across 9 files.
 
-- [ ] Inventory every file in scope (scene/ + lib/lipsync.js + any shaders) with LOC, dependencies, and store coupling.
-- [ ] Spike: pick one small leaf file (probably `Backdrop.jsx`) and do the full TS + TSL conversion to validate the recipe. Measure perf delta and bundle delta.
-- [ ] Decide the runtime selection strategy: WebGPU probe at `<Canvas>` mount, fallback to WebGL on probe failure or explicit feature-flag opt-out. Decide how to expose the active renderer to debug overlays.
-- [ ] Decide the TypeScript boundary: do stores get types? (probably yes, narrow types only). Do route handlers? (no for now). Does the UI? (no — separate plan if anyone wants it).
-- [ ] Decide the file-by-file order: leaves first (Backdrop), then materials (Asset, SkinManager), then animation / driver (Avatar, LipsyncDriver), then orchestrator (Scene, CameraManager), then worker (`exportWorker.js`).
-- [ ] Write the success criteria for the plan based on the spike's outcome. Update the frontmatter `success_criteria` and `readiness`.
+## Decisions
 
-**Owner**: Claude (design phase — Codex doesn't decide architecture).
+### Renderer selection — where it lives
 
-## Phases 1–N — File-by-file conversion
+The renderer switch happens at the **`<Canvas>` boundary in Scene.jsx**. R3F accepts a custom renderer factory via the `gl` prop:
 
-Defined after phase 0 lands. Expected shape: one phase per file (or small group). Each phase ships an isolated commit that converts the file end-to-end: TS types, TSL materials, WebGPU support, WebGL fallback verified. Reviewable independently.
+```ts
+import * as THREE from "three";
+import WebGPURenderer from "three/examples/jsm/renderers/webgpu/WebGPURenderer.js";
 
-**Owner**: Codex executes per-file conversion against the spec from phase 0. Claude reviews each commit and handles any cases where the spec doesn't fit cleanly (e.g. when a file needs structural changes the spec didn't anticipate).
+const factory: ConstructorParameters<typeof Canvas>[0]["gl"] = async (canvas) => {
+  if (await canWebGPU()) {
+    const r = new WebGPURenderer({ canvas, antialias: true });
+    await r.init();
+    return r;
+  }
+  return new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+};
+```
 
-## Final phase — Wiki sync & close
+`canWebGPU()` probes `navigator.gpu` *and* successfully requests an adapter. We don't trust feature detection alone — some browsers expose `navigator.gpu` but fail to instantiate on first use. Falling back per-canvas means the editor and HeroStage can independently degrade.
 
-- [ ] New `wiki/architecture/engine.md` (or section in `stores.md`) documenting: the WebGPU/WebGL fallback contract, the TSL material conventions, where the TypeScript boundary sits and why, how a new file is added to the engine surface.
+The active renderer is exposed via a `useRendererBackend()` hook that reads from the R3F `state.gl` (`gl.isWebGPURenderer` exists; can also check `gl.backend?.constructor.name`). A small debug overlay component (`<RendererBadge />`) renders this when `process.env.NEXT_PUBLIC_DEV_OVERLAYS === "1"`; default off in prod.
+
+### TSL adoption — hybrid, not all-or-nothing
+
+Every engine file the rewrite touches gets converted to TSL node materials *for any materials it owns*. Files that only consume materials (CameraManager, LipsyncDriver) don't introduce new TSL nodes — they stay material-agnostic.
+
+Materials authored as plain `MeshStandardMaterial({ color, roughness, metalness, map })` collapse cleanly to `MeshStandardNodeMaterial`. Custom shader code (if any surfaces — none today in the inventory) gets ported to TSL `Fn(...)`. No shader strings in `.tsl.ts` files unless a shader genuinely needs to live separately.
+
+### TypeScript boundary
+
+The engine surface is migrated to TS in this plan. Everything else stays JSX:
+
+- **In scope**: `src/components/scene/**`, `src/lib/lipsync.js`, `src/lib/utils.js` (depended on transitively).
+- **Out of scope**: `src/components/{ui,shell,hub,home,editor,me,play,character,admin}/**`, `src/app/**`, `src/stores/**` (the stores get *narrow types added* — see below — but stay `.js`).
+- **Stores get types**: `useConfiguratorStore` and `useAuthStore` get JSDoc `@typedef` blocks for the shapes the engine consumes (`Character`, `CustomizationEntry`, `Asset`). The store stays `.js` so other parts of the app don't drag a TS conversion they didn't ask for; the engine surface gets the types it needs via JSDoc-published interfaces.
+
+`tsconfig.json` is added with `noEmit: true` and `allowJs: true` so `tsc` typechecks the engine without requiring the rest of the project to migrate. `bun lint` keeps running Biome on `.js` and `.ts(x)` uniformly. Build path: Next.js + SWC handles TS automatically.
+
+### Store decoupling — happens during the file conversions, not before
+
+`Avatar`, `Asset`, `SkinManager` currently read directly from `useConfiguratorStore`. The rewrite changes each to accept its data via **props or a `CharacterContext`** (a small React context that the editor's `<Scene>` wraps with the store's slice, and that other surfaces — HeroStage today, plaza tomorrow — can wrap with their own data).
+
+This is the same refactor that would land separately for the plaza; doing it inside the file-by-file rewrite means each file is touched once. The editor experience is preserved because the editor's wrapper still reads from the store.
+
+### File-by-file order
+
+Leaves first (no dependents), then merge upward. Each phase is its own commit, atomic and reviewable in isolation.
+
+| Phase | File(s) | Why this order |
+|---|---|---|
+| 1 | `Backdrop.jsx` | Zero store coupling, three meshes — the spike that validates the renderer-switch + TSL recipe. |
+| 2 | `src/lib/lipsync.js` + `LipsyncDriver.jsx` | Renderer-agnostic; TS-only conversion proves the worker + Next.js TS pipeline. |
+| 3 | `SkinManager.jsx` | Material work but no rendering structure changes. |
+| 4 | `Asset.jsx` | Material work + the first big decoupling refactor (store → props/context). |
+| 5 | `Avatar.jsx` | Material work + decoupling + the export pipeline rendezvous. The biggest file. |
+| 6 | `CameraManager.jsx` | TS-only; renderer-agnostic. |
+| 7 | `Scene.jsx` | The wrapper. Renderer-switch ships here. Screenshot/thumbnail capture moves through WebGPU's equivalents. |
+| 8 | `exportWorker.js` | TS-only. Worker context; gltf-transform pipeline stays unchanged. |
+
+Phase 8 stays last because it's the most independent and the most risk-free.
+
+## Phase 0 — Discovery & design ✅
+
+Shipped with this plan-file commit:
+
+- [x] Inventory of every engine file with LOC + store coupling.
+- [x] Decisions: renderer-selection strategy, TSL adoption pattern, TypeScript boundary, store-decoupling approach, file-by-file order.
+- [x] Success criteria written (see frontmatter).
+- [ ] **Spike: convert Backdrop.jsx end-to-end** — *deferred to Phase 1 ship.* The reason: a TS+TSL+WebGPU conversion needs real-hardware verification (WebGPU adapter init succeeds, materials render identically, no driver-specific glitches). That verification requires running the editor on at least one WebGPU-capable browser and at least one WebGL-fallback browser — not something that lints clean and is "done"; it needs eyeballing. Phase 0 ships the design; the spike is the first real-code phase.
+
+## Phases 1–8 — file conversions (open)
+
+Each phase ships one file (or pair) converted end-to-end per the order above. The first phase to land is the spike from Phase 0 design — pick Backdrop.jsx, do the full conversion in a worktree, run it on Chrome (WebGPU) and Safari (WebGL fallback), measure perf + bundle delta, then commit + write up the recipe as the canonical reference for Phases 2-8.
+
+When Phase 1 lands, the success criteria above can be tightened (replace the "within a tolerable perceptual delta" eyeball with a measured numeric tolerance).
+
+## Phase 9 — Wiki sync & close (deferred)
+
+When all file conversions land:
+
+- [ ] New `wiki/architecture/engine.md` documenting: renderer-switch contract (probe + fallback), TSL material conventions, where the TypeScript boundary sits and why, how a new file is added to the engine surface, the `CharacterContext` API.
+- [ ] Update [wiki/architecture/stores.md](../wiki/architecture/stores.md) to note the JSDoc-published interfaces engine consumers depend on.
+- [ ] [app-nav-and-positioning phase 6 (plaza polish)](app-nav-and-positioning.md#phase-6--plaza-polish-deferred-) becomes unblocked — the multi-character render path stops needing workaround clones.
 - [ ] Flip `wiki_sync.done: true`, `status: implemented`, `readiness: reference`.
 
-## Open questions (resolve in phase 0)
+## Open questions (resolve as phases land)
 
-- Renderer selection at the `<Canvas>` boundary vs at app root? (Affects how multiple surfaces — editor, hero, plaza — share or fork the renderer.)
-- TSL adoption: full switch to node materials, or hybrid (TSL for new materials, classic for unchanged ones)?
-- Do we move shaders out of inline strings into `.tsl.ts` files?
-- TypeScript strictness: full `strict: true` for engine files, or staged?
-- How does the lipsync worker (`exportWorker.js`) fit? Workers under WebGPU have their own context — verify the same fallback works.
+- WebGPU adapter requirements for our material set: do we need any optional features (timestamp queries for perf debug, shader-f16 for bandwidth) or is the default adapter enough? Resolve in Phase 1 with `adapter.features` introspection.
+- Web Worker WebGPU: the export worker pipeline uses Three on the main thread today (via `GLTFExporter` followed by a worker-side processing pass). Does the WebGPU path keep this split, or move all of `GLTFExporter.parse(...)` into the worker? Resolve in Phase 8.
+- `tsconfig` strictness: start `strict: false` to keep migrations fast, or `strict: true` from day one? Recommend `strict: false` + `noImplicitAny: true` for the engine slice; tighten when the surface is stable.
 
 ## Wiki sync
 
-_Filled before flipping `status: implemented`._
+_Filled before flipping `status: implemented` (Phase 9). Phase 0 design landed today; the wiki page for the engine ships when phases 1-8 close._

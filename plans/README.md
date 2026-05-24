@@ -112,6 +112,7 @@ Living plans, in current priority order. Update `status`, `priority`, and `last_
 | 1.3 | [Engine rewrite — TS + WebGPU/TSL](app-engine-rewrite.md) | draft | p1 | Big foundation. Refactors the singleton-store coupling on the way through, which unblocks plaza polish. Phase 0 (discovery) writes the success criteria. |
 | 1.4 | [Thumbnails](app-thumbnails.md) | **implemented** | p2 | Phase 1: 512² stored, 1024² supersampled, head+shoulders framing. Phases 2-3 deferred behind engine rewrite. |
 | 1.5 | [Editor mobile](app-editor-mobile.md) | **implemented** | p2 | ModeSelector mobile-first refactor; tighter mobile padding; ## Responsive conventions wiki section locks the mobile-first rule for positioning utilities. |
+| 1.6 | [Experiences polish](app-experiences-polish.md) | draft (blocked) | p3 | Skeleton only — deferred behind 1.3 engine rewrite. Per-experiment sub-plans open lazily. |
 
 ## Reference and follow-up plans
 
