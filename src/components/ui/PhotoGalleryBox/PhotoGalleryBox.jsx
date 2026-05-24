@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
 import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { toast } from "../primitives/Toast";
 import { Tooltip } from "../primitives/Tooltip";
+
+const MotionButton = motion.button;
 
 const TrashIcon = () => (
   <svg
@@ -152,28 +155,39 @@ const PhotoGalleryBox = () => {
       </div>
 
       <div className="flex gap-1.5">
-        <motion.button
-          type="button"
-          onClick={onCapture}
-          disabled={capturingPhoto}
-          whileHover={{ scale: capturingPhoto ? 1 : 1.02 }}
-          whileTap={{ scale: capturingPhoto ? 1 : 0.97 }}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-white/15 px-3 py-2 text-xs font-medium text-white ring-1 ring-white/25 transition-colors hover:bg-white/20 disabled:opacity-60"
+        <Button
+          asChild
+          variant="default"
+          className="flex h-auto flex-1 items-center justify-center gap-1.5 rounded-lg bg-white/15 px-3 py-2 text-xs font-medium text-white ring-1 ring-white/25 transition-colors hover:bg-white/20 disabled:opacity-60"
         >
-          {capturingPhoto ? <Spinner /> : <CameraIcon />}
-          <span>Capture</span>
-        </motion.button>
-        <Tooltip label="Download as PNG" side="top">
-          <motion.button
+          <MotionButton
             type="button"
-            onClick={screenshot}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.94 }}
-            aria-label="Download screenshot"
+            onClick={onCapture}
+            disabled={capturingPhoto}
+            whileHover={{ scale: capturingPhoto ? 1 : 1.02 }}
+            whileTap={{ scale: capturingPhoto ? 1 : 0.97 }}
+          >
+            {capturingPhoto ? <Spinner /> : <CameraIcon />}
+            <span>Capture</span>
+          </MotionButton>
+        </Button>
+        <Tooltip label="Download as PNG" side="top">
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
             className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/65 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white"
           >
-            <DownloadIcon />
-          </motion.button>
+            <MotionButton
+              type="button"
+              onClick={screenshot}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.94 }}
+              aria-label="Download screenshot"
+            >
+              <DownloadIcon />
+            </MotionButton>
+          </Button>
         </Tooltip>
       </div>
 
@@ -208,13 +222,15 @@ const PhotoGalleryBox = () => {
                   className="h-full w-full object-cover"
                 />
                 <Tooltip label="Delete" side="top">
-                  <button
+                  <Button
                     type="button"
+                    variant="destructive"
+                    size="icon"
                     onClick={(e) => onDelete(p, e)}
-                    className="absolute top-1 right-1 inline-flex h-6 w-6 items-center justify-center rounded-md bg-black/55 text-white/70 opacity-0 transition-all group-hover:opacity-100 hover:bg-rose-500/70 hover:text-white"
+                    className="absolute top-1 right-1 h-6 w-6 rounded-md bg-black/55 text-white/70 opacity-0 transition-all group-hover:opacity-100 hover:bg-rose-500/70 hover:text-white"
                   >
                     <TrashIcon />
-                  </button>
+                  </Button>
                 </Tooltip>
               </motion.a>
             );

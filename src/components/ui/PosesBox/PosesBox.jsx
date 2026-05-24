@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
 import {
   useConfiguratorStore,
   PHOTO_POSES,
@@ -9,6 +10,7 @@ import {
 import { Tooltip } from "../primitives/Tooltip";
 
 const PILL_SPRING = { type: "spring", stiffness: 380, damping: 32 };
+const MotionButton = motion.button;
 
 const PosesBox = () => {
   const setPose = useConfiguratorStore((state) => state.setPose);
@@ -21,25 +23,30 @@ const PosesBox = () => {
         const active = pose === value;
         return (
           <Tooltip key={label} label={label} side="top">
-            <motion.button
-              type="button"
-              onClick={() => setPose(value)}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              transition={PILL_SPRING}
-              className={`relative inline-flex shrink-0 items-center justify-center rounded-xl px-5 py-2.5 text-xs font-medium tracking-tight transition-colors ${
+            <Button
+              asChild
+              variant="ghost"
+              className={`relative h-auto shrink-0 rounded-xl px-5 py-2.5 text-xs font-medium tracking-tight transition-colors hover:bg-transparent ${
                 active ? "text-white" : "text-white/55 hover:text-white"
               }`}
             >
-              {active && (
-                <motion.div
-                  layoutId="active-pose-pill"
-                  transition={PILL_SPRING}
-                  className="absolute inset-0 rounded-xl bg-white/12 ring-1 ring-white/25 shadow-[0_0_18px_rgba(255,255,255,0.12)]"
-                />
-              )}
-              <span className="relative">{label}</span>
-            </motion.button>
+              <MotionButton
+                type="button"
+                onClick={() => setPose(value)}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                transition={PILL_SPRING}
+              >
+                {active && (
+                  <motion.div
+                    layoutId="active-pose-pill"
+                    transition={PILL_SPRING}
+                    className="absolute inset-0 rounded-xl bg-white/12 ring-1 ring-white/25 shadow-[0_0_18px_rgba(255,255,255,0.12)]"
+                  />
+                )}
+                <span className="relative">{label}</span>
+              </MotionButton>
+            </Button>
           </Tooltip>
         );
       })}

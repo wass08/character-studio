@@ -1,8 +1,11 @@
 "use client";
 
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { Tooltip } from "../primitives/Tooltip";
+
+const MotionButton = motion.button;
 
 const UserIcon = () => (
   <svg
@@ -52,17 +55,22 @@ const UserMenu = () => {
   if (!isLoggedIn) {
     return (
       <Tooltip label="Sign in" side="bottom">
-        <motion.button
-          type="button"
-          onClick={() => setLoginDialogOpen(true)}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.94 }}
-          aria-label="Sign in"
+        <Button
+          asChild
+          variant="ghost"
           className="glass-panel inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white/85 transition-colors hover:text-white"
         >
-          <UserIcon />
-          <span className="text-xs tracking-tight">Sign in</span>
-        </motion.button>
+          <MotionButton
+            type="button"
+            onClick={() => setLoginDialogOpen(true)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.94 }}
+            aria-label="Sign in"
+          >
+            <UserIcon />
+            <span className="text-xs tracking-tight">Sign in</span>
+          </MotionButton>
+        </Button>
       </Tooltip>
     );
   }
@@ -80,16 +88,22 @@ const UserMenu = () => {
         </div>
       </Tooltip>
       <Tooltip label="Sign out" side="bottom">
-        <motion.button
-          type="button"
-          onClick={logout}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.94 }}
-          aria-label="Sign out"
+        <Button
+          asChild
+          variant="ghost"
+          size="icon"
           className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/55 transition-colors hover:bg-white/10 hover:text-white"
         >
-          <LogoutIcon />
-        </motion.button>
+          <MotionButton
+            type="button"
+            onClick={logout}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.94 }}
+            aria-label="Sign out"
+          >
+            <LogoutIcon />
+          </MotionButton>
+        </Button>
       </Tooltip>
     </div>
   );

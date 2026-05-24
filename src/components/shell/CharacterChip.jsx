@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as Popover from "@radix-ui/react-popover";
 import { ChevronDown, Plus, UserRound } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { cn } from "@/lib/utils";
@@ -75,19 +76,20 @@ const CharacterChip = () => {
   // about login.
   if (!currentCharacterId) {
     return (
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={() => {
           if (isLoggedIn) router.push("/create");
           else setLoginDialogOpen(true);
         }}
-        className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] pr-3 pl-1 text-xs font-medium tracking-tight text-white/75 transition-colors hover:border-white/25 hover:text-white"
+        className="h-9 gap-2 rounded-full border border-white/10 bg-white/[0.04] px-0 pr-3 pl-1 text-xs font-medium tracking-tight text-white/75 transition-colors hover:border-white/25 hover:bg-white/[0.04] hover:text-white"
       >
         <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
           <UserRound className="h-3.5 w-3.5 text-white/70" />
         </span>
         <span>No character</span>
-      </button>
+      </Button>
     );
   }
 
@@ -101,10 +103,11 @@ const CharacterChip = () => {
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
-        <button
+        <Button
           type="button"
+          variant="ghost"
           className={cn(
-            "inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] pr-2 pl-1 text-xs font-medium tracking-tight text-white/85 transition-colors hover:border-white/25 hover:bg-white/[0.07] hover:text-white",
+            "h-9 gap-2 rounded-full border border-white/10 bg-white/[0.04] px-0 pr-2 pl-1 text-xs font-medium tracking-tight text-white/85 transition-colors hover:border-white/25 hover:bg-white/[0.07] hover:text-white",
             open && "border-white/30 bg-white/[0.08] text-white",
           )}
         >
@@ -123,7 +126,7 @@ const CharacterChip = () => {
             {currentCharacterName || "Untitled"}
           </span>
           <ChevronDown className="h-3 w-3 text-white/55" />
-        </button>
+        </Button>
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
@@ -158,11 +161,12 @@ const CharacterChip = () => {
                   ? pb.files.getURL(c, c.thumbnail, { thumb: "128x128" })
                   : null;
                 return (
-                  <button
+                  <Button
                     type="button"
                     key={c.id}
+                    variant="ghost"
                     onClick={() => onSwitch(c)}
-                    className="group flex flex-col gap-1 rounded-lg p-1 text-left text-[10px] text-white/65 transition-colors hover:bg-white/[0.06] hover:text-white"
+                    className="group flex h-auto flex-col items-stretch justify-start gap-1 rounded-lg p-1 text-left text-[10px] font-normal text-white/65 transition-colors hover:bg-white/[0.06] hover:text-white"
                   >
                     <span className="block aspect-square overflow-hidden rounded-md bg-white/5 ring-1 ring-white/10">
                       {t ? (
@@ -174,7 +178,7 @@ const CharacterChip = () => {
                       ) : null}
                     </span>
                     <span className="truncate">{c.name}</span>
-                  </button>
+                  </Button>
                 );
               })}
             <Link

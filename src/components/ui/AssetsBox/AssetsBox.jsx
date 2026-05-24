@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef } from "react";
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
 import { useConfiguratorStore, pb } from "@/stores/useConfiguratorStore";
 import GenderSelectionBox from "../GenderSelectionBox/GenderSelectionBox";
 import { HeightSlider } from "../HeightSlider/HeightSlider";
@@ -15,6 +16,7 @@ import { cn } from "../primitives/cn";
 
 const PILL_SPRING = { type: "spring", stiffness: 380, damping: 32 };
 const ASSET_SPRING = { type: "spring", stiffness: 360, damping: 28 };
+const MotionButton = motion.button;
 
 const SIDEBAR_CLASS = cn(
   "fixed inset-x-0 bottom-0 z-40 flex max-h-[55vh] w-full flex-col-reverse items-stretch gap-2 px-2 pb-2",
@@ -40,7 +42,7 @@ const CATEGORIES_RAIL_CLASS = cn(
 );
 
 const TAB_BUTTON_CLASS =
-  "relative inline-flex shrink-0 items-center justify-center rounded-lg p-2.5 transition-colors hover:bg-white/[0.05]";
+  "relative h-auto shrink-0 rounded-lg p-2.5 transition-colors hover:bg-white/[0.05]";
 
 const ACTIVE_PILL_CLASS =
   "absolute inset-0 rounded-lg bg-white/[0.12] ring-1 ring-white/20 shadow-[0_0_18px_rgba(255,255,255,0.08)]";
@@ -77,13 +79,15 @@ const SectionHeader = ({ children, onReset, resetLabel }) => (
     </h3>
     {onReset && (
       <Tooltip label={resetLabel} side="top">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={onReset}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-white/55 transition-colors hover:bg-white/10 hover:text-white"
+          className="h-6 w-6 rounded-md text-white/55 transition-colors hover:bg-white/10 hover:text-white"
         >
           <ResetIcon />
-        </button>
+        </Button>
       </Tooltip>
     )}
   </div>
@@ -184,7 +188,9 @@ const AssetsBox = () => {
             const active = activeSectionId === section.id;
             return (
               <Tooltip key={section.id} label={section.name} side="top">
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
                   onClick={() => {
                     setActiveSectionId(section.id);
                     const firstCat = categoriesBySection[section.id]?.[0];
@@ -205,12 +211,14 @@ const AssetsBox = () => {
                       active={active}
                     />
                   </div>
-                </button>
+                </Button>
               </Tooltip>
             );
           })}
           <Tooltip label="Randomize" side="top">
-            <button
+            <Button
+              type="button"
+              variant="ghost"
               onClick={randomize}
               className={cn(
                 TAB_BUTTON_CLASS,
@@ -218,7 +226,7 @@ const AssetsBox = () => {
               )}
             >
               <RandomizeIcon />
-            </button>
+            </Button>
           </Tooltip>
         </div>
 
@@ -229,7 +237,9 @@ const AssetsBox = () => {
                 const active = currentCategory?.id === category.id;
                 return (
                   <Tooltip key={category.id} label={category.name} side="top">
-                    <button
+                    <Button
+                      type="button"
+                      variant="ghost"
                       onClick={() => setCurrentCategory(category)}
                       className={TAB_BUTTON_CLASS}
                     >
@@ -246,7 +256,7 @@ const AssetsBox = () => {
                           active={active}
                         />
                       </div>
-                    </button>
+                    </Button>
                   </Tooltip>
                 );
               })}
@@ -386,13 +396,9 @@ export default AssetsBox;
 
 const AssetButton = ({ children, onClick, selected, label, backgroundColor }) => (
   <Tooltip label={label} side="top">
-    <motion.button
-      type="button"
-      onClick={onClick}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      transition={ASSET_SPRING}
-      style={backgroundColor ? { backgroundColor } : undefined}
+    <Button
+      asChild
+      variant="ghost"
       className={cn(
         "relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg border p-1.5 text-white/80 transition-colors",
         "h-[72px] w-[72px]",
@@ -405,8 +411,17 @@ const AssetButton = ({ children, onClick, selected, label, backgroundColor }) =>
         !backgroundColor && (selected ? "bg-white/[0.10]" : "bg-white/[0.03] hover:bg-white/[0.06]"),
       )}
     >
-      {children}
-    </motion.button>
+      <MotionButton
+        type="button"
+        onClick={onClick}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        transition={ASSET_SPRING}
+        style={backgroundColor ? { backgroundColor } : undefined}
+      >
+        {children}
+      </MotionButton>
+    </Button>
   </Tooltip>
 );
 

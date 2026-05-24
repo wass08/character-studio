@@ -2,6 +2,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { CustomPicker } from "react-color";
+import { Button } from "@/components/ui/button";
 import {
   Hue,
   Saturation,
@@ -9,6 +10,8 @@ import {
 } from "react-color/lib/components/common";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { cn } from "../primitives/cn";
+
+const MotionButton = motion.button;
 
 const SaturationPointer = () => (
   <div
@@ -80,19 +83,25 @@ const CustomColorPicker = (props) => {
             const isActive =
               activeColor && activeColor === color.toLowerCase?.();
             return (
-              <motion.button
+              <Button
+                asChild
                 key={color}
-                type="button"
-                whileHover={{ scale: 1.12 }}
-                whileTap={{ scale: 0.92 }}
-                onClick={() => props.onChange(color)}
-                style={{ backgroundColor: color }}
+                variant="ghost"
+                size="icon"
                 className={`h-5 w-5 shrink-0 rounded-md transition-shadow ${
                   isActive
                     ? "ring-2 ring-white ring-offset-1 ring-offset-transparent shadow-[0_0_10px_rgba(255,255,255,0.3)]"
                     : "ring-1 ring-black/10 hover:ring-white/40"
                 }`}
-              />
+              >
+                <MotionButton
+                  type="button"
+                  whileHover={{ scale: 1.12 }}
+                  whileTap={{ scale: 0.92 }}
+                  onClick={() => props.onChange(color)}
+                  style={{ backgroundColor: color }}
+                />
+              </Button>
             );
           })}
         </div>

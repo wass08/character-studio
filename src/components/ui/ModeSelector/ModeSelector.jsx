@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
 import { useConfiguratorStore, UI_MODES } from "@/stores/useConfiguratorStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { cn } from "../primitives/cn";
@@ -50,10 +51,11 @@ const ModeSelector = () => {
           setMode(m.id);
         };
         const button = (
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={onClick}
-            className={`relative inline-flex items-center justify-center px-5 py-2 text-xs font-medium tracking-tight transition-colors ${
+            className={`relative h-auto rounded-full px-5 py-2 text-xs font-medium tracking-tight transition-colors hover:bg-transparent ${
               active
                 ? "text-white"
                 : disabled
@@ -69,7 +71,7 @@ const ModeSelector = () => {
               />
             )}
             <span className="relative">{m.label}</span>
-          </button>
+          </Button>
         );
         return (
           <Tooltip

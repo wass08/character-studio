@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { LogOut, Settings, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { cn } from "@/lib/utils";
 
@@ -24,13 +25,14 @@ const AccountIdentity = () => {
 
   if (!isLoggedIn) {
     return (
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={() => setLoginDialogOpen(true)}
-        className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium tracking-tight text-white/75 hover:text-white"
+        className="h-9 gap-1.5 rounded-full px-3 text-xs font-medium tracking-tight text-white/75 hover:bg-transparent hover:text-white"
       >
         Sign in
-      </button>
+      </Button>
     );
   }
 
@@ -39,14 +41,15 @@ const AccountIdentity = () => {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
-        <button
+        <Button
           type="button"
+          variant="ghost"
           className={cn(
-            "inline-flex h-9 items-center gap-2 rounded-full px-3 text-xs font-medium tracking-tight text-white/85 transition-colors hover:bg-white/[0.05] hover:text-white",
+            "h-9 gap-2 rounded-full px-3 text-xs font-medium tracking-tight text-white/85 transition-colors hover:bg-white/[0.05] hover:text-white",
           )}
         >
           <span className="max-w-[120px] truncate">{display}</span>
-        </button>
+        </Button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content

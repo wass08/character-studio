@@ -6,6 +6,7 @@ import { Mic, Pause, Play, Upload, Volume2 } from "lucide-react";
 import Scene from "@/components/scene/Scene";
 import LipsyncDriver from "@/components/scene/LipsyncDriver";
 import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
+import { Button } from "@/components/ui/button";
 import PlayShell from "./PlayShell";
 import NoCharacterOverlay from "./NoCharacterOverlay";
 import {
@@ -126,8 +127,10 @@ const LipsyncView = () => {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-6">
         <div className="pointer-events-auto glass-panel flex w-full max-w-2xl flex-col gap-3 rounded-2xl p-4">
           <div className="flex items-center gap-3">
-            <button
+            <Button
               type="button"
+              variant="default"
+              size="icon"
               onClick={() => {
                 if (playing) stop();
                 else if (selected) {
@@ -135,14 +138,14 @@ const LipsyncView = () => {
                 }
               }}
               disabled={!selected}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-zinc-950 ring-1 ring-white/40 transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-11 w-11 rounded-full bg-white text-zinc-950 ring-1 ring-white/40 transition-transform hover:scale-105 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               {playing ? (
                 <Pause className="h-4 w-4 fill-current" />
               ) : (
                 <Play className="ml-0.5 h-4 w-4 fill-current" />
               )}
-            </button>
+            </Button>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium text-white">
                 {selected || "Pick a voice"}
@@ -176,15 +179,16 @@ const LipsyncView = () => {
                 const url = pb.files.getURL(p, p.audio);
                 const active = selected === p.label;
                 return (
-                  <button
+                  <Button
                     type="button"
                     key={p.id}
+                    variant="outline"
                     onClick={() => playUrl(url, p.label)}
                     className={cn(
-                      "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium tracking-tight transition-colors",
+                      "h-9 shrink-0 gap-1.5 rounded-full border px-3 text-xs font-medium tracking-tight transition-colors",
                       active
                         ? "border-white/40 bg-white/15 text-white"
-                        : "border-white/10 bg-white/[0.04] text-white/75 hover:border-white/25 hover:text-white",
+                        : "border-white/10 bg-white/[0.04] text-white/75 hover:border-white/25 hover:bg-white/[0.04] hover:text-white",
                     )}
                   >
                     <Volume2 className="h-3.5 w-3.5" />
@@ -194,7 +198,7 @@ const LipsyncView = () => {
                         {p.gender}
                       </span>
                     )}
-                  </button>
+                  </Button>
                 );
               })
             )}

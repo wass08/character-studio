@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { Plus } from "lucide-react";
@@ -53,11 +54,12 @@ const NoCharacterOverlay = () => {
                   ? pb.files.getURL(c, c.thumbnail, { thumb: "128x128" })
                   : null;
                 return (
-                  <button
+                  <Button
                     type="button"
                     key={c.id}
+                    variant="ghost"
                     onClick={() => loadCharacter(c)}
-                    className="group flex flex-col gap-1 text-left"
+                    className="group flex h-auto flex-col items-stretch justify-start gap-1 p-0 text-left font-normal hover:bg-transparent hover:text-inherit"
                   >
                     <span className="block aspect-square overflow-hidden rounded-lg bg-white/5 ring-1 ring-white/10 transition group-hover:ring-white/30">
                       {t && (
@@ -71,7 +73,7 @@ const NoCharacterOverlay = () => {
                     <span className="truncate text-[10px] text-white/65">
                       {c.name}
                     </span>
-                  </button>
+                  </Button>
                 );
               })}
         </div>
@@ -84,13 +86,14 @@ const NoCharacterOverlay = () => {
             Create one
           </Link>
           {!isLoggedIn && (
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => setLoginDialogOpen(true)}
-              className="inline-flex flex-1 items-center justify-center rounded-lg border border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-medium tracking-tight text-white/85 hover:border-white/30 hover:text-white"
+              className="h-auto flex-1 rounded-lg border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-medium tracking-tight text-white/85 hover:border-white/30 hover:bg-white/[0.04] hover:text-white"
             >
               Sign in
-            </button>
+            </Button>
           )}
         </div>
       </div>

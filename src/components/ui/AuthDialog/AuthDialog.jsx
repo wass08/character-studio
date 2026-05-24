@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/useAuthStore";
 import {
   Dialog,
@@ -84,14 +85,15 @@ const AuthDialog = () => {
               autoFocus
               className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-white/35 focus:outline-none"
             />
-            <button
+            <Button
               type="submit"
+              variant="default"
               disabled={requestPending}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-white/15 px-4 py-2.5 text-sm font-medium tracking-tight text-white ring-1 ring-white/25 transition-colors hover:bg-white/20 disabled:opacity-60"
+              className="h-auto gap-2 rounded-lg bg-white/15 px-4 py-2.5 text-sm font-medium tracking-tight text-white ring-1 ring-white/25 transition-colors hover:bg-white/20 disabled:opacity-60"
             >
               {requestPending && <Spinner />}
               <span>Send code</span>
-            </button>
+            </Button>
           </form>
         ) : (
           <form onSubmit={onVerify} className="mt-5 flex flex-col gap-3">
@@ -105,21 +107,23 @@ const AuthDialog = () => {
               autoFocus
               className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-center text-lg tracking-[0.5em] text-white placeholder:text-white/30 focus:border-white/35 focus:outline-none"
             />
-            <button
+            <Button
               type="submit"
+              variant="default"
               disabled={verifyPending}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-white/15 px-4 py-2.5 text-sm font-medium tracking-tight text-white ring-1 ring-white/25 transition-colors hover:bg-white/20 disabled:opacity-60"
+              className="h-auto gap-2 rounded-lg bg-white/15 px-4 py-2.5 text-sm font-medium tracking-tight text-white ring-1 ring-white/25 transition-colors hover:bg-white/20 disabled:opacity-60"
             >
               {verifyPending && <Spinner />}
               <span>Verify</span>
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="link"
               onClick={resetOtp}
-              className="text-xs text-white/55 hover:text-white/80"
+              className="h-auto p-0 text-xs font-normal text-white/55 hover:text-white/80 hover:no-underline"
             >
               Use a different email
-            </button>
+            </Button>
           </form>
         )}
       </DialogContent>

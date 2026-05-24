@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
 import {
   UI_MODES,
   pb,
@@ -11,6 +12,8 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { toast } from "../primitives/Toast";
 import { Tooltip } from "../primitives/Tooltip";
 import { cn } from "../primitives/cn";
+
+const MotionButton = motion.button;
 
 const PlusIcon = () => (
   <svg
@@ -167,16 +170,21 @@ const MyCharactersBox = () => {
         <div className="py-8 text-center text-xs text-white/45">Loading…</div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          <motion.button
-            type="button"
-            onClick={onNew}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.02] p-2 text-white/55 transition-colors hover:border-white/35 hover:bg-white/[0.05] hover:text-white"
+          <Button
+            asChild
+            variant="outline"
+            className="flex h-auto w-full aspect-square flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.02] p-2 text-white/55 transition-colors hover:border-white/35 hover:bg-white/[0.05] hover:text-white"
           >
-            <PlusIcon />
-            <span className="text-[11px] font-medium">New</span>
-          </motion.button>
+            <MotionButton
+              type="button"
+              onClick={onNew}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <PlusIcon />
+              <span className="text-[11px] font-medium">New</span>
+            </MotionButton>
+          </Button>
 
           {characters.map((c) => {
             const thumb = c.thumbnail
@@ -226,27 +234,31 @@ const MyCharactersBox = () => {
                   label={isMain ? "Unset main" : "Set as main"}
                   side="top"
                 >
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={(e) => onToggleMain(c, e)}
                     className={cn(
-                      "absolute top-1 left-1 inline-flex h-6 w-6 items-center justify-center rounded-md transition-all",
+                      "absolute top-1 left-1 h-6 w-6 rounded-md transition-all",
                       isMain
                         ? "bg-amber-400/85 text-amber-950"
                         : "bg-black/45 text-white/70 opacity-0 group-hover:opacity-100 hover:bg-amber-400/70 hover:text-amber-950",
                     )}
                   >
                     <StarIcon filled={isMain} />
-                  </button>
+                  </Button>
                 </Tooltip>
                 <Tooltip label="Delete" side="top">
-                  <button
+                  <Button
                     type="button"
+                    variant="destructive"
+                    size="icon"
                     onClick={(e) => onDelete(c, e)}
-                    className="absolute top-1 right-1 inline-flex h-6 w-6 items-center justify-center rounded-md bg-black/45 text-white/70 opacity-0 transition-all group-hover:opacity-100 hover:bg-rose-500/70 hover:text-white"
+                    className="absolute top-1 right-1 h-6 w-6 rounded-md bg-black/45 text-white/70 opacity-0 transition-all group-hover:opacity-100 hover:bg-rose-500/70 hover:text-white"
                   >
                     <TrashIcon />
-                  </button>
+                  </Button>
                 </Tooltip>
               </motion.div>
             );

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Copy, Plus, Star, Trash2 } from "lucide-react";
 import HubHeader from "@/components/shell/HubHeader";
+import { Button } from "@/components/ui/button";
 import {
   pb,
   useConfiguratorStore,
@@ -132,13 +133,14 @@ const MyCharactersPage = () => {
             <p className="text-sm text-white/55">
               Sign in to see and manage your characters.
             </p>
-            <button
+            <Button
               type="button"
+              variant="default"
               onClick={() => setLoginDialogOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white px-5 py-2 text-xs font-semibold tracking-tight text-zinc-950"
+              className="h-auto gap-1.5 rounded-full bg-white px-5 py-2 text-xs font-semibold tracking-tight text-zinc-950 hover:bg-white/90"
             >
               Sign in
-            </button>
+            </Button>
           </div>
         ) : loading ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
@@ -191,39 +193,45 @@ const MyCharactersPage = () => {
                   </div>
 
                   <div className="absolute right-1 top-1 z-20 flex flex-col gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={(e) => {
                         e.preventDefault();
                         onDuplicate(c);
                       }}
                       title="Duplicate"
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-black/50 text-white/75 backdrop-blur hover:bg-black/70 hover:text-white"
+                      className="h-7 w-7 rounded-md bg-black/50 text-white/75 backdrop-blur hover:bg-black/70 hover:text-white"
                     >
                       <Copy className="h-3.5 w-3.5" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="destructive"
+                      size="icon"
                       onClick={(e) => {
                         e.preventDefault();
                         onDelete(c);
                       }}
                       title="Delete"
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-black/50 text-white/75 backdrop-blur hover:bg-rose-500/70 hover:text-white"
+                      className="h-7 w-7 rounded-md bg-black/50 text-white/75 backdrop-blur hover:bg-rose-500/70 hover:text-white"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   </div>
 
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={(e) => {
                       e.preventDefault();
                       onToggleMain(c);
                     }}
                     title={isMain ? "Unset main" : "Set as main"}
                     className={cn(
-                      "absolute left-1 top-1 z-20 inline-flex h-7 w-7 items-center justify-center rounded-md transition-all",
+                      "absolute left-1 top-1 z-20 h-7 w-7 rounded-md transition-all",
                       isMain
                         ? "bg-amber-400/85 text-amber-950"
                         : "bg-black/50 text-white/70 opacity-0 backdrop-blur group-hover:opacity-100 hover:bg-amber-400/70 hover:text-amber-950",
@@ -235,7 +243,7 @@ const MyCharactersPage = () => {
                         isMain && "fill-current",
                       )}
                     />
-                  </button>
+                  </Button>
                 </motion.div>
               );
             })}

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
 import {
   COMPRESSION,
   UI_MODES,
@@ -16,6 +17,7 @@ const COMPRESSION_OPTIONS = [
 ];
 
 const PILL_SPRING = { type: "spring", stiffness: 380, damping: 32 };
+const MotionButton = motion.button;
 
 const SECTIONS = [
   {
@@ -68,12 +70,13 @@ const CompressionPicker = ({ value, onChange }) => (
       {COMPRESSION_OPTIONS.map((opt) => {
         const active = value === opt.value;
         return (
-          <button
+          <Button
             key={opt.value}
             type="button"
+            variant="ghost"
             onClick={() => onChange(opt.value)}
             className={cn(
-              "relative flex flex-1 items-center justify-center rounded-md px-2 py-1.5 text-[11px] font-medium tracking-tight transition-colors",
+              "relative h-auto flex-1 rounded-md px-2 py-1.5 text-[11px] font-medium tracking-tight transition-colors hover:bg-transparent",
               active ? "text-white" : "text-white/55 hover:text-white/85",
             )}
           >
@@ -85,7 +88,7 @@ const CompressionPicker = ({ value, onChange }) => (
               />
             )}
             <span className="relative">{opt.label}</span>
-          </button>
+          </Button>
         );
       })}
     </div>
@@ -100,10 +103,11 @@ const formatBytes = (bytes) => {
 };
 
 const Checkbox = ({ checked, label, description, onChange }) => (
-  <button
+  <Button
     type="button"
+    variant="ghost"
     onClick={onChange}
-    className="group flex w-full items-start gap-3 rounded-md p-2.5 text-left transition-colors hover:bg-white/[0.04]"
+    className="group flex h-auto w-full items-start justify-start gap-3 rounded-md p-2.5 text-left font-normal whitespace-normal transition-colors hover:bg-white/[0.04] hover:text-inherit"
   >
     <span
       className={cn(
@@ -139,7 +143,7 @@ const Checkbox = ({ checked, label, description, onChange }) => (
         {description}
       </span>
     </div>
-  </button>
+  </Button>
 );
 
 const ExportBox = () => {
@@ -240,21 +244,26 @@ const ExportBox = () => {
           </span>
         </div>
 
-        <motion.button
-          type="button"
-          onClick={handleExport}
-          disabled={exporting}
-          whileHover={{ scale: exporting ? 1 : 1.02 }}
-          whileTap={{ scale: exporting ? 1 : 0.97 }}
+        <Button
+          asChild
+          variant="default"
           className={cn(
-            "inline-flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium tracking-tight transition-colors",
+            "h-auto w-full rounded-lg px-4 py-3 text-sm font-medium tracking-tight transition-colors",
             exporting
               ? "cursor-not-allowed bg-white/10 text-white/50"
               : "bg-white text-black hover:bg-white/90",
           )}
         >
-          {exporting ? "Exporting…" : "Export GLB"}
-        </motion.button>
+          <MotionButton
+            type="button"
+            onClick={handleExport}
+            disabled={exporting}
+            whileHover={{ scale: exporting ? 1 : 1.02 }}
+            whileTap={{ scale: exporting ? 1 : 0.97 }}
+          >
+            {exporting ? "Exporting…" : "Export GLB"}
+          </MotionButton>
+        </Button>
       </div>
     </div>
   );

@@ -16,6 +16,7 @@ import {
 import Scene from "@/components/scene/Scene";
 import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
 import HubHeader from "@/components/shell/HubHeader";
+import { Button } from "@/components/ui/button";
 import {
   pb,
   useConfiguratorStore,
@@ -171,21 +172,23 @@ const CharacterPageView = ({ id }) => {
                       <Pencil className="h-3.5 w-3.5" /> Edit
                     </Link>
                   ) : (
-                    <button
+                    <Button
                       type="button"
+                      variant="default"
                       onClick={onFork}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-semibold tracking-tight text-zinc-950 transition-colors hover:bg-white/90"
+                      className="h-auto gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-semibold tracking-tight text-zinc-950 transition-colors hover:bg-white/90"
                     >
                       <GitFork className="h-3.5 w-3.5" /> Fork
-                    </button>
+                    </Button>
                   )}
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={onShare}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-medium tracking-tight text-white/85 hover:border-white/30 hover:text-white"
+                    className="h-auto gap-1.5 rounded-full border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-medium tracking-tight text-white/85 hover:border-white/30 hover:bg-white/[0.04] hover:text-white"
                   >
                     <Share2 className="h-3.5 w-3.5" /> Share
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="mt-5">
