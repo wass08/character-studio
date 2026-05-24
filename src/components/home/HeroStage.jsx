@@ -7,6 +7,7 @@ import { motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import Avatar from "@/components/scene/Avatar";
+import { StoreCharacterProvider } from "@/components/scene/CharacterContext";
 import { Button } from "@/components/ui/button";
 import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 
@@ -167,7 +168,9 @@ const HeroStage = () => {
               intensity={0.8}
               color="#fff2e7"
             />
-            <Avatar />
+            <StoreCharacterProvider>
+              <Avatar />
+            </StoreCharacterProvider>
           </Canvas>
         </motion.div>
       </div>

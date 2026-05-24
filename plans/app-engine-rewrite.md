@@ -4,7 +4,7 @@ title: Engine rewrite — TypeScript + WebGPU/TSL coupled
 status: in_progress
 kind: living-plan
 priority: p1
-last_reviewed: 2026-05-24
+last_reviewed: 2026-05-25
 goal: "Convert the 3D engine surface (src/components/scene/, src/lib/lipsync.js, related shaders/materials) to TypeScript and TSL/WebGPU in a single pass per file, with a WebGL fallback for unsupported browsers."
 readiness: planned
 success_criteria:
@@ -176,17 +176,54 @@ Shipped 2026-05-23. Typed the `CAMERA_CONFIGS` record + `Triplet` helper for `[x
 
 Shipped 2026-05-23. Typed the `composeWithLogo` signature (`HTMLCanvasElement → Promise<Blob | null>`) and the three store-setter callbacks (`ScreenshotFn`, `CaptureFn`) so the engine surface declares its IO contract. Typed `SceneContent`'s `children` as `ReactNode`. Promise + canvas + RenderTarget surfaces typed inline — `gl.domElement` cast to `HTMLCanvasElement` (R3F's `WebGLRenderer.domElement` is typed as the broader DOM `HTMLCanvasElement | OffscreenCanvas` union). Captured the explicit `Promise<Blob | null>` return so `toBlob`'s callback type narrows correctly. No behavior change.
 
-### Phases 4a, 5a, 8a (remaining)
+### Phase 4a — Asset TS + CharacterContext decoupling ✅
 
-Heavier, deferred for focused sessions:
+Shipped 2026-05-25.
 
-- **Phase 4a (Asset.tsx)** — 131 LOC, 8 store refs. The store coupling is heavy; the natural moment to introduce CharacterContext for the (b) decoupling work. Doing (a) without (b) here is possible but the result is a tangle.
-- **Phase 5a (Avatar.tsx)** — 201 LOC, 6 store refs, plus the worker bridge to exportWorker. Same CharacterContext question.
-- **Phase 8a (exportWorker.ts)** — 432 LOC, 0 store refs. Skipped on first pass: the worker is loaded via `new URL("./exportWorker.js", import.meta.url)` in Avatar.jsx; Next.js's worker bundling is sensitive to the literal extension. Conversion needs either a careful URL update in Avatar + verification that turbopack still emits the worker chunk, or a defer-until-Avatar-converts strategy. Low value (no store, no React, library code) — leave for last.
+- `src/components/scene/Asset.tsx` (was `.jsx`). Replaced all 8 `useConfiguratorStore` reads with a single `useCharacter()` destructure (`customization`, `lockedGroups`, `skin`, `updateColor`, `registerMorphs`, `registerColorSlots`, `morphValues`). Typed the `useGLTF` scene-traversal pass via an `isMesh` type guard so the colour + morph passes narrow `Object3D` → `Mesh` cleanly. `attachedItems` typed inline as `AttachedItem[]`.
+- Introduced `src/components/scene/CharacterContext.tsx` — the new engine-side API. Exports `useCharacter()`, the `CharacterContextValue` shape, and a `StoreCharacterProvider` that wraps the singleton store via `zustand/react/shallow`. Editor / hero / per-character-play wrap with `StoreCharacterProvider`; future plaza can wrap with its own per-character provider against the same context.
+- `bun run build` + `bunx tsc --noEmit` clean.
+
+### Phase 5a — Avatar TS + CharacterContext decoupling ✅
+
+Shipped 2026-05-25.
+
+- `src/components/scene/Avatar.tsx` (was `.jsx`). Replaced 6 `useConfiguratorStore` reads with `useCharacter()` (`gender`, `customization`, `height`, `pose`, `setDownload`). `pb` is still imported directly from the store module — it's a non-state singleton client, not a candidate for the character context.
+- Typed the Web Worker bridge: `WorkerResponse`, `PendingHandler`, `ExportPipelineOptions`, `getExportWorker(): Worker`. `runExportPipeline` declared `Promise<Uint8Array>`. The `download` callback typed as the new `ExportPipeline` from `CharacterContext`.
+- Typed the GLTF nodes the avatar reaches into via two narrow shapes: `ArmatureGLTF` (root + MCH-eyes_parent + Plane002.skeleton) and `AnimationsGLTF` (animations). Both cast through `unknown` (the drei convention for narrowing `useGLTF`'s widened return).
+- Updated the worker URL to `new URL("./exportWorker.ts", import.meta.url)` (paired with Phase 8a). Turbopack's worker bundler accepted the `.ts` extension cleanly.
+- `SkeletonUtils.clone`'s `.traverse` callback typed inline by narrowing `Object3D` → `SkinnedMesh` via the runtime `isSkinnedMesh` flag.
+
+### Phase 8a — exportWorker TS ✅
+
+Shipped 2026-05-25.
+
+- `src/components/scene/exportWorker.ts` (was `.js`). `/// <reference lib="webworker" />` at the top + `declare const self: DedicatedWorkerGlobalScope` so the message-event types are correct without dragging the dom lib into the worker.
+- `ExportRequest` / `ExportResponse` discriminated unions typed at the wire. `bakeAndPruneMorphs` and `stripBonesUnder` typed against gltf-transform's `Document`, `Node`, and `TypedArray` exports.
+- One behaviour fix surfaced by the TS migration: the old `weld({ tolerance: 0.0001 })` call passed an option that no longer exists in gltf-transform's `WeldOptions` (the field was silently ignored at runtime). Now `weld()` — same runtime, no dead option.
+- `DracoFactory` typed as a config-in / `Promise<unknown>`-out shape since the Emscripten module instances aren't introspected anywhere in this file.
+- `bun run build` clean — Turbopack emitted the worker chunk identically; the export pipeline ran end-to-end on the editor route.
+
+### Side effect — SkinManager onto CharacterContext
+
+`src/components/scene/SkinManager.tsx` already shipped as TS in Phase 3a, but kept reading `useConfiguratorStore` directly. As part of the 4a/5a decoupling commit, it was switched to `useCharacter()` for consistency — all three engine leaves that consume character state now share the same API surface. The pure singleton `pb` client import stayed.
+
+### Provider wiring — StoreCharacterProvider on every Avatar consumer
+
+`Avatar` no longer reads the store directly, so each consumer wraps it once:
+
+- `src/components/scene/Scene.tsx` — wraps `SceneContent` inside `<Canvas>` (covers editor, lipsync, playground via the shared `<Scene>` mount).
+- `src/components/home/HeroStage.jsx` — wraps `<Avatar />` inside the homepage `<Canvas>`.
+- `src/components/play/PlatformerView.jsx` — wraps `<Avatar key={gender} />` inside the moving `groupRef` group.
+- `CharacterScopedPlay` doesn't render Avatar itself — it loads the URL character into the store, then renders children that mount `<Scene>` / `<PlayShell>`.
 
 ### Phases 1b–7b (TSL/WebGPU)
 
 Reserved for the hardware-verification session. The renderer-switch factory (Phase 7b normally, or layered onto an earlier phase as a feature flag) ships before any material conversion goes live so each material can be A/B'd on the two backends.
+
+### Phase status — TS layer
+
+**All nine engine files are now TypeScript** (1254 LOC across 9 files in the original inventory). The TS portion of the rewrite (the `(a)` layers of every phase) is complete; only the TSL/WebGPU `(b)` phases remain, and those are gated behind hardware verification.
 
 ## Phase 9 — Wiki sync & close (deferred)
 

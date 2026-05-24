@@ -1,27 +1,7 @@
 import { useEffect, useState } from "react";
-import type { MeshStandardMaterial } from "three";
 import { useCombinedTexture } from "@/hooks/useCombinedTexture";
-import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
-
-type Asset = {
-  r2Url?: string | null;
-  url?: string | null;
-  collectionId?: string;
-  id?: string;
-};
-
-type CustomizationEntry = {
-  asset?: Asset | null;
-  color?: string | null;
-  colors?: Record<string, string>;
-};
-
-type Customization = Record<string, CustomizationEntry>;
-
-type StoreSlice = {
-  skin: MeshStandardMaterial | null;
-  customization: Customization;
-};
+import { pb } from "@/stores/useConfiguratorStore";
+import { type CustomizationEntry, useCharacter } from "./CharacterContext";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -38,12 +18,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export const SkinManager = () => {
-  const skinMaterial = useConfiguratorStore(
-    (state: StoreSlice) => state.skin,
-  );
-  const customization = useConfiguratorStore(
-    (state: StoreSlice) => state.customization,
-  );
+  const { skin: skinMaterial, customization } = useCharacter();
 
   const rawSkinColor: string =
     customization.Skin?.color || customization.skin?.color || "#e7a67a";

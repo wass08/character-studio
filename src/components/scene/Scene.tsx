@@ -8,6 +8,7 @@ import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import Avatar from "./Avatar";
 import Backdrop from "./Backdrop";
 import { CameraManager } from "./CameraManager";
+import { StoreCharacterProvider } from "./CharacterContext";
 
 type ScreenshotFn = () => Promise<void>;
 type CaptureFn = () => Promise<Blob | null>;
@@ -132,10 +133,7 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
       for (let y = 0; y < SIZE; y++) {
         const srcRow = (SIZE - 1 - y) * SIZE * 4;
         const dstRow = y * SIZE * 4;
-        imageData.data.set(
-          pixels.subarray(srcRow, srcRow + SIZE * 4),
-          dstRow,
-        );
+        imageData.data.set(pixels.subarray(srcRow, srcRow + SIZE * 4), dstRow);
       }
       bigCtx.putImageData(imageData, 0, 0);
 
@@ -178,11 +176,7 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
         color="#ffebe3"
       />
       <Backdrop />
-      <directionalLight
-        position={[-5, 5, 5]}
-        intensity={1.5}
-        color="#ffebe3"
-      />
+      <directionalLight position={[-5, 5, 5]} intensity={1.5} color="#ffebe3" />
       {/* Camera-facing fill so faces aren't lit only from behind. */}
       <directionalLight
         position={[0.8, 2, -4]}
@@ -199,7 +193,9 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
 const Scene = ({ children }: { children?: ReactNode }) => {
   return (
     <Canvas shadows camera={{ fov: 40 }} gl={{ preserveDrawingBuffer: true }}>
-      <SceneContent>{children}</SceneContent>
+      <StoreCharacterProvider>
+        <SceneContent>{children}</SceneContent>
+      </StoreCharacterProvider>
     </Canvas>
   );
 };

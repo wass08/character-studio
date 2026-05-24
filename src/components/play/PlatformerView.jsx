@@ -1,18 +1,19 @@
 "use client";
 
-import { Suspense, useEffect, useRef } from "react";
+import { Environment, PerspectiveCamera, Sky } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment, Sky, PerspectiveCamera } from "@react-three/drei";
+import { Suspense, useEffect, useRef } from "react";
 import * as THREE from "three";
 import Avatar from "@/components/scene/Avatar";
+import { StoreCharacterProvider } from "@/components/scene/CharacterContext";
 import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
-import PlayShell from "./PlayShell";
-import NoCharacterOverlay from "./NoCharacterOverlay";
 import {
-  useConfiguratorStore,
   PHOTO_POSES,
   UI_MODES,
+  useConfiguratorStore,
 } from "@/stores/useConfiguratorStore";
+import NoCharacterOverlay from "./NoCharacterOverlay";
+import PlayShell from "./PlayShell";
 
 /**
  * Phase-7 platformer: lightweight WASD movement on a flat plane with a
@@ -20,7 +21,17 @@ import {
  * not a game. A future iteration can swap in BVHEcctrl for real physics.
  */
 
-const KEYS = { w: "f", a: "l", s: "b", d: "r", arrowup: "f", arrowdown: "b", arrowleft: "l", arrowright: "r", shift: "run" };
+const KEYS = {
+  w: "f",
+  a: "l",
+  s: "b",
+  d: "r",
+  arrowup: "f",
+  arrowdown: "b",
+  arrowleft: "l",
+  arrowright: "r",
+  shift: "run",
+};
 
 const useKeyboard = () => {
   const ref = useRef({ f: false, b: false, l: false, r: false, run: false });
@@ -54,7 +65,7 @@ const CharacterController = ({ groupRef }) => {
     const grp = groupRef.current;
     if (!grp) return;
     const k = keys.current;
-    const speed = (k.run ? 5.5 : 2.6);
+    const speed = k.run ? 5.5 : 2.6;
     vel.current.set(
       (k.l ? -1 : 0) + (k.r ? 1 : 0),
       0,
@@ -156,7 +167,9 @@ const PlatformerScene = () => {
       <CharacterController groupRef={groupRef} />
       <group ref={groupRef} position={[0, 0, 0]}>
         <Suspense fallback={null}>
-          <Avatar key={gender} />
+          <StoreCharacterProvider>
+            <Avatar key={gender} />
+          </StoreCharacterProvider>
         </Suspense>
       </group>
     </>
