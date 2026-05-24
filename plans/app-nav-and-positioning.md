@@ -1,7 +1,7 @@
 ---
 plan_id: app-nav-and-positioning
 title: Nav + hub positioning + Mii-wall homepage
-status: planned
+status: in_progress
 kind: living-plan
 priority: p0
 last_reviewed: 2026-05-23
@@ -41,16 +41,35 @@ References:
 - Ready Player Me hub — characters-first marketing.
 - The Sims character gallery — characters as social/shareable artifacts.
 
-## Phase 1 — Research & vocabulary lock
+## Phase 1 — Research & vocabulary lock ✅
 
 Goal of this phase: pick the words and the IA, with enough rationale that we don't reopen the decision in two weeks.
 
-- [ ] Audit current vocabulary: list every visible label in chrome, route, and CTA across the app. Source: `rg -n "Hub\|Experience\|My Characters\|Customize\|Play" src/`.
-- [ ] Sketch 3 IA candidates and their full label sets. At minimum cover: homepage name, the user's collection page, the editor entry, the experiences area, the public character page. Each candidate gets a one-paragraph rationale.
-- [ ] Pick one. Document the chosen vocabulary as a table (old label → new label → rationale) at the top of `wiki/architecture/app-structure.md` under a new `## Vocabulary` heading.
-- [ ] Update the chrome components ([HubHeader](../src/components/shell/HubHeader.jsx), [GlobalChrome](../src/components/shell/GlobalChrome.jsx), [ModeSelector](../src/components/ui/ModeSelector/ModeSelector.jsx), [CharacterChip](../src/components/shell/CharacterChip.jsx)) with the new labels. Component **file names** can stay (they're internal); only visible strings and the rename pass in phase 4 touch the file names if needed.
+- [x] Audit current vocabulary: list every visible label in chrome, route, and CTA across the app. Source: `rg -n "Hub\|Experience\|My Characters\|Customize\|Play" src/`.
+- [x] Sketch 3 IA candidates and their full label sets. *Three "name the home" candidates were rejected by the user, who reframed around the actual goal (get visitors to create). Replaced with a pro-creator framing (Ready Player Me / Meshy / Inworld Studio) and signed off via four targeted product decisions.*
+- [x] Pick one. *Locked: pro-creator IA — `Studio` for the workspace, `/gallery` deferred, shared marketing home for signed-in users, in-memory editor draft until first save. Documented in [wiki/architecture/app-structure.md `## Vocabulary`](../wiki/architecture/app-structure.md#vocabulary).*
+- [x] Update the chrome components — [HubHeader](../src/components/shell/HubHeader.jsx) (nav drops the home label; "My" → "Studio"; "+ Create" → "+ New character"), [PlayShell](../src/components/play/PlayShell.jsx) and [ModeSelector](../src/components/ui/ModeSelector/ModeSelector.jsx) back-links ("← Hub" → "← Studio", pointing at `/me` until phase 4 route rename). [GlobalChrome](../src/components/shell/GlobalChrome.jsx) and [CharacterChip](../src/components/shell/CharacterChip.jsx) had no vocabulary-impacted strings.
 
 **Owner**: Claude. Decision-heavy work; the rename in phase 4 is the slice that goes to Codex.
+
+### Locked decisions (2026-05-23)
+
+| Decision | Lock |
+|---|---|
+| Workspace name | **Studio** (at `/studio`) |
+| Gallery destination | **Home only for now**; `/gallery` deferred until volume justifies it |
+| Signed-in `/` | **Same marketing home for everyone** |
+| Editor URL on first creation | **`/editor` with in-memory draft → `/editor/[id]` after first save** |
+| `/play/*` URL shape | **`/c/[id]/try/[experiment]`** (redirect from `/play/*`) — enforces "experiments belong to characters" in the URL itself |
+
+The full label and URL tables live in [wiki/architecture/app-structure.md `## Vocabulary`](../wiki/architecture/app-structure.md#vocabulary). That section is now the single source of truth for visible strings — reviewers reject PRs that reintroduce removed words.
+
+### Out of phase 1 (deferred to later phases)
+
+- Homepage section labels (`HubHero` copy, `ExperiencesGrid` heading + tagline) — owned by phase 3 (Mii-wall ship).
+- Legacy in-editor `MyCharactersBox` — owned by phase 4 (sweep).
+- Per-character CTA framing on `/c/[id]` ("Try [name] in …") — owned by phase 4.
+- Route renames (`/me` → `/studio`, `/create` → `/editor`, `/play/[x]` → `/c/[id]/try/[x]`) + redirects + folder renames — owned by phase 4 (Codex executes against the locked vocabulary table).
 
 ## Phase 2 — Mii-wall homepage prototype
 
