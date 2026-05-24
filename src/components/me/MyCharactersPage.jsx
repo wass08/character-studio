@@ -121,10 +121,10 @@ const MyCharactersPage = () => {
             </p>
           </div>
           <Link
-            href="/create"
+            href="/editor"
             className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-semibold tracking-tight text-zinc-950 transition-colors hover:bg-white/90"
           >
-            <Plus className="h-3.5 w-3.5" /> Create
+            <Plus className="h-3.5 w-3.5" /> New character
           </Link>
         </div>
 

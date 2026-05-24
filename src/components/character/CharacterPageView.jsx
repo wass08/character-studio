@@ -95,7 +95,7 @@ const CharacterPageView = ({ id }) => {
       id: null,
       name: `${record?.name || "Untitled"} — fork`,
     });
-    router.push("/create");
+    router.push("/editor");
   };
 
   const onShare = async () => {

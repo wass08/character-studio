@@ -9,9 +9,7 @@ import { cn } from "@/lib/utils";
 
 // Vocabulary locked in wiki/architecture/app-structure.md#vocabulary:
 // home gets no nav label (the logo carries it), workspace is "Studio".
-// /me is the workspace today; renamed to /studio in phase 4 of the
-// nav-and-positioning plan.
-const NAV = [{ href: "/me", label: "Studio" }];
+const NAV = [{ href: "/studio", label: "Studio" }];
 
 /**
  * Persistent top chrome for hub-style pages and experiences.
@@ -77,7 +75,7 @@ const HubHeader = ({ variant = "hub", className }) => {
 
       <div className="ml-auto flex items-center gap-2">
         <Link
-          href="/create"
+          href="/editor"
           className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-white/90 px-4 py-1.5 text-xs font-semibold tracking-tight text-zinc-900 shadow-[0_0_22px_rgba(255,255,255,0.15)] ring-1 ring-white/40 transition-colors hover:bg-white"
         >
           + New character

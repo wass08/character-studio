@@ -62,7 +62,7 @@ const AccountIdentity = () => {
         className="w-48 overflow-hidden rounded-xl border-white/10 bg-zinc-950/95 p-1 text-sm text-white/90 shadow-2xl backdrop-blur-xl"
       >
         <DropdownMenuItem
-          onSelect={() => router.push("/me")}
+          onSelect={() => router.push("/studio")}
           className="cursor-pointer rounded-lg px-3 py-2 text-xs focus:bg-white/[0.06] focus:text-white"
         >
           <User className="h-3.5 w-3.5 text-white/55" />

@@ -31,10 +31,8 @@ const ModeSelector = () => {
         "max-md:top-20 max-md:right-5 max-md:left-auto max-md:translate-x-0 max-md:rounded-2xl",
       )}
     >
-      {/* Back to workspace from the editor. Wired to /me until the
-          route rename in phase 4 of the nav-and-positioning plan. */}
       <Link
-        href="/me"
+        href="/studio"
         className="inline-flex items-center px-3 py-2 text-xs font-medium tracking-tight text-white/55 transition-colors hover:text-white/90"
         aria-label="Back to studio"
       >

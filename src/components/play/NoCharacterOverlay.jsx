@@ -79,11 +79,11 @@ const NoCharacterOverlay = () => {
         </div>
         <div className="mt-5 flex gap-2">
           <Link
-            href="/create"
+            href="/editor"
             className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-white px-4 py-2 text-xs font-semibold tracking-tight text-zinc-950 transition-colors hover:bg-white/90"
           >
             <Plus className="h-3.5 w-3.5" />
-            Create one
+            New character
           </Link>
           {!isLoggedIn && (
             <Button

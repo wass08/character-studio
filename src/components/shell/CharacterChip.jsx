@@ -84,7 +84,7 @@ const CharacterChip = () => {
         type="button"
         variant="ghost"
         onClick={() => {
-          if (isLoggedIn) router.push("/create");
+          if (isLoggedIn) router.push("/editor");
           else setLoginDialogOpen(true);
         }}
         className="h-9 gap-2 rounded-full border border-white/10 bg-white/[0.04] px-0 pr-3 pl-1 text-xs font-medium tracking-tight text-white/75 transition-colors hover:border-white/25 hover:bg-white/[0.04] hover:text-white"
@@ -185,7 +185,7 @@ const CharacterChip = () => {
                 );
               })}
             <Link
-              href="/create"
+              href="/editor"
               onClick={() => setOpen(false)}
               className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-white/12 text-[10px] text-white/55 transition-colors hover:border-white/30 hover:text-white"
             >
@@ -194,7 +194,7 @@ const CharacterChip = () => {
             </Link>
           </div>
           <Link
-            href="/me"
+            href="/studio"
             onClick={() => setOpen(false)}
             className="mt-1 flex items-center justify-between rounded-lg px-3 py-2 text-xs tracking-tight text-white/70 hover:bg-white/[0.06] hover:text-white"
           >

@@ -58,7 +58,7 @@ const EditorView = ({ characterId }) => {
         await loadCharacter(rec);
       } catch (e) {
         toast.error(e?.message || "Couldn't load character");
-        router.replace("/create");
+        router.replace("/editor");
       }
     })();
   }, [characterId, loadCharacter, setCurrentCharacter, router]);

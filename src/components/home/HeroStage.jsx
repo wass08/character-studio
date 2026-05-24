@@ -116,7 +116,7 @@ const HeroStage = () => {
               size="lg"
               className="h-auto gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold tracking-tight text-zinc-950 shadow-[0_0_32px_rgba(255,255,255,0.18)] hover:bg-white hover:scale-[1.02] transition-transform"
             >
-              <Link href="/create">
+              <Link href="/editor">
                 Create your character
                 <ArrowRight className="h-4 w-4" />
               </Link>
