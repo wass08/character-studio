@@ -1,6 +1,21 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+// Declare Turbopack's workspace root explicitly so the "multiple
+// lockfiles" dev-overlay warning goes away. We anchor to the parent
+// directory (the one that holds yarn.lock and was already being
+// auto-inferred); setting it to the project dir instead breaks CSS
+// module resolution because the @tailwindcss/postcss resolver walks
+// up from src/app/globals.css and a tighter root rejects the lookup.
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
+const workspaceRoot = path.dirname(projectRoot);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactCompiler: true,
+  turbopack: {
+    root: workspaceRoot,
+  },
   // Vocabulary lock from plans/app-nav-and-positioning.md phase 1 renamed
   // a few routes; redirects preserve any external links into the old paths.
   // /play/[experiment] becomes per-character at /c/[id]/try/[experiment] —
