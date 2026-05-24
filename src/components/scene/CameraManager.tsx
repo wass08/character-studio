@@ -1,21 +1,29 @@
-import { useConfiguratorStore, UI_MODES } from "@/stores/useConfiguratorStore";
-import { CameraControls, PerspectiveCamera } from "@react-three/drei";
+import { CameraControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { button, useControls } from "leva";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { useConfiguratorStore, UI_MODES } from "@/stores/useConfiguratorStore";
 
-export const DEFAULT_CAMERA_POSITION = [
+type Triplet = [number, number, number];
+
+export const DEFAULT_CAMERA_POSITION: Triplet = [
   0.1, 1.4059367994699732, -2.990515168885181,
 ];
-export const DEFAULT_CAMERA_TARGET = [
+export const DEFAULT_CAMERA_TARGET: Triplet = [
   0.1, 0.9652248734528945, 0.5650397082939782,
 ];
 
-export const PHOTO_CAMERA_POSITION = [0, 1.4, -3.5];
-export const PHOTO_CAMERA_TARGET = [0, 1.0, 0];
+export const PHOTO_CAMERA_POSITION: Triplet = [0, 1.4, -3.5];
+export const PHOTO_CAMERA_TARGET: Triplet = [0, 1.0, 0];
 
-const CAMERA_CONFIGS = {
+type CameraConfig = {
+  bone: string;
+  offset: THREE.Vector3;
+  targetOffset: THREE.Vector3;
+};
+
+const CAMERA_CONFIGS: Record<string, CameraConfig> = {
   Hat: {
     bone: "DEF-head",
     offset: new THREE.Vector3(0, 0.1, -0.6),
@@ -63,14 +71,30 @@ const CAMERA_CONFIGS = {
   },
 };
 
-export const CameraManager = ({ loading }) => {
-  const controls = useRef();
+type CameraManagerProps = {
+  loading?: boolean;
+};
+
+// Until useConfiguratorStore is itself typed, the engine surface
+// narrows store reads at the call site.
+type CategoryRef = { name: string } | null;
+type StoreSlice = {
+  currentCategory: CategoryRef;
+  height: number;
+  mode: string;
+};
+
+// `loading` is part of the historic API but currently unused — kept
+// in the props for ABI parity until the engine rewrite's later phases
+// remove the field entirely.
+export const CameraManager = (_props: CameraManagerProps = {}) => {
+  const controls = useRef<CameraControls | null>(null);
   const scene = useThree((state) => state.scene);
   const currentCategory = useConfiguratorStore(
-    (state) => state.currentCategory,
+    (state: StoreSlice) => state.currentCategory,
   );
-  const height = useConfiguratorStore((state) => state.height);
-  const mode = useConfiguratorStore((state) => state.mode);
+  const height = useConfiguratorStore((state: StoreSlice) => state.height);
+  const mode = useConfiguratorStore((state: StoreSlice) => state.mode);
 
   useEffect(() => {
     if (!controls.current) return;
@@ -90,20 +114,16 @@ export const CameraManager = ({ loading }) => {
     controls.current.enabled = true;
 
     const config = currentCategory
-      ? CAMERA_CONFIGS[currentCategory.name]
+      ? (CAMERA_CONFIGS[currentCategory.name] ?? null)
       : null;
     const targetObject = config ? scene.getObjectByName(config.bone) : null;
 
     const targetPos = new THREE.Vector3();
     const lookAtPos = new THREE.Vector3();
 
-    if (targetObject) {
+    if (targetObject && config) {
       targetObject.getWorldPosition(lookAtPos);
-
-      if (config.targetOffset) {
-        lookAtPos.add(config.targetOffset);
-      }
-
+      lookAtPos.add(config.targetOffset);
       targetPos.copy(lookAtPos).add(config.offset);
     } else {
       targetPos.set(...DEFAULT_CAMERA_POSITION);
@@ -145,21 +165,21 @@ export const CameraManager = ({ loading }) => {
 
   useControls({
     getCameraPosition: button(() => {
-      console.log("Camera Position", controls.current.getPosition());
+      const c = controls.current;
+      if (c) console.log("Camera Position", c.getPosition(new THREE.Vector3()));
     }),
     getCameraTarget: button(() => {
-      console.log("Camera Target", controls.current.getTarget());
+      const c = controls.current;
+      if (c) console.log("Camera Target", c.getTarget(new THREE.Vector3()));
     }),
   });
 
   return (
-    <>
-      <CameraControls
-        ref={controls}
-        maxPolarAngle={Math.PI / 2}
-        minDistance={2}
-        maxDistance={8}
-      />
-    </>
+    <CameraControls
+      ref={controls}
+      maxPolarAngle={Math.PI / 2}
+      minDistance={2}
+      maxDistance={8}
+    />
   );
 };
