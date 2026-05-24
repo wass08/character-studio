@@ -12,7 +12,7 @@ import { toast } from "@/components/ui/primitives/Toast";
 
 /**
  * Moderation + curation. Admins see every character (including hidden),
- * toggle the featured flag for the hub's featured row, and hide misuse.
+ * toggle the featured flag for the homepage's featured row, and hide misuse.
  */
 const CharactersAdminPanel = () => {
   const isAdmin = useAuthStore((s) => s.isAdmin);

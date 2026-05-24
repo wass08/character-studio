@@ -8,7 +8,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { Plus } from "lucide-react";
 
 /**
- * Shown on top of an experience when no character is loaded.
+ * Shown on top of a per-character experiment when no character is loaded.
  * Lets the user pick one of theirs, or jump to /create.
  */
 const NoCharacterOverlay = () => {

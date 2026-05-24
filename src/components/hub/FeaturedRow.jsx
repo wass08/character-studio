@@ -8,8 +8,8 @@ import CharacterCard from "./CharacterCard";
  * Admin-curated picks above the wall. Admins flip a `featured` flag on a
  * character record (see /admin/characters) and we render up to 8 here.
  *
- * If no characters are featured yet the row stays hidden so the hub doesn't
- * look broken.
+ * If no characters are featured yet the row stays hidden so the homepage
+ * doesn't look broken.
  */
 const FeaturedRow = () => {
   const [items, setItems] = useState([]);

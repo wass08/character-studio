@@ -41,7 +41,6 @@ export const UI_MODES = {
   PHOTO: "photo",
   CUSTOMIZE: "customize",
   EXPORT: "export",
-  MY_CHARACTERS: "my_characters",
 };
 
 export const COMPRESSION = {
@@ -561,7 +560,8 @@ export const useConfiguratorStore = create(
       partialize: (state) => ({
         exportSettings: state.exportSettings,
         // Keep the user's active character across reloads and route changes
-        // so the chip + experiences don't reset to "No character" on refresh.
+        // so the chip + per-character experiments don't reset to "No
+        // character" on refresh.
         currentCharacterId: state.currentCharacterId,
         currentCharacterName: state.currentCharacterName,
       }),

@@ -5,7 +5,7 @@ import { pb } from "@/stores/useConfiguratorStore";
 import CharacterCard from "./CharacterCard";
 
 /**
- * The signature wall on the hub: the most recent 50 characters.
+ * The signature wall on the homepage: the most recent 50 characters.
  * No curation here — featured picks live above in their own row.
  */
 const LivingWall = () => {
