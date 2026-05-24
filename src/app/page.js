@@ -1,12 +1,12 @@
-import HubHeader from "@/components/shell/HubHeader";
-import HubHero from "@/components/hub/HubHero";
+import HeroStage from "@/components/home/HeroStage";
 import FeaturedRow from "@/components/hub/FeaturedRow";
-import ExperiencesGrid from "@/components/hub/ExperiencesGrid";
 import LivingWall from "@/components/hub/LivingWall";
+import HubHeader from "@/components/shell/HubHeader";
 
 export const metadata = {
   title: "Character Studio",
-  description: "Build, play with, and share characters.",
+  description:
+    "Create your character. Pose them, make them speak, take them somewhere.",
 };
 
 export default function Home() {
@@ -14,9 +14,8 @@ export default function Home() {
     <div className="min-h-screen hub-bg text-white">
       <HubHeader />
       <main>
-        <HubHero />
+        <HeroStage />
         <FeaturedRow />
-        <ExperiencesGrid />
         <LivingWall />
       </main>
     </div>
