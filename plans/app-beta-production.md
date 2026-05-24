@@ -4,7 +4,7 @@ title: Beta production — characters-first studio
 status: in_progress
 kind: living-plan
 priority: p0
-last_reviewed: 2026-05-23
+last_reviewed: 2026-05-24
 goal: "Ship a public beta of character-studio: characters-first IA, polished hub with a live 3D wall of community characters, mobile-responsive editor, WebGPU/TS engine, shadcn UI everywhere, fixed thumbnails."
 readiness: ready
 success_criteria:

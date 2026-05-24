@@ -100,6 +100,16 @@ Rules:
 - `plan_id` matches the filename without `.md`.
 - Avoid dates in active filenames unless the plan is event-specific.
 
+## Resume points (next session)
+
+The whole beta plan is opened. 4 sub-plans shipped end-to-end, 1 in-progress (engine rewrite, 67% TS-converted), 1 deferred (experiences polish). Three concrete pick-up paths, ordered by what's most ready:
+
+1. **Verification pass (user-led)** — run through every shipped route at desktop + mobile, test the redirects (`/me` → `/studio`, `/create/[id]` → `/editor/[id]`, `/play/[experiment]` → `/studio`), save a character + confirm the new 512² thumbnail, click "Try [name] in …" from `/c/[id]`. Issues feed back into the relevant sub-plan's body, not new plans.
+2. **Engine rewrite Phase 4a + 5a + 8a (CharacterContext refactor + Asset/Avatar/exportWorker)** — focused design session. The pattern: introduce a `CharacterContext` so `Asset` and `Avatar` stop reading `useConfiguratorStore` directly (editor wraps the context with the store; hero/plaza wrap it with props). Lands the three remaining TS conversions in one pass. See [app-engine-rewrite.md `### Phases 4a, 5a, 8a (remaining)`](app-engine-rewrite.md).
+3. **Engine rewrite Phase 1b (WebGPU spike on Backdrop)** — only with hardware. Convert Backdrop's floor material to TSL, add the renderer-switch factory in Scene.tsx behind a feature flag, eyeball Chrome (WebGPU) + Safari (WebGL fallback), measure perf + bundle delta.
+
+The "How we work this" section in [app-beta-production.md](app-beta-production.md#how-we-work-this) still applies — Claude designs + reviews, Codex picks up mechanical slices, every shipping commit is one logical change.
+
 ## Development order
 
 Living plans, in current priority order. Update `status`, `priority`, and `last_reviewed` in each plan's frontmatter; this table is a scan, not the source of truth.
@@ -109,7 +119,7 @@ Living plans, in current priority order. Update `status`, `priority`, and `last_
 | 1 | [Beta production](app-beta-production.md) | in_progress | p0 | Charter — characters-first studio. Sub-plans materialise via `start-plan` as workstreams are picked up. |
 | 1.1 | [Nav + positioning](app-nav-and-positioning.md) | **implemented** | p0 | Phases 1, 3, 4, 5 shipped. Vocabulary locked, single-character hero on /, all routes renamed (`/studio`, `/editor`, `/c/[id]/try/[experiment]`) with redirects, legacy components deleted. Phase 2 `/lab/wall` paused as deliberate reference for phase 6 (plaza polish, deferred behind engine rewrite). |
 | 1.2 | [shadcn-everywhere](app-shadcn-everywhere.md) | **implemented** | p1 | All 5 phases shipped. Zero direct Radix imports outside `src/components/ui/`, zero hand-rolled buttons in JSX, shims for Dialog/Tooltip/Toast/IconButton over shadcn, wiki `## UI primitives` section landed. |
-| 1.3 | [Engine rewrite — TS + WebGPU/TSL](app-engine-rewrite.md) | draft | p1 | Big foundation. Refactors the singleton-store coupling on the way through, which unblocks plaza polish. Phase 0 (discovery) writes the success criteria. |
+| 1.3 | [Engine rewrite — TS + WebGPU/TSL](app-engine-rewrite.md) | in_progress | p1 | Phase 0 design done. **6 of 9 engine files converted to TS** (Backdrop, lipsync, LipsyncDriver, SkinManager, CameraManager, Scene). Remaining: Asset/Avatar (need CharacterContext refactor), exportWorker (defer until Avatar updates the `new URL()` import). TSL/WebGPU layer reserved for hardware-verification session. |
 | 1.4 | [Thumbnails](app-thumbnails.md) | **implemented** | p2 | Phase 1: 512² stored, 1024² supersampled, head+shoulders framing. Phases 2-3 deferred behind engine rewrite. |
 | 1.5 | [Editor mobile](app-editor-mobile.md) | **implemented** | p2 | ModeSelector mobile-first refactor; tighter mobile padding; ## Responsive conventions wiki section locks the mobile-first rule for positioning utilities. |
 | 1.6 | [Experiences polish](app-experiences-polish.md) | draft (blocked) | p3 | Skeleton only — deferred behind 1.3 engine rewrite. Per-experiment sub-plans open lazily. |

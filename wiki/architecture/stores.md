@@ -47,3 +47,27 @@ A `pb.authStore.onChange` subscription (set up at module load on the client) kee
 - **Don't add cross-store coupling.** A store action must not call another store's actions inside itself. Coordinating logic lives in the component that triggers both.
 - **Persisted slice changes are migrations.** Renaming or removing a field on `useConfiguratorStore` ships stale data to every returning user — add a `migrate` in the `persist` config or bump the version, don't ship silently.
 - **PB requests that race during React-strict-mode mount/unmount/mount** need `requestKey: null` (see the `getOne` / `getList` calls in `AuthBootstrapper`) — otherwise the second call cancels the first and you get a silent empty result.
+
+## TypeScript boundary
+
+*Engine-surface convention, in progress via [app-engine-rewrite](../../plans/app-engine-rewrite.md).*
+
+The stores stay `.js`. TypeScript consumers (anything under `src/components/scene/**` that has been converted to `.ts`/`.tsx`) **narrow the store types at the call site** via a `StoreSlice` literal declared in the consuming file:
+
+```ts
+type StoreSlice = {
+  currentCategory: { name: string } | null;
+  height: number;
+  mode: string;
+};
+
+const currentCategory = useConfiguratorStore(
+  (state: StoreSlice) => state.currentCategory,
+);
+```
+
+Why not type the store itself: the rest of the app is still `.js` and doesn't pay the migration cost. Per-call-site narrowing keeps the engine surface type-safe without dragging UI/route/store code into a TS conversion it didn't ask for.
+
+When multiple files start declaring the same shapes (`CustomizationEntry`, `Asset`, `Character`), promote them to a shared `src/components/scene/types.ts` module — but only on the second site, not preemptively.
+
+The full TypeScript-boundary decision (engine surface only, JSDoc `@typedef`s as the eventual store-published interface) lives in [app-engine-rewrite.md `## Decisions`](../../plans/app-engine-rewrite.md#decisions).

@@ -4,7 +4,7 @@ title: Engine rewrite — TypeScript + WebGPU/TSL coupled
 status: in_progress
 kind: living-plan
 priority: p1
-last_reviewed: 2026-05-23
+last_reviewed: 2026-05-24
 goal: "Convert the 3D engine surface (src/components/scene/, src/lib/lipsync.js, related shaders/materials) to TypeScript and TSL/WebGPU in a single pass per file, with a WebGL fallback for unsupported browsers."
 readiness: planned
 success_criteria:
