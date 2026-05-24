@@ -30,39 +30,43 @@ The vocabulary below is the single source of truth for every visible string and 
 
 ### URLs
 
-| Today | Locked | Redirect from old | Notes |
-|---|---|---|---|
-| `/` | `/` (kept) | — | Marketing home for everyone — signed-in users see the same page. Hero + live wall (social proof) + features. |
-| `/create`, `/create/[id]` | `/editor`, `/editor/[id]` | yes | `/editor` lands an in-memory draft; first save mints an ID and the URL replaces to `/editor/[id]` (Figma-style). |
-| `/me` | `/studio` | yes | Workspace — user's characters, recent edits, "+ New character" CTA. |
-| `/c/[id]` | `/c/[id]` (kept) | — | Public character page. Short prefix wins for shareable URLs. |
-| `/play/{lipsync,platformer,playground}` | `/c/[id]/try/{lipsync,platformer,playground}` | yes (`/play/[x]` → `/studio` with a "pick a character first" toast) | The URL shape enforces the IA: experiments belong to characters. Bare `/play/[x]` cannot exist in the new world. |
-| `/admin/*` | `/admin/*` (kept) | — | Internal; no positioning impact. |
-| *(deferred)* | `/gallery` | — | Full community gallery as a destination. Not shipped in this cycle; the home wall is enough for beta. |
+All shipped. Old paths redirect via `next.config.mjs`.
+
+| Path | Owns | Redirect notes |
+|---|---|---|
+| `/` | Marketing home — hero, featured, wall. Same page signed-in or signed-out. | — |
+| `/editor`, `/editor/[id]` | Editor (build / edit a character). | `/create` and `/create/:id` → 308 to `/editor*`. |
+| `/studio` | Workspace — user's characters, recent edits, "+ New character" CTA. | `/me` and `/me/:path*` → 308 to `/studio*`. |
+| `/c/[id]` | Public character page (showcase). | — |
+| `/c/[id]/try/{lipsync,platformer,playground}` | Per-character experiments. Loader at `src/components/play/CharacterScopedPlay.jsx` ensures the URL's character is the one in the store. | `/play/:experiment` → 307 to `/studio` (bare `/play` carries no character context; the user picks one first). |
+| `/admin/{characters,voices}` | Internal moderation + curation. | — |
+| *(deferred)* `/gallery` | Full community gallery as a destination. Not in beta — the homepage wall covers it. | — |
 
 ### Rules going forward
 
-- **No "Hub" in any visible string.** It survives only in legacy component file names (`HubHeader.jsx`, `HubHero.jsx`) until phase 4 renames them. New code uses none of these words.
+- **No "Hub" in any visible string.** It survives only in legacy internal names (`HubHeader.jsx` component / file, the `hub-bg` CSS class, the `layoutId="hub-nav-active"` motion id). New code uses none of these words; file renames will follow when they're touched for other reasons.
 - **No top-level "Experiences" section.** Experiments are reached from a character page (`/c/[id]`), framed as "Try [name] in …".
 - **Workspace is "Studio".** Singular, capitalised. Never "My Studio", "Your Studio", "the Studio".
 - **CTA copy is "+ New character" in chrome, "Create your character" in the marketing hero.** Don't mix.
 - **Character public URLs stay short** (`/c/[id]`). Experiments are sub-routes (`/c/[id]/try/[experiment]`), not query params or sibling routes.
+- **Old paths redirect**, but new code links to the new paths directly. Don't rely on the redirects in internal navigation — they exist for stale external links only.
 
 ## Surface ↔ route map
 
-Routes shipping today and their locked future name (see [Vocabulary](#vocabulary) for the migration plan). Component folder names are mostly carried forward; the few that rename do so in [app-nav-and-positioning](../../plans/app-nav-and-positioning.md) phase 4.
+Reflects today's shipped routes. Component folder names mostly carried forward; legacy names that don't actively mislead are deferred to rename when those files get touched for other reasons.
 
-| Surface | Route today | Locked route | Component folder |
-|---|---|---|---|
-| Marketing home | `/` | `/` (kept) | `src/components/hub/` *(folder name will be renamed to `home/` in phase 4)* |
-| Editor (build a character) | `/create`, `/create/[id]` | `/editor`, `/editor/[id]` | `src/components/editor/` |
-| Public character page | `/c/[id]` | `/c/[id]` (kept) | `src/components/character/` |
-| Workspace ("Studio") | `/me` | `/studio` | `src/components/me/` *(rename to `studio/` in phase 4)* |
-| Experiments (per character) | `/play/{lipsync,platformer,playground}` | `/c/[id]/try/{lipsync,platformer,playground}` | `src/components/play/` |
-| Admin | `/admin/characters`, `/admin/voices` | (kept) | `src/app/admin/*/*Panel.jsx` + `src/components/admin/` |
-| Global chrome | mounted in root layout | (kept) | `src/components/shell/` |
-| 3D canvas | embedded in editor + experiments | (kept) | `src/components/scene/` |
-| Primitive UI (shadcn-style) | reused everywhere | (kept) | `src/components/ui/` |
+| Surface | Route | Component folder |
+|---|---|---|
+| Marketing home | `/` | `src/components/home/HeroStage.jsx` + `src/components/hub/{FeaturedRow,LivingWall,CharacterCard}` (legacy folder name kept) |
+| Editor (build / edit) | `/editor`, `/editor/[id]` | `src/components/editor/` |
+| Public character page | `/c/[id]` | `src/components/character/` |
+| Workspace ("Studio") | `/studio` | `src/components/me/` (legacy folder name kept) |
+| Per-character experiments | `/c/[id]/try/{lipsync,platformer,playground}` | `src/components/play/` + the `CharacterScopedPlay` loader |
+| Admin | `/admin/characters`, `/admin/voices` | `src/app/admin/*/*Panel.jsx` + `src/components/admin/` |
+| Global chrome | mounted in root layout | `src/components/shell/` |
+| 3D canvas | embedded in editor + experiments | `src/components/scene/` |
+| Primitive UI (shadcn) | reused everywhere | `src/components/ui/` |
+| Internal experiments | `/lab/wall` (multi-character plaza prototype, deferred polish) | `src/components/lab/` |
 
 ## Layering rules
 
@@ -70,6 +74,53 @@ Routes shipping today and their locked future name (see [Vocabulary](#vocabulary
 - **`src/components/<surface>/`** owns the surface's UX. Surfaces may import from `src/components/ui/` (primitives), `src/components/shell/` (chrome), `src/components/scene/` (canvas), and `src/lib/`. They **do not** import from sibling surfaces — if two surfaces need the same view, lift it to `src/components/ui/` or `src/components/shell/`.
 - **`src/components/shell/`** owns global chrome ([HubHeader](../../src/components/shell/HubHeader.jsx), [GlobalChrome](../../src/components/shell/GlobalChrome.jsx), [CharacterChip](../../src/components/shell/CharacterChip.jsx), [AccountIdentity](../../src/components/shell/AccountIdentity.jsx)). `GlobalChrome` is mounted once in `src/app/layout.js` and reads from the stores — surfaces don't mount their own copy.
 - **`src/components/scene/`** owns the R3F canvas. Surfaces inject content into it via children; the canvas itself does not import from surface folders.
+
+## Homepage
+
+*Locked 2026-05-23 by [app-nav-and-positioning](../../plans/app-nav-and-positioning.md) phase 3.*
+
+The homepage at `/` is a marketing page that sells *making a character*. Same page for signed-in and signed-out visitors — there's no logged-in fork.
+
+### Composition (top → bottom)
+
+| Block | Component | Notes |
+|---|---|---|
+| Chrome | [HubHeader](../../src/components/shell/HubHeader.jsx) | Sticky; nav has only "Studio" (signed-in), CTA is "+ New character", chip + account on the right. |
+| Hero | [HeroStage](../../src/components/home/HeroStage.jsx) | Two-column on desktop, stacked on mobile. Left: copy + single "Create your character" CTA. Right: live 3D character on a dark stage card. |
+| Featured | [FeaturedRow](../../src/components/hub/FeaturedRow.jsx) | Horizontal scroll of admin-curated picks (`featured = true` in PB). Hides itself when empty. |
+| Wall | [LivingWall](../../src/components/hub/LivingWall.jsx) | 2D grid of the most recent 50 non-hidden characters. |
+
+`ExperiencesGrid` was deleted in phase 4; experiments live on character pages now, not as a peer section here.
+
+### Hero stage — which character renders
+
+`HeroStage` mounts a thin R3F canvas (display-mode lighting; no orbit controls / leva / screenshot helpers — those are editor concerns) and renders the editor's existing `<Avatar />` from [`src/components/scene/`](../../src/components/scene/Avatar.jsx). The character it shows is whatever sits in `useConfiguratorStore` at first paint:
+
+1. **Signed-in user with a `mainCharacter`** — `AuthBootstrapper` (mounted globally) loads it before HeroStage mounts. Their character is the hero.
+2. **Anonymous user with a persisted `currentCharacterId`** — `AuthBootstrapper` re-fetches it. Their last-viewed character is the hero.
+3. **Otherwise (fresh visit, signed-out, no persisted id)** — HeroStage's own effect fetches one curator-`featured` character (falling back to the most-recent non-hidden character) and `loadCharacter`s it into the store. Race-guarded so a parallel AuthBootstrapper load wins if it finishes first.
+
+The single-character pipeline is the editor's proven path (singleton store + `Avatar`). The multi-character plaza is [phase 6 of the nav plan](../../plans/app-nav-and-positioning.md#phase-6--plaza-polish-deferred-), deferred until the engine rewrite refactors the store coupling.
+
+### Camera framing
+
+R3F's default `lookAt` is the world origin (the character's feet). HeroStage overrides via the Canvas `onCreated` callback:
+
+```js
+camera={{ position: [0, 1.05, -3.6], fov: 38 }}
+onCreated={({ camera }) => {
+  camera.lookAt(0, 1.0, 0); // chest height
+  camera.updateProjectionMatrix();
+}}
+```
+
+Head sits in the upper third of the stage; feet rest just above the bottom edge. The fixed camera doesn't move — no orbit, no auto-rotation. Animation lives on the character.
+
+### Empty states
+
+- No characters in DB at all → FeaturedRow auto-hides (it bails on `items.length === 0`). LivingWall renders its empty dashed-border placeholder. Hero shows a blank canvas (no error — silent fallthrough).
+- One or more characters but none featured → FeaturedRow hides, HeroStage falls back to most-recent.
+- All characters hidden → FeaturedRow hides, LivingWall shows the placeholder, HeroStage canvas is blank.
 
 ## Where state lives
 
@@ -81,7 +132,7 @@ See [stores](stores.md) for full ownership rules.
 ## Server vs client
 
 - Every `page.js` defaults to a server component. Add `"use client"` only on the deepest component that needs it (anything reading a Zustand store, using `motion`, R3F, or browser APIs).
-- Wrap browser-only providers in `src/app/layout.js` — currently `<TooltipProvider>` (shadcn), `<Toaster />` (shadcn/sonner), and `<GlobalChrome />`.
+- Wrap browser-only providers in `src/app/layout.js` — currently `<TooltipProvider>` (shadcn) + `<Toaster />` (shadcn/sonner) + `<GlobalChrome />` (mounts `AuthDialog` + `AuthBootstrapper`).
 - Public character pages (`/c/[id]`) should fetch their character record server-side from PocketBase for OG metadata; client-side hydration takes over from there.
 
 ## Adding a new surface

@@ -1,33 +1,34 @@
 ---
 plan_id: app-nav-and-positioning
-title: Nav + hub positioning + Mii-wall homepage
-status: in_progress
-kind: living-plan
+title: Nav + positioning + single-character hero
+status: implemented
+kind: implementation-record
 priority: p0
 last_reviewed: 2026-05-23
-goal: "Lock the characters-first vocabulary, build a Mii-style live 3D wall on the homepage, and propagate both through every label, link, and route name in the app."
-readiness: ready
+goal: "Lock the characters-first vocabulary, ship a live single-character hero on /, and propagate the new IA through every label, link, and route in the app. (Multi-character plaza polish is phase 6, deferred to post-beta — see below.)"
+readiness: reference
 success_criteria:
-  - "Vocabulary lock recorded in wiki/architecture/app-structure.md, with a table mapping today's labels → beta labels and the rationale."
-  - "Homepage renders ≥ 6 random community characters in a live 3D scene, idle/wave animations, name tooltip on hover, ≥ 50 fps on M-series Macs and ≥ 30 fps on a 2022 mid-tier Android in Chrome — verified by manual run + frame-time capture."
-  - "Every route's chrome and every existing link uses the locked vocabulary; `rg -i 'hub|experience'` returns only intentional matches (component file names + rationale comments)."
+  - "Vocabulary lock recorded in wiki/architecture/app-structure.md ## Vocabulary, with label + URL tables and the rules section. Shipped on b5fb384."
+  - "Homepage renders one live 3D character (signed-in user's main, anon visitor's persisted, or curator demo as fallback) with marketing copy + single 'Create your character' CTA. Shipped on 6d7ca36."
+  - "Every internal Link / router.push uses the locked routes (/studio, /editor, /c/[id]/try/[experiment]). `next.config.mjs` redirects cover the old paths. `rg -i 'hub|experience'` returns only intentional internal component / class / motion-id names. Shipped on d97ce35, ce20aaf, 32bfa8d."
 depends_on: []
 related_plans:
   - app-beta-production
+  - app-shadcn-everywhere
 related_wiki:
   - wiki/architecture/app-structure.md
 wiki_sync:
   required: true
-  done: false
+  done: true
   pages:
     - wiki/architecture/app-structure.md
-  notes: "On completion: rewrite the surface ↔ route table with the locked vocabulary; add a 'Vocabulary' section above it; document the Mii-wall component contract."
+  notes: "Vocabulary section landed on b5fb384 (phase 1). The homepage section + final surface↔route table + shipped-route notes landed in this commit (phase 5)."
 archive:
   eligible: false
-  reason: "Active sub-plan of app-beta-production."
+  reason: "Newest reference implementation. Phase 6 (plaza polish) remains open at the end of the body but is explicitly deferred to post-beta."
 ---
 
-# Nav + hub positioning + Mii-wall homepage
+# Nav + positioning + single-character hero
 
 Sub-plan of [app-beta-production](app-beta-production.md). This is the IA and homepage work that every other beta sub-plan inherits vocabulary from — it ships first or nothing else lands cleanly.
 
@@ -127,33 +128,69 @@ This pivot works because the editor's `Avatar.jsx` + `useConfiguratorStore` pipe
 
 - [ ] Keep [FeaturedRow](../src/components/hub/FeaturedRow.jsx) and [LivingWall](../src/components/hub/LivingWall.jsx) — the 2D card grids already work, already use the locked vocabulary, already feel like "social proof". The wall doesn't need to be 3D to do its job.
 - [ ] Remove [ExperiencesGrid](../src/components/hub/ExperiencesGrid.jsx) from `/`. Experiences are now subordinated to characters per the locked vocabulary; they're reached from a character page (`/c/[id]`), not from the homepage.
-- [ ] Empty-state: if `FeaturedRow` is empty, hide it (already does); if `LivingWall` is empty, render the "Need at least N characters" dashed-border placeholder used in `/lab/wall`.
+- [x] Remove [ExperiencesGrid](../src/components/hub/ExperiencesGrid.jsx) from `/`. *(Shipped on 6d7ca36 — removed from page.js; file deleted in slice 3, 32bfa8d.)*
+- [x] Empty-state: FeaturedRow hides itself on empty; LivingWall renders its dashed-border placeholder. HeroStage canvas stays blank on no-character-found (silent fallthrough). *(Existing behaviour; verified in `## Homepage` wiki section.)*
 
 ### Curator account decision
 
-The featured-character pool needs at least one curator-owned character that's stable enough to ship as the homepage hero. Open question from phase 1; resolve in this phase.
+Deferred — the demo-character bootstrap currently falls back to "most recent non-hidden" when no `featured = true` exists. Curating a stable featured character is a tiny admin task that can happen any time; not a blocker for shipping.
 
 ### Ship checklist
 
-- [ ] OG image / metadata refresh on `/` to match the new positioning.
-- [ ] Lighthouse perf ≥ 85 on mobile (one 3D character + cards should pass).
-- [ ] Manual smoke: signed-out lands on demo hero; signed-in lands on their main; both see featured row + wall below.
-- [ ] Capture a perf trace + a screenshot for the wiki sync.
+- [ ] OG image refresh — descoped to a follow-up (logo/copy in metadata is correct; OG image generation is its own job).
+- [ ] Lighthouse perf ≥ 85 on mobile — not measured in this cycle; smoke confirmed the page renders without errors.
+- [x] Manual smoke: anonymous visitor sees Jane (most-recent fallback) as hero; chip shows her in the header; clothes/face/hair render; idle pose driving.
+- [ ] Perf trace — descoped to a follow-up.
 
-## Phase 4 — Rename pass
+## Phase 4 — Rename pass ✅
 
-- [ ] Apply the vocabulary table app-wide: every visible string in `src/components/**` and `src/app/**`, every `metadata.title` / `metadata.description`.
-- [ ] Decide route renames (e.g. should `/play/*` become `/try/*`? Should `/me` become `/<new-collection-word>`?). Land redirects from old paths so external links don't break.
-- [ ] Update component **file names** only where the old name actively misleads (e.g. `LivingWall.jsx` may become `CharacterWall.jsx`); skip cosmetic renames.
-- [ ] Final `rg -i 'hub|experience'` audit — every remaining match is either an intentional component name, a comment explaining the rationale, or this file.
+Shipped across 3 slices on commits d97ce35, ce20aaf, 32bfa8d.
 
-**Owner**: Codex executes the sweep against the vocabulary table from phase 1. Claude reviews.
+### Slice 1 — folder + Link renames
 
-## Phase 5 — Wiki sync & close (single-hero scope)
+- [x] `/me` → `/studio` (`git mv src/app/me src/app/studio`, page metadata + function name updated).
+- [x] `/create`, `/create/[id]` → `/editor`, `/editor/[id]`.
+- [x] `next.config.mjs` redirects: `/me*` → `/studio*` (308), `/create*` → `/editor*` (308), `/play/:experiment` → `/studio` (307).
+- [x] Internal Link / router.push sweep across 13 sites (HubHeader nav, HeroStage CTA, CharacterChip, AccountIdentity, MyCharactersPage CTA, NoCharacterOverlay CTA, PlayShell back-link, ModeSelector back-link, EditorView replace, CharacterPageView fork, CharacterChip empty-state, GlobalChrome FULLSCREEN_PREFIXES).
 
-- [ ] Update `wiki/architecture/app-structure.md`: surface ↔ route table reflects renamed routes; the `## Vocabulary` section is already in place from phase 1; add a new `## Homepage` section documenting the single-hero contract (which character loads, fallback rules, signed-in vs signed-out, layout).
-- [ ] Update `plans/app-beta-production.md` beta-gate checklist to mark item 1 done. Beta-gate item 2 ("Mii-style homepage wall shipped") needs rewording — the v1 ships a single-character hero, not the wall. Update the criterion to reflect that.
-- [ ] Flip `wiki_sync.done: true`, `status: implemented`, `readiness: reference`, `last_reviewed: <today>` here (single-hero scope only — phase 6 remains open).
+### Slice 2 — play → per-character experiment routes
+
+- [x] New routes `src/app/c/[id]/try/{lipsync,platformer,playground}/page.js`.
+- [x] New loader `src/components/play/CharacterScopedPlay.jsx` resolves the URL's character against the store; loads from PB if needed; renders an error panel on 404 and a spinner while loading.
+- [x] `PlayShell` reads `currentCharacterId` / `currentCharacterName` from the store; back-link points to `/c/[id]` with the character's name (truncated 140px), falls back to `/studio` if no character.
+- [x] `CharacterPageView` TRY_LINKS reshaped to `{ slug, label, icon }`; hrefs built per render as `/c/${id}/try/${slug}`; section heading reads "Try {name} in".
+- [x] Old `src/app/play/` folder removed.
+
+### Slice 3 — legacy cleanup + comment vocabulary
+
+- [x] Deleted: `HubHero.jsx`, `ExperiencesGrid.jsx` (replaced by HeroStage), `MyCharactersBox/` (unreachable since the MY_CHARACTERS mode pill was dropped in phase 1).
+- [x] Dropped `UI_MODES.MY_CHARACTERS` constant + the `mode === MY_CHARACTERS` branch in `UI.jsx`. `PHOTO` mode kept — still used by per-character play views.
+- [x] Comment vocabulary refresh in `FeaturedRow`, `LivingWall`, `useConfiguratorStore` (partialize), `NoCharacterOverlay`, `CharactersAdminPanel`.
+- [x] Final `rg -i 'hub|experience'` audit: remaining matches are internal-only — `src/components/hub/` folder + `HubHeader` component/variant + `hub-bg` CSS class + `layoutId="hub-nav-active"`. File renames deferred to "only where actively misleading" (none qualify).
+
+### Component file rename status
+
+Per the plan's "only where actively misleading" rule:
+
+- `src/components/hub/` — keep. Folder name is internal; component file names (FeaturedRow, LivingWall, CharacterCard) are still accurate.
+- `src/components/me/MyCharactersPage.jsx` — keep. Routes to `/studio` now, but the component file name still describes what it shows (the user's own characters).
+- `HubHeader.jsx` — keep. "Hub" is a fine internal name for the chrome shell; only the user-visible string mattered.
+- `LivingWall.jsx` — keep. Name is descriptive; not misleading.
+
+If any of these get touched for unrelated work later, opportunistic rename is fine.
+
+**Owner shift**: spec'd "Codex executes the sweep against the vocabulary table". Ended up inline because the sweep was small enough (~17 files across 3 slices) that a Codex round-trip would have been slower than doing it directly.
+
+## Phase 5 — Wiki sync & close (single-hero scope) ✅
+
+- [x] Updated `wiki/architecture/app-structure.md`:
+  - `## Vocabulary` URL table rewritten to "shipped" state (was "today vs locked future"); redirects noted per row.
+  - `## Vocabulary` rules section updated: "Hub" survives only in internal names; old-paths-redirect rule added.
+  - `## Surface ↔ route map` rewritten to reflect today's shipped routes; component folder column notes which legacy names were kept.
+  - New `## Homepage` section documents the HeroStage contract: which character loads (signed-in main → anon persisted → curator featured → most-recent fallback), camera framing (`onCreated` lookAt override), empty states, and the deferred-to-phase-6 plaza note.
+  - Server-vs-client paragraph updated to reflect the shadcn `TooltipProvider` + sonner `Toaster` (already correct from app-shadcn-everywhere sync, refined here).
+- [x] Beta charter — workstream #1 row marked implemented; beta-gate items "vocabulary lock" and "homepage hero" ticked.
+- [x] Flipped `status: implemented`, `kind: implementation-record`, `readiness: reference`, `wiki_sync.done: true`, `last_reviewed: 2026-05-23` in this file's frontmatter.
 
 ## Phase 6 — Plaza polish (deferred) 🅿️
 
@@ -191,4 +228,22 @@ Picks up where the `/lab/wall` prototype paused. Tracked here so it doesn't fall
 
 ## Wiki sync
 
-_To be filled before flipping `status: implemented`. Will list the exact sections added/changed in `wiki/architecture/app-structure.md`._
+Landed across two commits.
+
+**Phase 1** (b5fb384, 2026-05-23) — initial `## Vocabulary` section in [wiki/architecture/app-structure.md](../wiki/architecture/app-structure.md):
+
+- Position statement (pro creator product; product is character creation).
+- Labels table (today's word → locked word → why).
+- URLs table (today → locked → redirect strategy).
+- Five rules going forward (no Hub, no Experiences section, Studio singular, CTA copy split, character URLs stay short).
+- Surface ↔ route table updated to "today vs locked future".
+
+**Phase 5** (this commit) — single-hero scope sync:
+
+- `## Vocabulary` URL table rewritten as "shipped" (with redirect notes per row).
+- Rules section updated for the post-sweep state.
+- `## Surface ↔ route map` rewritten to reflect today's actual routes; legacy folder names called out.
+- New `## Homepage` section — full HeroStage contract (composition, character-loading priority, camera framing, empty states), plus pointer to phase 6 plaza polish.
+- Server-vs-client paragraph refreshed to match the shadcn-everywhere providers.
+
+Plaza polish (phase 6) is intentionally **not** synced here — it ships its own wiki update when it eventually lands.

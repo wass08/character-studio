@@ -47,7 +47,7 @@ Listed in execution order. Each row links to a sub-plan once materialised (via [
 
 | # | Workstream | Sub-plan | Priority | Status | Depends on | Why this order |
 |---:|---|---|---|---|---|---|
-| 1 | Nav + positioning + single-hero homepage (plaza polish deferred to phase 6) | [app-nav-and-positioning](app-nav-and-positioning.md) | p0 | in_progress (paused) | — | Phase 1 done (vocabulary lock). Phase 2 paused on /lab/wall prototype — pivoted to a single-character hero for v1. Plaza polish is phase 6, gated by #5. |
+| 1 | Nav + positioning + single-hero homepage (plaza polish deferred to phase 6) | [app-nav-and-positioning](app-nav-and-positioning.md) | p0 | **implemented** | — | Phases 1, 3, 4, 5 shipped. Phase 2 paused on /lab/wall prototype (kept as a deliberate reference). Plaza polish is phase 6, gated by #3 (engine rewrite). |
 | 2 | shadcn-everywhere sweep | [app-shadcn-everywhere](app-shadcn-everywhere.md) | p1 | **implemented** | #1 phase 1 | Five-phase plan all done. 22 files migrated to shadcn Button, primitives/Dialog/Tooltip/Toast/IconButton rebuilt as shims, AccountIdentity + CharacterChip on shadcn dropdown/popover. Wiki sync landed. |
 | 3 | Engine rewrite — TS + WebGPU/TSL coupled | [app-engine-rewrite](app-engine-rewrite.md) | p1 | draft | — | Big foundation. Refactors store coupling along the way, unblocking the plaza. Phase 0 (discovery) writes success criteria. Runs in parallel on its own branch. |
 | 4 | Editor mobile responsiveness | _(create when started)_ | p2 | draft | #2 | Mobile-correct shadcn primitives → meaningful breakpoint work on the editor. |
@@ -114,7 +114,8 @@ Lipsync, platformer, playground all need polish — gameplay tuning, camera, con
 These collapse the success criteria into a reviewable list. Charter flips to `verification` when all are ticked, `implemented` when verified on a deployed beta build.
 
 - [x] Vocabulary lock + nav reflects it (sub-plan #1, phase 1 — shipped on `b5fb384`)
-- [ ] Single-character homepage hero shipped (sub-plan #1, phase 3 — pivoted from "Mii-style wall" after the multi-character prototype hit deferred polish; the plaza is post-beta in phase 6)
+- [x] Single-character homepage hero shipped (sub-plan #1, phase 3 — shipped on `6d7ca36`)
+- [x] App-wide rename pass + redirects (sub-plan #1, phase 4 — shipped on `d97ce35` / `ce20aaf` / `32bfa8d`)
 - [ ] Thumbnails meet target spec on both new and re-baked characters (sub-plan #2)
 - [x] shadcn audit clean — no bespoke primitives left (sub-plan #2 — shipped on `46de33e` / `384dbfa` / `09eeb43` / `f0c05e5`)
 - [ ] Editor passes mobile Lighthouse ≥ 90 perf, usable at 390 px wide (sub-plan #4)

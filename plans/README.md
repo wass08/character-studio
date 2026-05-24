@@ -107,7 +107,7 @@ Living plans, in current priority order. Update `status`, `priority`, and `last_
 | Order | Plan | Status | Priority | Notes |
 |---:|---|---|---|---|
 | 1 | [Beta production](app-beta-production.md) | in_progress | p0 | Charter — characters-first studio. Sub-plans materialise via `start-plan` as workstreams are picked up. |
-| 1.1 | [Nav + positioning](app-nav-and-positioning.md) | in_progress (paused) | p0 | Phase 1 vocabulary lock shipped. Phase 2 paused on `/lab/wall` prototype; phase 3 pivoted to a single-character hero. Plaza polish deferred to phase 6 (gated by 1.3). |
+| 1.1 | [Nav + positioning](app-nav-and-positioning.md) | **implemented** | p0 | Phases 1, 3, 4, 5 shipped. Vocabulary locked, single-character hero on /, all routes renamed (`/studio`, `/editor`, `/c/[id]/try/[experiment]`) with redirects, legacy components deleted. Phase 2 `/lab/wall` paused as deliberate reference for phase 6 (plaza polish, deferred behind engine rewrite). |
 | 1.2 | [shadcn-everywhere](app-shadcn-everywhere.md) | **implemented** | p1 | All 5 phases shipped. Zero direct Radix imports outside `src/components/ui/`, zero hand-rolled buttons in JSX, shims for Dialog/Tooltip/Toast/IconButton over shadcn, wiki `## UI primitives` section landed. |
 | 1.3 | [Engine rewrite — TS + WebGPU/TSL](app-engine-rewrite.md) | draft | p1 | Big foundation. Refactors the singleton-store coupling on the way through, which unblocks plaza polish. Phase 0 (discovery) writes the success criteria. |
 
