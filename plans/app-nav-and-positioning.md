@@ -71,16 +71,43 @@ The full label and URL tables live in [wiki/architecture/app-structure.md `## Vo
 - Per-character CTA framing on `/c/[id]` ("Try [name] in …") — owned by phase 4.
 - Route renames (`/me` → `/studio`, `/create` → `/editor`, `/play/[x]` → `/c/[id]/try/[x]`) + redirects + folder renames — owned by phase 4 (Codex executes against the locked vocabulary table).
 
-## Phase 2 — Mii-wall homepage prototype
+## Phase 2 — Mii-wall homepage prototype 🟡 partial
 
 Goal: prove the live 3D wall concept on a throwaway route before touching `/`.
 
-- [ ] Stand up `/playground/wall` (or behind a feature flag on `/`) that fetches 8 random characters from `CharacterStudioCharacters` (filter `featured = true OR random sample`, `hidden != true`).
-- [ ] Render each in a shared R3F canvas at a fixed grid layout. Use the same `Scene` pipeline as the editor but with thumbnail-rig lighting (handoff to sub-plan #2 once it lands; until then, eyeball it).
-- [ ] Per-character: idle animation, occasional wave / look-around trigger, name floating-tooltip on hover (use the existing shadcn Tooltip from `src/components/ui/primitives/`).
-- [ ] Performance pass: lock frame-time budget (16 ms desktop, 33 ms mobile mid-tier). Reduce poly count, share materials, instance where possible. If 6+ characters in one canvas blows the budget, fall back to N independent canvases or LOD.
+- [x] Stand up `/lab/wall` that fetches up to 8 random characters from `CharacterStudioCharacters` (`sort: "@random"`, filter `hidden != true`). Internal-only route under `/lab/` so it doesn't pollute the IA; deleted when the wall ships on `/` in phase 3.
+- [x] Render each in a shared R3F canvas (one canvas, N characters — independent skeletons via `SkeletonUtils.clone`, shared geometry/materials). Lighting kept simple — hemisphere + ambient + 2 directional, no shadows, no environment map. Handoff to sub-plan #2 (thumbnails) when it lands.
+- [x] PocketBase schema discovery: customization sits at the **top level** of the character record, not under `.config`. Each `customization[category]` entry stores an `assetId` (PB relation), not an embedded asset. The wall side-loads the entire `CharacterStudioAssets` collection once and resolves IDs from a `Map`.
+- [ ] **Heads missing on rendered characters.** Body / clothes / footwear render correctly, but face / eyes / mouth / head assets don't appear. Likely the same skeleton-binding gap that hides the bind pose — the head assets are skinned to bones (DEF-head, DEF-jaw, etc.) that exist in our clone, so they *should* render. Needs runtime inspection of the cloned skeleton's bone bindings vs. the head asset's expected skeleton.
+- [ ] **Animations not driving.** Posture is stuck in bind pose despite `useAnimations` returning actions and `idleAction.play()` being called. Suspect `useAnimations` registers the mixer against the `<group>` ref *before* `<primitive object={boneRoots.root} />` mounts a useful subtree. Try moving the bone subtree into a stable child of `group` declared *before* the useAnimations hook runs, or refactor to pass an explicit bones-mounted ref to `useAnimations`.
+- [ ] Per-character one-shots (wave / look-around). Code is in place but the Animations.glb has no clips matching `wave` or `look` — the stagger naturally no-ops. Either ship new clips or pick alternative one-shots from the existing 46-clip library (e.g. `Rig|Idle_Talking_Loop`, `Rig|Interact`, `Rig|Dance_Loop`).
+- [ ] Hover tooltip. Code in place (`<Html>` anchored to head bone), but untested until the head bone resolves correctly post-animation-fix.
+- [ ] Performance pass. Deferred until rendering is correct — measuring fps with frozen bind-pose characters wouldn't validate the real budget.
 
-**Owner**: Claude leads. Codex can pick up the asset/animation wiring once the rig and contract are decided.
+**Owner**: Claude leads design + per-file decisions; the foundation cut was built by Codex from a spec; Claude diagnosed and fixed the data-shape mismatch (assets-by-id) inline. The animation + heads investigation is the next slice — well-scoped enough to delegate again, but it's also the kind of three.js debugging that's faster done with live preview inspection.
+
+### What's in the commit (architectural shape, deliberately scoped)
+
+```
+src/app/lab/wall/page.js           — route shell
+src/components/lab/WallView.jsx    — fetch (characters ⊕ assets), skeleton, empty-state
+src/components/lab/WallScene.jsx   — single Canvas, lights, ground, grid layout, tooltip slot
+src/components/lab/WallCharacter.jsx — gender-keyed Armature/Animations load, SkeletonUtils.clone,
+                                       bone-roots mount, per-asset render, hover handlers
+src/components/lab/WallAsset.jsx   — config-driven skinnedMesh renderer (clone of editor's
+                                       Asset.jsx without the store reads)
+```
+
+Architecture verified working:
+- Multi-character canvas (3 characters render side by side, gender-correct rig, clothes-correct config).
+- Per-character skeleton clones (no shared-pose bleed).
+- Asset lookup by `assetId` against side-loaded `CharacterStudioAssets` map.
+- Bone subtree mounting (`root` + `MCH-eyes_parent`) without the Plane.002 placeholder artifact.
+
+Architecture **not yet verified**:
+- Animation mixer actually drives bones (suspected ref-timing issue).
+- Head/face assets render (likely related — they may animate but be stuck at bind position).
+- Tooltip positioning (depends on head bone being correctly transformed).
 
 ## Phase 3 — Ship on `/`
 
