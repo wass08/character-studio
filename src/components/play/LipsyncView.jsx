@@ -38,7 +38,7 @@ const LipsyncView = () => {
   const audioRef = useRef(null);
 
   useEffect(() => {
-    setMode(UI_MODES.PHOTO);
+    setMode(UI_MODES.LIPSYNC);
   }, [setMode]);
 
   // Load voice presets for the active character's gender first; fall back

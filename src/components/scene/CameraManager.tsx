@@ -17,6 +17,13 @@ export const DEFAULT_CAMERA_TARGET: Triplet = [
 export const PHOTO_CAMERA_POSITION: Triplet = [0, 1.4, -3.5];
 export const PHOTO_CAMERA_TARGET: Triplet = [0, 1.0, 0];
 
+// Portrait framing for /try/lipsync — face fills ~40% of the viewport.
+// Picks up the head bone's actual world position when available so
+// height-slider tweaks don't crop the chin off; falls back to a
+// reasonable default before the avatar mounts.
+export const LIPSYNC_CAMERA_FALLBACK_POSITION: Triplet = [0, 1.55, -1.4];
+export const LIPSYNC_CAMERA_FALLBACK_TARGET: Triplet = [0, 1.55, 0];
+
 type CameraConfig = {
   bone: string;
   offset: THREE.Vector3;
@@ -82,6 +89,7 @@ type StoreSlice = {
   currentCategory: CategoryRef;
   height: number;
   mode: string;
+  loading: boolean;
 };
 
 // `loading` is part of the historic API but currently unused — kept
@@ -95,6 +103,7 @@ export const CameraManager = (_props: CameraManagerProps = {}) => {
   );
   const height = useConfiguratorStore((state: StoreSlice) => state.height);
   const mode = useConfiguratorStore((state: StoreSlice) => state.mode);
+  const loading = useConfiguratorStore((state: StoreSlice) => state.loading);
 
   useEffect(() => {
     if (!controls.current) return;
@@ -110,7 +119,39 @@ export const CameraManager = (_props: CameraManagerProps = {}) => {
       return;
     }
 
-    // Re-enable controls when back in customize mode
+    // Lipsync mode: head-and-shoulders portrait. Anchored on DEF-head
+    // when present so the face fills the frame regardless of avatar
+    // height. CameraControls' minDistance is dropped to let the camera
+    // sit ~1m from the head.
+    if (mode === UI_MODES.LIPSYNC) {
+      controls.current.enabled = false;
+      controls.current.minDistance = 0.6;
+      const head = scene.getObjectByName("DEF-head");
+      if (head) {
+        const headPos = new THREE.Vector3();
+        head.getWorldPosition(headPos);
+        controls.current.setLookAt(
+          headPos.x,
+          headPos.y + 0.02,
+          headPos.z - 1.0,
+          headPos.x,
+          headPos.y - 0.05,
+          headPos.z,
+          true,
+        );
+      } else {
+        controls.current.setLookAt(
+          ...LIPSYNC_CAMERA_FALLBACK_POSITION,
+          ...LIPSYNC_CAMERA_FALLBACK_TARGET,
+          true,
+        );
+      }
+      return;
+    }
+
+    // Re-enable controls when back in customize mode; restore default
+    // dolly bounds (LIPSYNC drops them above).
+    controls.current.minDistance = 2;
     controls.current.enabled = true;
 
     const config = currentCategory
@@ -151,7 +192,10 @@ export const CameraManager = (_props: CameraManagerProps = {}) => {
       lookAtPos.z,
       true,
     );
-  }, [currentCategory, height, scene, mode]);
+    // `loading` participates so LIPSYNC re-targets DEF-head once the
+    // avatar finishes mounting (head bone isn't in the scene tree
+    // until then).
+  }, [currentCategory, height, scene, mode, loading]);
 
   useEffect(() => {
     if (controls.current) {

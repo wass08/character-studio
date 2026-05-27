@@ -32,14 +32,26 @@ const KEYS = {
   arrowleft: "l",
   arrowright: "r",
   shift: "run",
+  " ": "jump",
+  r: "reset",
 };
 
 const useKeyboard = () => {
-  const ref = useRef({ f: false, b: false, l: false, r: false, run: false });
+  const ref = useRef({
+    f: false,
+    b: false,
+    l: false,
+    r: false,
+    run: false,
+    jump: false,
+    reset: false,
+  });
   useEffect(() => {
     const down = (e) => {
       const k = KEYS[e.key.toLowerCase()];
-      if (k) ref.current[k] = true;
+      if (!k) return;
+      if (k === "jump" || k === "reset") e.preventDefault();
+      ref.current[k] = true;
     };
     const up = (e) => {
       const k = KEYS[e.key.toLowerCase()];
@@ -55,17 +67,32 @@ const useKeyboard = () => {
   return ref;
 };
 
+const SPAWN = new THREE.Vector3(0, 0, 0);
+const JUMP_VELOCITY = 6.2;
+const GRAVITY = 18;
+
 const CharacterController = ({ groupRef }) => {
   const keys = useKeyboard();
   const setPose = useConfiguratorStore((s) => s.setPose);
   const vel = useRef(new THREE.Vector3());
   const target = useRef(new THREE.Quaternion());
   const lastIsMoving = useRef(false);
+  const vy = useRef(0);
+  const grounded = useRef(true);
 
   useFrame((_, dt) => {
     const grp = groupRef.current;
     if (!grp) return;
     const k = keys.current;
+
+    // Reset to spawn (one-shot — clear the flag).
+    if (k.reset) {
+      grp.position.copy(SPAWN);
+      vy.current = 0;
+      grounded.current = true;
+      k.reset = false;
+    }
+
     const speed = k.run ? 5.5 : 2.6;
     vel.current.set(
       (k.l ? -1 : 0) + (k.r ? 1 : 0),
@@ -80,6 +107,23 @@ const CharacterController = ({ groupRef }) => {
       target.current.setFromAxisAngle(new THREE.Vector3(0, 1, 0), angle);
       grp.quaternion.slerp(target.current, Math.min(1, dt * 12));
     }
+
+    // Vertical integration. Trigger the jump on press while grounded;
+    // gravity pulls back to y=0 (single flat ground plane for now).
+    if (k.jump && grounded.current) {
+      vy.current = JUMP_VELOCITY;
+      grounded.current = false;
+    }
+    if (!grounded.current) {
+      vy.current -= GRAVITY * dt;
+      grp.position.y += vy.current * dt;
+      if (grp.position.y <= 0) {
+        grp.position.y = 0;
+        vy.current = 0;
+        grounded.current = true;
+      }
+    }
+
     // Soft world bounds.
     grp.position.x = THREE.MathUtils.clamp(grp.position.x, -28, 28);
     grp.position.z = THREE.MathUtils.clamp(grp.position.z, -28, 28);
@@ -154,6 +198,11 @@ const Scenery = () => (
         </mesh>
       );
     })}
+    {/* Low hill — a fat sphere half-buried for a visible jump target. */}
+    <mesh castShadow receiveShadow position={[6, -1.2, -8]}>
+      <sphereGeometry args={[3.2, 32, 24]} />
+      <meshStandardMaterial color="#4a6a4f" roughness={1} />
+    </mesh>
   </>
 );
 
@@ -199,7 +248,7 @@ const PlatformerView = () => {
       {!introFinished && <LoadingScreen />}
       <NoCharacterOverlay />
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-6 z-20 flex justify-center px-6">
+      <div className="pointer-events-none absolute inset-x-0 bottom-6 z-20 flex justify-center px-6 max-md:hidden">
         <div className="glass-panel pointer-events-auto flex flex-wrap items-center gap-3 rounded-full px-4 py-2 text-[11px] tracking-tight text-white/75">
           <span>
             <kbd className="rounded bg-white/10 px-1.5 py-0.5 text-white/90">
@@ -214,10 +263,36 @@ const PlatformerView = () => {
             </kbd>{" "}
             run
           </span>
+          <span className="text-white/25">·</span>
+          <span>
+            <kbd className="rounded bg-white/10 px-1.5 py-0.5 text-white/90">
+              Space
+            </kbd>{" "}
+            jump
+          </span>
+          <span className="text-white/25">·</span>
+          <span>
+            <kbd className="rounded bg-white/10 px-1.5 py-0.5 text-white/90">
+              R
+            </kbd>{" "}
+            reset
+          </span>
         </div>
       </div>
+      <DesktopOnlyOverlay />
     </PlayShell>
   );
 };
+
+const DesktopOnlyOverlay = () => (
+  <div className="pointer-events-none absolute inset-x-0 top-1/2 z-30 flex -translate-y-1/2 justify-center px-6 md:hidden">
+    <div className="pointer-events-auto rounded-2xl bg-black/65 px-5 py-4 text-center text-xs text-white/85 ring-1 ring-white/15 backdrop-blur">
+      <p className="font-medium text-white">Platformer is desktop-only for now.</p>
+      <p className="mt-1 text-white/65">
+        Touch controls are on the way. Try on a keyboard.
+      </p>
+    </div>
+  </div>
+);
 
 export default PlatformerView;

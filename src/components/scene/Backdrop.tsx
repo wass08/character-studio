@@ -2,13 +2,14 @@ import { useGLTF } from "@react-three/drei";
 import type { ThreeElements } from "@react-three/fiber";
 import type { Mesh, MeshStandardMaterial } from "three";
 import type { GLTF } from "three-stdlib";
+import {
+  BACKDROP_PRESETS,
+  DEFAULT_BACKDROP,
+  type BackdropPresetId,
+} from "./backdropPresets";
 
 type GroupProps = ThreeElements["group"];
 
-// Static dressing — stool + floor + plant — loaded from a single GLB.
-// First file converted in the engine rewrite plan
-// (plans/app-engine-rewrite.md). TS-only at this stage; TSL/WebGPU
-// layer arrives in a follow-up hardware-verification session.
 type BackdropGLTF = GLTF & {
   nodes: {
     Stool: Mesh;
@@ -21,12 +22,16 @@ type BackdropGLTF = GLTF & {
   };
 };
 
-export default function Backdrop(props: GroupProps) {
-  // useGLTF's return widens nodes/materials to index signatures; cast
-  // through unknown is the standard narrow per the drei + R3F TS docs.
+type BackdropProps = GroupProps & { preset?: BackdropPresetId };
+
+export default function Backdrop({
+  preset = DEFAULT_BACKDROP,
+  ...props
+}: BackdropProps) {
   const { nodes, materials } = useGLTF(
     "/models/Backdrop.glb",
   ) as unknown as BackdropGLTF;
+  const floorColor = BACKDROP_PRESETS[preset]?.floor ?? BACKDROP_PRESETS[DEFAULT_BACKDROP].floor;
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -43,7 +48,7 @@ export default function Backdrop(props: GroupProps) {
         position={[0, -0.017, 0]}
         geometry={nodes.Plane002.geometry}
       >
-        <meshStandardMaterial roughness={1} color="#b0b0ff" />
+        <meshStandardMaterial roughness={1} color={floorColor} />
       </mesh>
       <mesh
         castShadow

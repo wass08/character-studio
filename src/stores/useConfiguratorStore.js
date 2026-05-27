@@ -41,7 +41,10 @@ export const UI_MODES = {
   PHOTO: "photo",
   CUSTOMIZE: "customize",
   EXPORT: "export",
+  LIPSYNC: "lipsync",
 };
+
+export const BACKDROP_IDS = ["studio", "sunset", "night"];
 
 export const COMPRESSION = {
   NONE: "none",
@@ -91,13 +94,18 @@ export const useConfiguratorStore = create(
   mode: UI_MODES.CUSTOMIZE,
   setMode: (mode) => {
     set({ mode });
-    if (mode === UI_MODES.CUSTOMIZE) {
+    if (mode === UI_MODES.CUSTOMIZE || mode === UI_MODES.LIPSYNC) {
       set({ pose: PHOTO_POSES.Idle });
     }
   },
   pose: PHOTO_POSES.Idle,
   setPose: (pose) => {
     set({ pose });
+  },
+  backdrop: "studio",
+  setBackdrop: (backdrop) => {
+    if (!BACKDROP_IDS.includes(backdrop)) return;
+    set({ backdrop });
   },
   sections: [],
   activeSectionId: null,

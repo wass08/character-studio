@@ -8,6 +8,11 @@ import type { Renderer } from "three/webgpu";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import Avatar from "./Avatar";
 import Backdrop from "./Backdrop";
+import {
+  BACKDROP_PRESETS,
+  DEFAULT_BACKDROP,
+  type BackdropPresetId,
+} from "./backdropPresets";
 import { CameraManager } from "./CameraManager";
 import { StoreCharacterProvider } from "./CharacterContext";
 import { EngineCanvas } from "./EngineCanvas";
@@ -17,6 +22,7 @@ type CaptureFn = () => Promise<Blob | null>;
 
 type StoreSlice = {
   gender: string;
+  backdrop: BackdropPresetId;
   setScreenshot: (fn: ScreenshotFn) => void;
   setCapturePhoto: (fn: CaptureFn) => void;
   setCaptureFaceThumbnail: (fn: CaptureFn) => void;
@@ -46,6 +52,11 @@ const composeWithLogo = (
 
 const SceneContent = ({ children }: { children?: ReactNode }) => {
   const gender = useConfiguratorStore((state: StoreSlice) => state.gender);
+  const backdropId = useConfiguratorStore(
+    (state: StoreSlice) => state.backdrop,
+  );
+  const backdrop =
+    BACKDROP_PRESETS[backdropId] ?? BACKDROP_PRESETS[DEFAULT_BACKDROP];
 
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
@@ -112,24 +123,69 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
       cam.position.set(headPos.x, headPos.y + 0.08, headPos.z - 1.55);
       cam.lookAt(headPos.x, headPos.y - 0.22, headPos.z);
 
-      // R3F still types `state.gl` as the classic WebGLRenderer; cast to
-      // the unified Renderer to reach renderAsync / readback. EngineCanvas
-      // guarantees the runtime instance is a WebGPURenderer.
+      // Portrait rig (Phase 2 of plans/app-thumbnails.md). Suppress
+      // scene lights + IBL so the saved thumb looks identical no
+      // matter which BACKDROP preset is active, then inject a
+      // three-point setup. The off-screen render target means none of
+      // this is visible to the user mid-capture.
+      const suppressed: { light: THREE.Light; visible: boolean }[] = [];
+      scene.traverse((obj) => {
+        const maybeLight = obj as THREE.Light;
+        if (maybeLight.isLight) {
+          suppressed.push({ light: maybeLight, visible: maybeLight.visible });
+          maybeLight.visible = false;
+        }
+      });
+      const prevEnvironment = scene.environment;
+      const prevBackground = scene.background;
+      scene.environment = null;
+      scene.background = new THREE.Color("#22202a");
+
+      const fill = new THREE.AmbientLight("#e8e4ee", 0.45);
+      const key = new THREE.DirectionalLight("#fff4ea", 2.4);
+      key.position.set(headPos.x + 1.4, headPos.y + 0.9, headPos.z - 1.0);
+      key.target.position.set(headPos.x, headPos.y, headPos.z);
+      const sideFill = new THREE.DirectionalLight("#d8d8e8", 0.9);
+      sideFill.position.set(headPos.x - 1.2, headPos.y + 0.4, headPos.z - 0.5);
+      sideFill.target.position.set(headPos.x, headPos.y, headPos.z);
+      const rim = new THREE.DirectionalLight("#fffaf0", 1.6);
+      rim.position.set(headPos.x - 0.2, headPos.y + 1.2, headPos.z + 1.6);
+      rim.target.position.set(headPos.x, headPos.y, headPos.z);
+      const portraitLights = [
+        fill,
+        key,
+        key.target,
+        sideFill,
+        sideFill.target,
+        rim,
+        rim.target,
+      ];
+      portraitLights.forEach((l) => scene.add(l));
+
       const renderer = gl as unknown as Renderer;
       const prevRT = renderer.getRenderTarget();
-      renderer.setRenderTarget(rt);
-      renderer.clear();
-      await renderer.renderAsync(scene, cam);
-      renderer.setRenderTarget(prevRT);
-
-      const pixels = (await renderer.readRenderTargetPixelsAsync(
-        rt,
-        0,
-        0,
-        SIZE,
-        SIZE,
-      )) as Uint8Array;
-      rt.dispose();
+      let pixels: Uint8Array;
+      try {
+        renderer.setRenderTarget(rt);
+        renderer.clear();
+        await renderer.renderAsync(scene, cam);
+        renderer.setRenderTarget(prevRT);
+        pixels = (await renderer.readRenderTargetPixelsAsync(
+          rt,
+          0,
+          0,
+          SIZE,
+          SIZE,
+        )) as Uint8Array;
+      } finally {
+        portraitLights.forEach((l) => scene.remove(l));
+        scene.background = prevBackground;
+        scene.environment = prevEnvironment;
+        suppressed.forEach(({ light, visible }) => {
+          light.visible = visible;
+        });
+        rt.dispose();
+      }
 
       // The unified Renderer returns pixels in canvas orientation (no
       // Y-flip needed). drawImage-downsamples through the browser's 2D
@@ -162,32 +218,44 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
     <>
       <Leva hidden />
       <CameraManager />
-      <color attach="background" args={["#222237"]} />
+      <color attach="background" args={[backdrop.background]} />
       <Environment
         background={false}
-        environmentIntensity={0.5}
+        environmentIntensity={backdrop.environment.intensity}
         environmentRotation={[0, Math.PI / 2, 0]}
-        preset="city"
+        preset={backdrop.environment.preset}
       />
 
-      <ambientLight intensity={0.55} />
-      <hemisphereLight args={["#fff4ec", "#3a3a4a", 0.55]} />
+      <ambientLight
+        color={backdrop.ambient.color}
+        intensity={backdrop.ambient.intensity}
+      />
+      <hemisphereLight
+        args={[
+          backdrop.hemisphere.sky,
+          backdrop.hemisphere.ground,
+          backdrop.hemisphere.intensity,
+        ]}
+      />
       <directionalLight
         position={[-3, 5, -3]}
-        intensity={1.2}
+        intensity={backdrop.keyLight.intensity}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-bias={-0.0001}
-        color="#ffebe3"
+        color={backdrop.keyLight.color}
       />
-      <Backdrop />
-      <directionalLight position={[-5, 5, 5]} intensity={1.5} color="#ffebe3" />
-      {/* Camera-facing fill so faces aren't lit only from behind. */}
+      <Backdrop preset={backdrop.id} />
+      <directionalLight
+        position={[-5, 5, 5]}
+        intensity={backdrop.fillLight.intensity}
+        color={backdrop.fillLight.color}
+      />
       <directionalLight
         position={[0.8, 2, -4]}
-        intensity={0.8}
-        color="#fff2e7"
+        intensity={backdrop.rimLight.intensity}
+        color={backdrop.rimLight.color}
       />
 
       <Avatar key={gender} />
