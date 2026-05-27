@@ -20,12 +20,17 @@ type AttachedItem = {
   material: Material | null;
   morphTargetDictionary?: { [key: string]: number };
   morphTargetInfluences?: number[];
+  isSkinned: boolean;
 };
 
 // Type guards. drei's `useGLTF` widens scene children to `Object3D`; we
 // narrow to mesh-bearing nodes for the colour and morph passes.
 function isMesh(obj: object): obj is Mesh {
   return (obj as Mesh).isMesh === true;
+}
+
+function isSkinnedMesh(obj: object): obj is SkinnedMesh {
+  return (obj as SkinnedMesh).isSkinnedMesh === true;
 }
 
 export const Asset = ({ url, categoryName, skeleton }: AssetProps) => {
@@ -44,7 +49,7 @@ export const Asset = ({ url, categoryName, skeleton }: AssetProps) => {
   const assetColor = customization[categoryName]?.color ?? null;
   const assetColors = customization[categoryName]?.colors ?? {};
 
-  const meshRefs = useRef<Array<SkinnedMesh | null>>([]);
+  const meshRefs = useRef<Array<Mesh | null>>([]);
 
   useEffect(() => {
     scene.traverse((child) => {
@@ -73,6 +78,7 @@ export const Asset = ({ url, categoryName, skeleton }: AssetProps) => {
         material: isSkin ? skin : (material ?? null),
         morphTargetDictionary: child.morphTargetDictionary,
         morphTargetInfluences: child.morphTargetInfluences,
+        isSkinned: isSkinnedMesh(child),
       });
     });
     return items;
@@ -147,19 +153,39 @@ export const Asset = ({ url, categoryName, skeleton }: AssetProps) => {
     return null;
   }
 
-  return attachedItems.map((item, index) => (
-    <skinnedMesh
-      key={`${url}-${index}`}
-      ref={(el) => {
-        meshRefs.current[index] = el;
-      }}
-      skeleton={skeleton}
-      geometry={item.geometry}
-      material={item.material ?? undefined}
-      morphTargetDictionary={item.morphTargetDictionary}
-      morphTargetInfluences={item.morphTargetInfluences}
-      castShadow
-      receiveShadow
-    />
-  ));
+  return attachedItems.map((item, index) => {
+    const setRef = (el: Mesh | null) => {
+      meshRefs.current[index] = el;
+    };
+    if (item.isSkinned) {
+      return (
+        <skinnedMesh
+          key={`${url}-${index}`}
+          ref={setRef}
+          skeleton={skeleton}
+          geometry={item.geometry}
+          material={item.material ?? undefined}
+          morphTargetDictionary={item.morphTargetDictionary}
+          morphTargetInfluences={item.morphTargetInfluences}
+          castShadow
+          receiveShadow
+          // Frustum culling a dynamic SkinnedMesh by its rest-pose
+          // bounding sphere is unreliable — always render.
+          frustumCulled={false}
+        />
+      );
+    }
+    return (
+      <mesh
+        key={`${url}-${index}`}
+        ref={setRef}
+        geometry={item.geometry}
+        material={item.material ?? undefined}
+        morphTargetDictionary={item.morphTargetDictionary}
+        morphTargetInfluences={item.morphTargetInfluences}
+        castShadow
+        receiveShadow
+      />
+    );
+  });
 };

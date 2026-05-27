@@ -1,8 +1,8 @@
 "use client";
 
 import { Html } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
 import { Suspense, useMemo, useState } from "react";
+import { EngineCanvas } from "@/components/scene/EngineCanvas";
 import { cn } from "@/lib/utils";
 import WallCharacter from "./WallCharacter";
 
@@ -18,11 +18,10 @@ export default function WallScene({ characters, assetsById }) {
   const rowOffset = ((visibleCharacters.length - 1) * CHARACTER_SPACING) / 2;
 
   return (
-    <Canvas
+    <EngineCanvas
       className="h-full w-full"
       shadows={false}
       dpr={[1, 1.5]}
-      gl={{ antialias: true }}
       camera={{ position: [0, 1.6, 7], fov: 35 }}
     >
       <color attach="background" args={["#101018"]} />
@@ -66,6 +65,6 @@ export default function WallScene({ characters, assetsById }) {
           </Html>
         </group>
       )}
-    </Canvas>
+    </EngineCanvas>
   );
 }

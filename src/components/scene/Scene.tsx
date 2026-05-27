@@ -1,14 +1,16 @@
 "use client";
 import { Environment } from "@react-three/drei";
-import { Canvas, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { Leva } from "leva";
 import { type ReactNode, useEffect } from "react";
 import * as THREE from "three";
+import type { Renderer } from "three/webgpu";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import Avatar from "./Avatar";
 import Backdrop from "./Backdrop";
 import { CameraManager } from "./CameraManager";
 import { StoreCharacterProvider } from "./CharacterContext";
+import { EngineCanvas } from "./EngineCanvas";
 
 type ScreenshotFn = () => Promise<void>;
 type CaptureFn = () => Promise<Blob | null>;
@@ -98,7 +100,7 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
       const OUT = 512; // stored size
       const SS = 2; // supersample factor
       const SIZE = OUT * SS;
-      const rt = new THREE.WebGLRenderTarget(SIZE, SIZE, {
+      const rt = new THREE.RenderTarget(SIZE, SIZE, {
         format: THREE.RGBAFormat,
         type: THREE.UnsignedByteType,
       });
@@ -110,31 +112,35 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
       cam.position.set(headPos.x, headPos.y + 0.08, headPos.z - 1.55);
       cam.lookAt(headPos.x, headPos.y - 0.22, headPos.z);
 
-      const prevRT = gl.getRenderTarget();
-      gl.setRenderTarget(rt);
-      gl.clear();
-      gl.render(scene, cam);
-      gl.setRenderTarget(prevRT);
+      // R3F still types `state.gl` as the classic WebGLRenderer; cast to
+      // the unified Renderer to reach renderAsync / readback. EngineCanvas
+      // guarantees the runtime instance is a WebGPURenderer.
+      const renderer = gl as unknown as Renderer;
+      const prevRT = renderer.getRenderTarget();
+      renderer.setRenderTarget(rt);
+      renderer.clear();
+      await renderer.renderAsync(scene, cam);
+      renderer.setRenderTarget(prevRT);
 
-      const pixels = new Uint8Array(SIZE * SIZE * 4);
-      gl.readRenderTargetPixels(rt, 0, 0, SIZE, SIZE, pixels);
+      const pixels = (await renderer.readRenderTargetPixelsAsync(
+        rt,
+        0,
+        0,
+        SIZE,
+        SIZE,
+      )) as Uint8Array;
       rt.dispose();
 
-      // readRenderTargetPixels returns pixels with Y flipped vs. canvas.
-      // First copy the raw render into an intermediate canvas at SIZE,
-      // then drawImage-downsample into the OUT canvas — the browser's
-      // 2D scaler does a high-quality box filter that's our SS step.
+      // The unified Renderer returns pixels in canvas orientation (no
+      // Y-flip needed). drawImage-downsamples through the browser's 2D
+      // scaler — high-quality box filter for our SS step.
       const big = document.createElement("canvas");
       big.width = SIZE;
       big.height = SIZE;
       const bigCtx = big.getContext("2d");
       if (!bigCtx) return null;
       const imageData = bigCtx.createImageData(SIZE, SIZE);
-      for (let y = 0; y < SIZE; y++) {
-        const srcRow = (SIZE - 1 - y) * SIZE * 4;
-        const dstRow = y * SIZE * 4;
-        imageData.data.set(pixels.subarray(srcRow, srcRow + SIZE * 4), dstRow);
-      }
+      imageData.data.set(pixels);
       bigCtx.putImageData(imageData, 0, 0);
 
       const outCanvas = document.createElement("canvas");
@@ -192,11 +198,11 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
 
 const Scene = ({ children }: { children?: ReactNode }) => {
   return (
-    <Canvas shadows camera={{ fov: 40 }} gl={{ preserveDrawingBuffer: true }}>
+    <EngineCanvas shadows camera={{ fov: 40 }}>
       <StoreCharacterProvider>
         <SceneContent>{children}</SceneContent>
       </StoreCharacterProvider>
-    </Canvas>
+    </EngineCanvas>
   );
 };
 

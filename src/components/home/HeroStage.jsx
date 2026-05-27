@@ -1,13 +1,13 @@
 "use client";
 
 import { Environment } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import Avatar from "@/components/scene/Avatar";
 import { StoreCharacterProvider } from "@/components/scene/CharacterContext";
+import { EngineCanvas } from "@/components/scene/EngineCanvas";
 import { Button } from "@/components/ui/button";
 import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 
@@ -132,11 +132,10 @@ const HeroStage = () => {
           transition={{ duration: 1, delay: 0.15 }}
           className="relative h-[420px] w-full overflow-hidden rounded-2xl md:h-[520px] lg:h-[600px]"
         >
-          <Canvas
+          <EngineCanvas
             dpr={[1, 1.5]}
             shadows={false}
             camera={{ position: [0, 1.05, -3.6], fov: 38 }}
-            gl={{ antialias: true }}
             // R3F's default lookAt is origin (feet). Aim at chest height
             // so the head sits in the upper third of the frame.
             onCreated={({ camera }) => {
@@ -171,7 +170,7 @@ const HeroStage = () => {
             <StoreCharacterProvider>
               <Avatar />
             </StoreCharacterProvider>
-          </Canvas>
+          </EngineCanvas>
         </motion.div>
       </div>
     </section>

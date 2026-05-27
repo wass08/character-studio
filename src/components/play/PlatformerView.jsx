@@ -1,11 +1,12 @@
 "use client";
 
 import { Environment, PerspectiveCamera, Sky } from "@react-three/drei";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { Suspense, useEffect, useRef } from "react";
 import * as THREE from "three";
 import Avatar from "@/components/scene/Avatar";
 import { StoreCharacterProvider } from "@/components/scene/CharacterContext";
+import { EngineCanvas } from "@/components/scene/EngineCanvas";
 import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
 import {
   PHOTO_POSES,
@@ -188,14 +189,13 @@ const PlatformerView = () => {
 
   return (
     <PlayShell title="Platformer">
-      <Canvas
+      <EngineCanvas
         shadows
         frameloop="always"
-        gl={{ preserveDrawingBuffer: true }}
         camera={{ position: [0, 4, 8], fov: 50 }}
       >
         <PlatformerScene />
-      </Canvas>
+      </EngineCanvas>
       {!introFinished && <LoadingScreen />}
       <NoCharacterOverlay />
 
