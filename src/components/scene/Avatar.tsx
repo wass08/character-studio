@@ -3,7 +3,13 @@
 import { useAnimations, useGLTF } from "@react-three/drei";
 import type { ThreeElements } from "@react-three/fiber";
 import { Suspense, useEffect, useRef } from "react";
-import type { AnimationClip, Group, Object3D, SkinnedMesh } from "three";
+import type {
+  AnimationAction,
+  AnimationClip,
+  Group,
+  Object3D,
+  SkinnedMesh,
+} from "three";
 import { GLTFExporter, SkeletonUtils } from "three-stdlib";
 import { pb } from "@/stores/useConfiguratorStore";
 import { Asset } from "./Asset";
@@ -123,14 +129,29 @@ export default function Model(props: ModelProps) {
     }
   }, [height]);
 
+  // Crossfade between poses instead of stop/start, otherwise the rig
+  // momentarily collapses to its rest pose (T-pose) during the 0.5s
+  // window when the new clip is ramping up from weight 0. crossFadeFrom
+  // overlaps the two actions' weights so the rig stays fully driven.
+  const prevActionRef = useRef<AnimationAction | null>(null);
+
+  // Drop the stale reference when the animation set changes (gender
+  // swap loads a fresh Animations.glb with new action instances).
   useEffect(() => {
-    const action = actions[pose];
-    if (action) {
-      action.reset().fadeIn(0.5).play();
-      return () => {
-        action.fadeOut(0.2).stop();
-      };
+    prevActionRef.current = null;
+  }, [actions]);
+
+  useEffect(() => {
+    const next = actions[pose];
+    if (!next) return;
+    const prev = prevActionRef.current;
+    if (prev && prev !== next) {
+      next.reset().play();
+      next.crossFadeFrom(prev, 0.4, true);
+    } else {
+      next.reset().fadeIn(0.4).play();
     }
+    prevActionRef.current = next;
   }, [actions, pose]);
 
   useEffect(() => {

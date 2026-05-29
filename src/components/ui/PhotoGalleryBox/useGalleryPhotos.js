@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
-import { useAuthStore } from "@/stores/useAuthStore";
 import { toast } from "@/components/ui/primitives/Toast";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 
 export const useGalleryPhotos = () => {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
@@ -21,11 +21,23 @@ export const useGalleryPhotos = () => {
     let cancelled = false;
     setLoading(true);
     pb.collection("CharacterStudioPhotos")
-      .getList(1, 24, { sort: "-created", skipTotal: true })
+      // requestKey: null disables PB SDK's per-method auto-cancellation,
+      // which otherwise eats this request when React Strict Mode mounts
+      // the effect twice in quick succession — the second call cancels
+      // the first, then setPhotos never fires because we silently
+      // swallowed the AbortError.
+      .getList(1, 24, {
+        sort: "-created",
+        skipTotal: true,
+        requestKey: null,
+        expand: "character",
+      })
       .then((list) => {
         if (!cancelled) setPhotos(list.items);
       })
-      .catch(() => {})
+      .catch((err) => {
+        if (!cancelled) console.warn("[gallery] failed to load photos", err);
+      })
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;

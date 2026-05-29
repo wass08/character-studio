@@ -108,9 +108,12 @@ export const CameraManager = (_props: CameraManagerProps = {}) => {
   useEffect(() => {
     if (!controls.current) return;
 
-    // Photo mode: use fixed full-body camera, disable orbit
+    // Photo mode: snap to a flattering full-body framing on entry, but
+    // leave orbit/zoom on so users can compose their own shot. Drop
+    // minDistance to allow close-ups without clipping into the avatar.
     if (mode === UI_MODES.PHOTO) {
-      controls.current.enabled = false;
+      controls.current.enabled = true;
+      controls.current.minDistance = 1;
       controls.current.setLookAt(
         ...PHOTO_CAMERA_POSITION,
         ...PHOTO_CAMERA_TARGET,

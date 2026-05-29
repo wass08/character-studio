@@ -35,6 +35,12 @@ const nextConfig = {
         destination: "/studio",
         permanent: false,
       },
+      // Playground was renamed to Photo Booth; preserve any saved links.
+      {
+        source: "/c/:id/try/playground",
+        destination: "/c/:id/try/photobooth",
+        permanent: true,
+      },
     ];
   },
 };

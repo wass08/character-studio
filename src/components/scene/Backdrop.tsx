@@ -33,7 +33,9 @@ export default function Backdrop({
   ) as unknown as BackdropGLTF;
   const floorColor = BACKDROP_PRESETS[preset]?.floor ?? BACKDROP_PRESETS[DEFAULT_BACKDROP].floor;
   return (
-    <group {...props} dispose={null}>
+    // Named so the thumbnail capture can hide it without traversing
+    // by material/geometry.
+    <group name="character-studio-backdrop" {...props} dispose={null}>
       <mesh
         castShadow
         receiveShadow

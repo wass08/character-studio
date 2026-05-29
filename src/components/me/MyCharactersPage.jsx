@@ -179,7 +179,7 @@ const MyCharactersPage = () => {
                     <img
                       src={t}
                       alt={c.name}
-                      className="absolute inset-0 h-full w-full object-cover"
+                      className="pointer-events-none absolute inset-0 h-full w-full object-cover"
                       loading="lazy"
                     />
                   )}

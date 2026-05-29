@@ -12,7 +12,7 @@ import { Tooltip } from "../primitives/Tooltip";
 const PILL_SPRING = { type: "spring", stiffness: 380, damping: 32 };
 
 // Modes that stay inside the editor. Photo / My-Characters moved to
-// their own routes (/play/playground, /me).
+// their own routes (/c/[id]/try/photobooth, /studio).
 const MODES = [
   { id: UI_MODES.CUSTOMIZE, label: "Customize" },
   { id: UI_MODES.EXPORT, label: "Export" },
@@ -40,10 +40,10 @@ const ModeSelector = () => {
       <Link
         href="/studio"
         className="inline-flex items-center px-2 py-2 text-xs font-medium tracking-tight text-white/55 transition-colors hover:text-white/90 md:px-3"
-        aria-label="Back to studio"
+        aria-label="Back to My Characters"
       >
         <span className="md:hidden">←</span>
-        <span className="hidden md:inline">← Studio</span>
+        <span className="hidden md:inline">← My Characters</span>
       </Link>
       {MODES.map((m) => {
         const active = mode === m.id;

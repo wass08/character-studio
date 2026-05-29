@@ -12,9 +12,8 @@ import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
  * keeps the character chip visible so users always see who's "on stage."
  *
  * Back-link routes to the active character's profile page when one is
- * loaded; falls back to the Studio workspace otherwise. The label is
- * the character's name (or "Studio") so the breadcrumb actually says
- * where you're going.
+ * loaded; falls back to /studio (My Characters) otherwise. The label is
+ * the character's name when present, "My Characters" otherwise.
  */
 const PlayShell = ({ title, children, sidebar }) => {
   const currentCharacterId = useConfiguratorStore((s) => s.currentCharacterId);
@@ -24,7 +23,7 @@ const PlayShell = ({ title, children, sidebar }) => {
   const backHref = currentCharacterId ? `/c/${currentCharacterId}` : "/studio";
   const backLabel = currentCharacterId
     ? currentCharacterName || "Character"
-    : "Studio";
+    : "My Characters";
 
   return (
     <main className="fixed inset-0 flex h-screen w-full flex-col bg-black text-white">

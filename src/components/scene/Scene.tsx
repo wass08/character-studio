@@ -5,13 +5,16 @@ import { Leva } from "leva";
 import { type ReactNode, useEffect } from "react";
 import * as THREE from "three";
 import type { Renderer } from "three/webgpu";
-import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
+import {
+  PHOTO_ASPECT_RATIOS,
+  useConfiguratorStore,
+} from "@/stores/useConfiguratorStore";
 import Avatar from "./Avatar";
 import Backdrop from "./Backdrop";
 import {
   BACKDROP_PRESETS,
-  DEFAULT_BACKDROP,
   type BackdropPresetId,
+  DEFAULT_BACKDROP,
 } from "./backdropPresets";
 import { CameraManager } from "./CameraManager";
 import { StoreCharacterProvider } from "./CharacterContext";
@@ -26,6 +29,41 @@ type StoreSlice = {
   setScreenshot: (fn: ScreenshotFn) => void;
   setCapturePhoto: (fn: CaptureFn) => void;
   setCaptureFaceThumbnail: (fn: CaptureFn) => void;
+};
+
+// Centered crop of a canvas down to a target width/height aspect ratio.
+// Returns a new canvas; if the source already matches the ratio (within
+// 0.5%) the original is returned unchanged.
+const cropToAspect = (
+  source: HTMLCanvasElement,
+  ratio: number,
+): HTMLCanvasElement => {
+  const W = source.width;
+  const H = source.height;
+  const currentRatio = W / H;
+  if (Math.abs(currentRatio - ratio) / ratio < 0.005) return source;
+  let cropW: number;
+  let cropH: number;
+  let sx: number;
+  let sy: number;
+  if (currentRatio > ratio) {
+    cropH = H;
+    cropW = Math.round(H * ratio);
+    sx = Math.round((W - cropW) / 2);
+    sy = 0;
+  } else {
+    cropW = W;
+    cropH = Math.round(W / ratio);
+    sx = 0;
+    sy = Math.round((H - cropH) / 2);
+  }
+  const out = document.createElement("canvas");
+  out.width = cropW;
+  out.height = cropH;
+  const ctx = out.getContext("2d");
+  if (!ctx) return source;
+  ctx.drawImage(source, sx, sy, cropW, cropH, 0, 0, cropW, cropH);
+  return out;
 };
 
 const composeWithLogo = (
@@ -60,6 +98,7 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
 
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
+  const camera = useThree((state) => state.camera);
   const setScreenshot = useConfiguratorStore(
     (state: StoreSlice) => state.setScreenshot,
   );
@@ -71,9 +110,106 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
   );
 
   useEffect(() => {
-    // Triggers a PNG download of the current view with the logo overlay.
+    // WebGPU canvas surfaces are invalidated after each present, so
+    // drawImage(gl.domElement) reads a blank frame. Render the live
+    // scene into an offscreen RT, read pixels back, then composite.
+    const renderToOffscreen = async (): Promise<HTMLCanvasElement | null> => {
+      const sourceCanvas = gl.domElement as HTMLCanvasElement;
+      // 2× supersample then box-filter via drawImage. Matches the
+      // thumbnail pipeline and cleans up the silhouette aliasing that
+      // came from reading the unfiltered RT directly. Memory cost for
+      // a 1080p shot is ~33 MB transient — fine on modern GPUs.
+      const SS = 2;
+      const outW = sourceCanvas.width;
+      const outH = sourceCanvas.height;
+      const W = outW * SS;
+      const H = outH * SS;
+      const rt = new THREE.RenderTarget(W, H, {
+        format: THREE.RGBAFormat,
+        type: THREE.UnsignedByteType,
+        // RTs are linear by default; the readback feeds putImageData
+        // which expects sRGB-encoded bytes. Without this the output is
+        // a stop or two darker than the live canvas.
+        colorSpace: THREE.SRGBColorSpace,
+      });
+      const renderer = gl as unknown as Renderer;
+      const prevRT = renderer.getRenderTarget();
+      let pixels: Uint8Array;
+      try {
+        renderer.setRenderTarget(rt);
+        renderer.clear();
+        await renderer.renderAsync(scene, camera);
+        renderer.setRenderTarget(prevRT);
+        pixels = (await renderer.readRenderTargetPixelsAsync(
+          rt,
+          0,
+          0,
+          W,
+          H,
+        )) as Uint8Array;
+      } finally {
+        rt.dispose();
+      }
+      // Stage the supersampled pixels onto a big canvas first…
+      const big = document.createElement("canvas");
+      big.width = W;
+      big.height = H;
+      const bigCtx = big.getContext("2d");
+      if (!bigCtx) return null;
+      const imageData = bigCtx.createImageData(W, H);
+      // WebGPU's copyTextureToBuffer aligns each row to 256 bytes, so
+      // for widths that aren't multiples of 64 px the returned buffer
+      // has trailing padding on every row *except the last* (the spec
+      // only requires `bytesPerRow * (H - 1) + tightRowBytes` storage).
+      // `imageData.data.set(pixels)` overflows in that case. Detect the
+      // padded layout and copy row-by-row.
+      const tightRowBytes = W * 4;
+      const tightTotal = tightRowBytes * H;
+      const paddedRowBytes = Math.ceil(tightRowBytes / 256) * 256;
+      const paddedTotal = paddedRowBytes * (H - 1) + tightRowBytes;
+      if (pixels.length === tightTotal) {
+        imageData.data.set(pixels);
+      } else if (pixels.length === paddedTotal) {
+        for (let y = 0; y < H; y++) {
+          imageData.data.set(
+            pixels.subarray(
+              y * paddedRowBytes,
+              y * paddedRowBytes + tightRowBytes,
+            ),
+            y * tightRowBytes,
+          );
+        }
+      } else {
+        console.warn(
+          `[capture] readback size mismatch: got ${pixels.length}, expected ${tightTotal} (tight) or ${paddedTotal} (padded, W=${W}, H=${H}, paddedRow=${paddedRowBytes})`,
+        );
+        return null;
+      }
+      bigCtx.putImageData(imageData, 0, 0);
+      // …then downsample via drawImage's high-quality scaler, which
+      // box-filters the SS texels into the output. Costs effectively
+      // free anti-aliasing on the silhouette.
+      const out = document.createElement("canvas");
+      out.width = outW;
+      out.height = outH;
+      const ctx = out.getContext("2d");
+      if (!ctx) return null;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(big, 0, 0, outW, outH);
+      return out;
+    };
+
+    const cropToCurrentAspect = (snap: HTMLCanvasElement) => {
+      const id = useConfiguratorStore.getState().photoAspectRatio;
+      const ratio = PHOTO_ASPECT_RATIOS[id as keyof typeof PHOTO_ASPECT_RATIOS];
+      return ratio ? cropToAspect(snap, ratio) : snap;
+    };
+
     const screenshot: ScreenshotFn = async () => {
-      const blob = await composeWithLogo(gl.domElement as HTMLCanvasElement);
+      const snap = await renderToOffscreen();
+      if (!snap) return;
+      const blob = await composeWithLogo(cropToCurrentAspect(snap));
       if (!blob) return;
       const link = document.createElement("a");
       const date = new Date();
@@ -87,21 +223,22 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     };
 
-    // Same image, returned as a Blob for uploading.
-    const capturePhoto: CaptureFn = async () =>
-      composeWithLogo(gl.domElement as HTMLCanvasElement);
+    const capturePhoto: CaptureFn = async () => {
+      const snap = await renderToOffscreen();
+      if (!snap) return null;
+      return composeWithLogo(cropToCurrentAspect(snap));
+    };
 
     setScreenshot(screenshot);
     setCapturePhoto(capturePhoto);
-  }, [gl, setScreenshot, setCapturePhoto]);
+  }, [gl, scene, camera, setScreenshot, setCapturePhoto]);
 
   useEffect(() => {
     // Renders a 1024×1024 head-and-shoulders portrait off-screen then
     // downsamples to 512×512 via canvas — cheap 2× supersampling AA
     // for silhouettes (hair, ears). The portable alternative to
     // multisample render targets, which need a manual blit-resolve
-    // path that varies by three.js version. Contract documented in
-    // wiki/architecture/data-model.md `## Thumbnail capture`.
+    // path that varies by three.js version.
     const captureFaceThumbnail: CaptureFn = async () => {
       const head = scene.getObjectByName("DEF-head");
       if (!head) return null;
@@ -114,58 +251,36 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
       const rt = new THREE.RenderTarget(SIZE, SIZE, {
         format: THREE.RGBAFormat,
         type: THREE.UnsignedByteType,
+        // sRGB-encode in the RT so the read bytes match what the live
+        // canvas shows. Without this the saved thumb is visibly darker
+        // than the editor view.
+        colorSpace: THREE.SRGBColorSpace,
       });
-      // Head + shoulders framing: camera slightly above and 1.55m
-      // behind the head, looking a bit below so the upper torso enters
-      // the bottom third of the frame. fov 30 gives ~0.83m of visible
-      // height at the head plane — enough for hair top + collarbone.
-      const cam = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
-      cam.position.set(headPos.x, headPos.y + 0.08, headPos.z - 1.55);
-      cam.lookAt(headPos.x, headPos.y - 0.22, headPos.z);
+      // Medium portrait framing: head + chest. fov 24° at 1.55m gives
+      // ~0.65m of visible height. LookAt 5cm below the head bone keeps
+      // the frame center low enough for the chest to fade out at the
+      // bottom, while leaving ~6cm of clearance above the hair (enough
+      // for tall hairstyles — mohawks, top buns).
+      const cam = new THREE.PerspectiveCamera(24, 1, 0.1, 100);
+      cam.position.set(headPos.x, headPos.y + 0.05, headPos.z - 1.55);
+      cam.lookAt(headPos.x, headPos.y - 0.09, headPos.z);
 
-      // Portrait rig (Phase 2 of plans/app-thumbnails.md). Suppress
-      // scene lights + IBL so the saved thumb looks identical no
-      // matter which BACKDROP preset is active, then inject a
-      // three-point setup. The off-screen render target means none of
-      // this is visible to the user mid-capture.
-      const suppressed: { light: THREE.Light; visible: boolean }[] = [];
-      scene.traverse((obj) => {
-        const maybeLight = obj as THREE.Light;
-        if (maybeLight.isLight) {
-          suppressed.push({ light: maybeLight, visible: maybeLight.visible });
-          maybeLight.visible = false;
-        }
-      });
-      const prevEnvironment = scene.environment;
+      // WYSIWYG lighting: render the live scene with its current lights
+      // + IBL so the saved thumb matches what the user just saw. Hide
+      // the 3D backdrop (stool/plant/floor) so the avatar pops on the
+      // transparent bg — chips/cards composite over their own surface.
       const prevBackground = scene.background;
-      scene.environment = null;
-      scene.background = new THREE.Color("#22202a");
-
-      const fill = new THREE.AmbientLight("#e8e4ee", 0.45);
-      const key = new THREE.DirectionalLight("#fff4ea", 2.4);
-      key.position.set(headPos.x + 1.4, headPos.y + 0.9, headPos.z - 1.0);
-      key.target.position.set(headPos.x, headPos.y, headPos.z);
-      const sideFill = new THREE.DirectionalLight("#d8d8e8", 0.9);
-      sideFill.position.set(headPos.x - 1.2, headPos.y + 0.4, headPos.z - 0.5);
-      sideFill.target.position.set(headPos.x, headPos.y, headPos.z);
-      const rim = new THREE.DirectionalLight("#fffaf0", 1.6);
-      rim.position.set(headPos.x - 0.2, headPos.y + 1.2, headPos.z + 1.6);
-      rim.target.position.set(headPos.x, headPos.y, headPos.z);
-      const portraitLights = [
-        fill,
-        key,
-        key.target,
-        sideFill,
-        sideFill.target,
-        rim,
-        rim.target,
-      ];
-      portraitLights.forEach((l) => scene.add(l));
+      scene.background = null;
+      const backdropRoot = scene.getObjectByName("character-studio-backdrop");
+      const prevBackdropVisible = backdropRoot?.visible ?? true;
+      if (backdropRoot) backdropRoot.visible = false;
 
       const renderer = gl as unknown as Renderer;
       const prevRT = renderer.getRenderTarget();
+      const prevClearAlpha = renderer.getClearAlpha();
       let pixels: Uint8Array;
       try {
+        renderer.setClearAlpha(0);
         renderer.setRenderTarget(rt);
         renderer.clear();
         await renderer.renderAsync(scene, cam);
@@ -178,12 +293,9 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
           SIZE,
         )) as Uint8Array;
       } finally {
-        portraitLights.forEach((l) => scene.remove(l));
+        renderer.setClearAlpha(prevClearAlpha);
         scene.background = prevBackground;
-        scene.environment = prevEnvironment;
-        suppressed.forEach(({ light, visible }) => {
-          light.visible = visible;
-        });
+        if (backdropRoot) backdropRoot.visible = prevBackdropVisible;
         rt.dispose();
       }
 
@@ -244,6 +356,12 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-bias={-0.0001}
+        // Belt-and-braces with the per-asset castShadow=false on cloth
+        // (Asset.tsx): the skin body still casts the floor shadow but
+        // can't self-acne, while normalBias offsets the depth-compare
+        // point along the surface normal for any remaining curvy-edge
+        // shadow comparisons (hair on face, etc.).
+        shadow-normalBias={0.08}
         color={backdrop.keyLight.color}
       />
       <Backdrop preset={backdrop.id} />

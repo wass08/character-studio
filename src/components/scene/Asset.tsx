@@ -7,6 +7,7 @@ import type {
   Skeleton,
   SkinnedMesh,
 } from "three";
+import * as THREE from "three";
 import { useCharacter } from "./CharacterContext";
 
 type AssetProps = {
@@ -71,7 +72,24 @@ export const Asset = ({ url, categoryName, skeleton }: AssetProps) => {
     scene.traverse((child) => {
       if (!isMesh(child)) return;
       if (child.name.includes("Plane002")) return;
-      const material = child.material as (Material & { name?: string }) | null;
+      let material = child.material as
+        | (Material & { name?: string; type?: string })
+        | null;
+      // WebGPU/TSL regression: MeshPhysicalMaterial on cloth produces
+      // dark seams/holes (likely a clearcoat/sheen/back-face shading
+      // path that isn't equivalent to the WebGL implementation).
+      // Downgrade to MeshStandardMaterial — .copy() carries over color,
+      // maps, normalScale, roughness, metalness, side, etc. and quietly
+      // drops the physical extras we weren't visibly using. Mutates the
+      // drei-cached GLB material so the conversion happens once per
+      // asset, not per instance.
+      if (material?.type === "MeshPhysicalMaterial") {
+        const downgraded = new THREE.MeshStandardMaterial();
+        downgraded.copy(material as unknown as THREE.MeshStandardMaterial);
+        downgraded.needsUpdate = true;
+        child.material = downgraded;
+        material = downgraded as unknown as typeof material;
+      }
       const isSkin = material?.name?.toLowerCase().includes("skin") ?? false;
       items.push({
         geometry: child.geometry,

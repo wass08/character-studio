@@ -1,9 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { motion } from "motion/react";
 import {
   ArrowRight,
   Camera,
@@ -13,23 +9,27 @@ import {
   Pencil,
   Share2,
 } from "lucide-react";
+import { motion } from "motion/react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Scene from "@/components/scene/Scene";
-import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
 import HubHeader from "@/components/shell/HubHeader";
 import { Button } from "@/components/ui/button";
+import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
+import { toast } from "@/components/ui/primitives/Toast";
+import { useAuthStore } from "@/stores/useAuthStore";
 import {
   pb,
-  useConfiguratorStore,
   UI_MODES,
+  useConfiguratorStore,
 } from "@/stores/useConfiguratorStore";
-import { useAuthStore } from "@/stores/useAuthStore";
-import { toast } from "@/components/ui/primitives/Toast";
 
 // Experiments live under the character's own page (/c/[id]/try/[slug])
 // per the locked vocabulary — they're features of a character, not a
 // peer section. The href is built per render from `record.id`.
 const TRY_LINKS = [
-  { slug: "playground", label: "Playground", icon: Camera },
+  { slug: "photobooth", label: "Photo Booth", icon: Camera },
   { slug: "lipsync", label: "Lipsync", icon: MessagesSquare },
   { slug: "platformer", label: "Platformer", icon: ArrowRight },
 ];
@@ -160,8 +160,7 @@ const CharacterPageView = ({ id }) => {
                   {record.name}
                 </h1>
                 <div className="mt-1 text-xs text-white/55">
-                  by{" "}
-                  <span className="text-white/80">{author}</span>
+                  by <span className="text-white/80">{author}</span>
                   {" · "}
                   {new Date(record.created).toLocaleDateString()}
                 </div>

@@ -53,24 +53,44 @@ const ASSETS_PANEL_CLASS = cn(
   "md:max-h-[calc(100vh-32px)] md:w-[280px] md:flex-col md:items-start md:overflow-x-hidden md:overflow-y-auto",
 );
 
-const MaskIcon = ({ url, active }) => (
-  <div
-    className={cn(
-      "h-6 w-6 transition-colors duration-200 md:h-7 md:w-7",
-      active ? "bg-white" : "bg-white/55",
-    )}
-    style={{
-      maskImage: `url(${url})`,
-      WebkitMaskImage: `url(${url})`,
-      maskSize: "contain",
-      WebkitMaskSize: "contain",
-      maskRepeat: "no-repeat",
-      WebkitMaskRepeat: "no-repeat",
-      maskPosition: "center",
-      WebkitMaskPosition: "center",
-    }}
-  />
-);
+// Categories/sections without an uploaded icon used to render as
+// invisible blank buttons (CSS mask with a broken URL). Fall back to a
+// first-letter glyph so newly added groups stay clickable until an icon
+// is uploaded in /admin.
+const MaskIcon = ({ url, active, fallbackLabel }) => {
+  const hasIcon = Boolean(url && !url.endsWith("/"));
+  if (!hasIcon) {
+    return (
+      <div
+        className={cn(
+          "flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-semibold uppercase transition-colors duration-200 md:h-7 md:w-7",
+          active ? "bg-white/15 text-white" : "bg-white/[0.06] text-white/55",
+        )}
+        aria-hidden="true"
+      >
+        {fallbackLabel?.slice(0, 1) || "?"}
+      </div>
+    );
+  }
+  return (
+    <div
+      className={cn(
+        "h-6 w-6 transition-colors duration-200 md:h-7 md:w-7",
+        active ? "bg-white" : "bg-white/55",
+      )}
+      style={{
+        maskImage: `url(${url})`,
+        WebkitMaskImage: `url(${url})`,
+        maskSize: "contain",
+        WebkitMaskSize: "contain",
+        maskRepeat: "no-repeat",
+        WebkitMaskRepeat: "no-repeat",
+        maskPosition: "center",
+        WebkitMaskPosition: "center",
+      }}
+    />
+  );
+};
 
 const SectionHeader = ({ children, onReset, resetLabel }) => (
   <div className="mb-2.5 flex items-center justify-between px-0.5">
@@ -209,6 +229,7 @@ const AssetsBox = () => {
                     <MaskIcon
                       url={pb.files.getURL(section, section.icon)}
                       active={active}
+                      fallbackLabel={section.name}
                     />
                   </div>
                 </Button>
@@ -254,6 +275,7 @@ const AssetsBox = () => {
                         <MaskIcon
                           url={pb.files.getURL(category, category.icon)}
                           active={active}
+                          fallbackLabel={category.name}
                         />
                       </div>
                     </Button>

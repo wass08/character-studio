@@ -1,15 +1,15 @@
 "use client";
 
+import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "motion/react";
-import CharacterChip from "./CharacterChip";
-import AccountIdentity from "./AccountIdentity";
 import { cn } from "@/lib/utils";
+import AccountIdentity from "./AccountIdentity";
+import CharacterChip from "./CharacterChip";
 
-// Vocabulary locked in wiki/architecture/app-structure.md#vocabulary:
-// home gets no nav label (the logo carries it), workspace is "Studio".
-const NAV = [{ href: "/studio", label: "Studio" }];
+// Home has no nav label (the logo carries it). /studio is the user's
+// character library.
+const NAV = [{ href: "/studio", label: "My Characters" }];
 
 /**
  * Persistent top chrome for hub-style pages and experiences.
@@ -17,9 +17,16 @@ const NAV = [{ href: "/studio", label: "Studio" }];
  *   - "hub" (default): translucent overlay over scrolling content
  *   - "fixed": opaque pinned bar that sits over a fullscreen canvas
  */
+// The chip is a "current character" indicator, so it only makes sense on
+// routes that actually have a character in scope: the editor and any
+// /c/[id]/* page. Hub pages already surface the roster via /studio.
+const isCharacterRoute = (pathname) =>
+  !!pathname && (pathname.startsWith("/c/") || pathname.startsWith("/editor"));
+
 const HubHeader = ({ variant = "hub", className }) => {
   const pathname = usePathname();
   const fixed = variant === "fixed";
+  const showChip = isCharacterRoute(pathname);
   return (
     <header
       className={cn(
@@ -37,12 +44,9 @@ const HubHeader = ({ variant = "hub", className }) => {
       >
         <img
           src="/images/logo-white.svg"
-          alt="Wawasensei"
+          alt="Character Studio"
           className="h-7 w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)] md:h-9"
         />
-        <span className="hidden text-xs font-medium tracking-[0.18em] text-white/65 uppercase md:inline">
-          Studio
-        </span>
       </Link>
 
       <nav className="hidden md:flex items-center gap-1 ml-3">
@@ -74,13 +78,7 @@ const HubHeader = ({ variant = "hub", className }) => {
       </nav>
 
       <div className="ml-auto flex items-center gap-2">
-        <Link
-          href="/editor"
-          className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-white/90 px-4 py-1.5 text-xs font-semibold tracking-tight text-zinc-900 shadow-[0_0_22px_rgba(255,255,255,0.15)] ring-1 ring-white/40 transition-colors hover:bg-white"
-        >
-          + New character
-        </Link>
-        <CharacterChip />
+        {showChip && <CharacterChip />}
         <AccountIdentity />
       </div>
     </header>
