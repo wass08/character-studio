@@ -1,0 +1,298 @@
+"use client";
+
+import { Environment, PerspectiveCamera, Sky } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import { Suspense, useEffect, useRef } from "react";
+import * as THREE from "three";
+import Avatar from "@/components/scene/Avatar";
+import { StoreCharacterProvider } from "@/components/scene/CharacterContext";
+import { EngineCanvas } from "@/components/scene/EngineCanvas";
+import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
+import {
+  PHOTO_POSES,
+  UI_MODES,
+  useConfiguratorStore,
+} from "@/stores/useConfiguratorStore";
+import NoCharacterOverlay from "./NoCharacterOverlay";
+import PlayShell from "./PlayShell";
+
+/**
+ * Phase-7 platformer: lightweight WASD movement on a flat plane with a
+ * follow camera. Kept intentionally simple — this is "feel them move,"
+ * not a game. A future iteration can swap in BVHEcctrl for real physics.
+ */
+
+const KEYS = {
+  w: "f",
+  a: "l",
+  s: "b",
+  d: "r",
+  arrowup: "f",
+  arrowdown: "b",
+  arrowleft: "l",
+  arrowright: "r",
+  shift: "run",
+  " ": "jump",
+  r: "reset",
+};
+
+const useKeyboard = () => {
+  const ref = useRef({
+    f: false,
+    b: false,
+    l: false,
+    r: false,
+    run: false,
+    jump: false,
+    reset: false,
+  });
+  useEffect(() => {
+    const down = (e) => {
+      const k = KEYS[e.key.toLowerCase()];
+      if (!k) return;
+      if (k === "jump" || k === "reset") e.preventDefault();
+      ref.current[k] = true;
+    };
+    const up = (e) => {
+      const k = KEYS[e.key.toLowerCase()];
+      if (k) ref.current[k] = false;
+    };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+    };
+  }, []);
+  return ref;
+};
+
+const SPAWN = new THREE.Vector3(0, 0, 0);
+const JUMP_VELOCITY = 6.2;
+const GRAVITY = 18;
+
+const CharacterController = ({ groupRef }) => {
+  const keys = useKeyboard();
+  const setPose = useConfiguratorStore((s) => s.setPose);
+  const vel = useRef(new THREE.Vector3());
+  const target = useRef(new THREE.Quaternion());
+  const lastIsMoving = useRef(false);
+  const vy = useRef(0);
+  const grounded = useRef(true);
+
+  useFrame((_, dt) => {
+    const grp = groupRef.current;
+    if (!grp) return;
+    const k = keys.current;
+
+    // Reset to spawn (one-shot — clear the flag).
+    if (k.reset) {
+      grp.position.copy(SPAWN);
+      vy.current = 0;
+      grounded.current = true;
+      k.reset = false;
+    }
+
+    const speed = k.run ? 5.5 : 2.6;
+    vel.current.set(
+      (k.l ? -1 : 0) + (k.r ? 1 : 0),
+      0,
+      (k.f ? -1 : 0) + (k.b ? 1 : 0),
+    );
+    const moving = vel.current.lengthSq() > 0;
+    if (moving) {
+      vel.current.normalize().multiplyScalar(speed * dt);
+      grp.position.add(vel.current);
+      const angle = Math.atan2(vel.current.x, vel.current.z) + Math.PI;
+      target.current.setFromAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+      grp.quaternion.slerp(target.current, Math.min(1, dt * 12));
+    }
+
+    // Vertical integration. Trigger the jump on press while grounded;
+    // gravity pulls back to y=0 (single flat ground plane for now).
+    if (k.jump && grounded.current) {
+      vy.current = JUMP_VELOCITY;
+      grounded.current = false;
+    }
+    if (!grounded.current) {
+      vy.current -= GRAVITY * dt;
+      grp.position.y += vy.current * dt;
+      if (grp.position.y <= 0) {
+        grp.position.y = 0;
+        vy.current = 0;
+        grounded.current = true;
+      }
+    }
+
+    // Soft world bounds.
+    grp.position.x = THREE.MathUtils.clamp(grp.position.x, -28, 28);
+    grp.position.z = THREE.MathUtils.clamp(grp.position.z, -28, 28);
+
+    if (moving !== lastIsMoving.current) {
+      lastIsMoving.current = moving;
+      setPose(moving ? PHOTO_POSES.Walk : PHOTO_POSES.Idle);
+    }
+  });
+
+  return null;
+};
+
+const FollowCamera = ({ targetRef }) => {
+  const cameraRef = useRef();
+  const tmp = useRef(new THREE.Vector3());
+  const desired = useRef(new THREE.Vector3());
+
+  useFrame((_, dt) => {
+    const grp = targetRef.current;
+    const cam = cameraRef.current;
+    if (!grp || !cam) return;
+    grp.getWorldPosition(tmp.current);
+    desired.current.set(tmp.current.x, tmp.current.y + 3, tmp.current.z + 6);
+    cam.position.lerp(desired.current, Math.min(1, dt * 6));
+    cam.lookAt(tmp.current.x, tmp.current.y + 1.1, tmp.current.z);
+  });
+
+  return (
+    <PerspectiveCamera
+      ref={cameraRef}
+      makeDefault
+      fov={50}
+      position={[0, 4, 8]}
+    />
+  );
+};
+
+const Scenery = () => (
+  <>
+    <color attach="background" args={["#7c95b0"]} />
+    <Suspense fallback={null}>
+      <Sky sunPosition={[100, 30, 100]} turbidity={6} />
+      <Environment preset="city" environmentIntensity={0.55} />
+    </Suspense>
+    <ambientLight intensity={0.55} />
+    <directionalLight
+      position={[-12, 18, 8]}
+      intensity={1.3}
+      castShadow
+      shadow-mapSize-width={2048}
+      shadow-mapSize-height={2048}
+      color="#fff2e3"
+    />
+
+    <mesh receiveShadow rotation-x={-Math.PI / 2}>
+      <planeGeometry args={[60, 60]} />
+      <meshStandardMaterial color="#3d4a55" />
+    </mesh>
+    {Array.from({ length: 10 }).map((_, i) => {
+      const angle = (i / 10) * Math.PI * 2;
+      const r = 10;
+      return (
+        <mesh
+          key={i}
+          castShadow
+          receiveShadow
+          position={[Math.cos(angle) * r, 0.5, Math.sin(angle) * r]}
+        >
+          <boxGeometry args={[1.2, 1, 1.2]} />
+          <meshStandardMaterial color="#5b6c7a" />
+        </mesh>
+      );
+    })}
+    {/* Low hill — a fat sphere half-buried for a visible jump target. */}
+    <mesh castShadow receiveShadow position={[6, -1.2, -8]}>
+      <sphereGeometry args={[3.2, 32, 24]} />
+      <meshStandardMaterial color="#4a6a4f" roughness={1} />
+    </mesh>
+  </>
+);
+
+const PlatformerScene = () => {
+  const groupRef = useRef();
+  const gender = useConfiguratorStore((s) => s.gender);
+
+  return (
+    <>
+      <Scenery />
+      <FollowCamera targetRef={groupRef} />
+      <CharacterController groupRef={groupRef} />
+      <group ref={groupRef} position={[0, 0, 0]}>
+        <Suspense fallback={null}>
+          <StoreCharacterProvider>
+            <Avatar key={gender} />
+          </StoreCharacterProvider>
+        </Suspense>
+      </group>
+    </>
+  );
+};
+
+const PlatformerView = () => {
+  const setMode = useConfiguratorStore((s) => s.setMode);
+  const introFinished = useConfiguratorStore((s) => s.introFinished);
+
+  useEffect(() => {
+    // Lets the avatar play its idle clip on entry. We override per-frame
+    // through CharacterController based on actual movement.
+    setMode(UI_MODES.CUSTOMIZE);
+  }, [setMode]);
+
+  return (
+    <PlayShell title="Platformer">
+      <EngineCanvas
+        shadows
+        frameloop="always"
+        camera={{ position: [0, 4, 8], fov: 50 }}
+      >
+        <PlatformerScene />
+      </EngineCanvas>
+      {!introFinished && <LoadingScreen />}
+      <NoCharacterOverlay />
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-6 z-20 flex justify-center px-6 max-md:hidden">
+        <div className="glass-panel pointer-events-auto flex flex-wrap items-center gap-3 rounded-full px-4 py-2 text-[11px] tracking-tight text-white/75">
+          <span>
+            <kbd className="rounded bg-white/10 px-1.5 py-0.5 text-white/90">
+              WASD
+            </kbd>{" "}
+            move
+          </span>
+          <span className="text-white/25">·</span>
+          <span>
+            <kbd className="rounded bg-white/10 px-1.5 py-0.5 text-white/90">
+              Shift
+            </kbd>{" "}
+            run
+          </span>
+          <span className="text-white/25">·</span>
+          <span>
+            <kbd className="rounded bg-white/10 px-1.5 py-0.5 text-white/90">
+              Space
+            </kbd>{" "}
+            jump
+          </span>
+          <span className="text-white/25">·</span>
+          <span>
+            <kbd className="rounded bg-white/10 px-1.5 py-0.5 text-white/90">
+              R
+            </kbd>{" "}
+            reset
+          </span>
+        </div>
+      </div>
+      <DesktopOnlyOverlay />
+    </PlayShell>
+  );
+};
+
+const DesktopOnlyOverlay = () => (
+  <div className="pointer-events-none absolute inset-x-0 top-1/2 z-30 flex -translate-y-1/2 justify-center px-6 md:hidden">
+    <div className="pointer-events-auto rounded-2xl bg-black/65 px-5 py-4 text-center text-xs text-white/85 ring-1 ring-white/15 backdrop-blur">
+      <p className="font-medium text-white">Platformer is desktop-only for now.</p>
+      <p className="mt-1 text-white/65">
+        Touch controls are on the way. Try on a keyboard.
+      </p>
+    </div>
+  </div>
+);
+
+export default PlatformerView;

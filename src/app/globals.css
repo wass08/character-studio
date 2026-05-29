@@ -138,11 +138,23 @@
 @layer base {
   html,
   body {
-    overflow: hidden;
     background: var(--background);
     color: var(--foreground);
     font-family: var(--font-inter);
   }
+  /* Studio shell: editor and play routes pin themselves and own their
+     canvases. Hub-style routes scroll the document. */
+  body.fullscreen-app {
+    overflow: hidden;
+  }
+}
+
+@utility hub-bg {
+  background:
+    radial-gradient(1100px 700px at 20% -10%, rgba(255, 220, 180, 0.10), transparent 65%),
+    radial-gradient(900px 600px at 110% 10%, rgba(135, 110, 255, 0.12), transparent 65%),
+    radial-gradient(1200px 800px at 50% 110%, rgba(255, 255, 255, 0.06), transparent 70%),
+    #0a0a0d;
 }
 
 @layer base {

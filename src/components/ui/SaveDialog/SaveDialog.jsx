@@ -7,6 +7,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "../primitives/Dialog";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "../primitives/Spinner";
 
 const SaveDialog = ({ open, onOpenChange, onSubmit, defaultName = "" }) => {
@@ -43,14 +44,15 @@ const SaveDialog = ({ open, onOpenChange, onSubmit, defaultName = "" }) => {
             onChange={(e) => setName(e.target.value)}
             className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-white/35 focus:outline-none"
           />
-          <button
+          <Button
             type="submit"
+            variant="default"
             disabled={submitting || !name.trim()}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-white/15 px-4 py-2.5 text-sm font-medium tracking-tight text-white ring-1 ring-white/25 transition-colors hover:bg-white/20 disabled:opacity-60"
+            className="h-auto gap-2 rounded-lg bg-white/15 px-4 py-2.5 text-sm font-medium tracking-tight text-white ring-1 ring-white/25 transition-colors hover:bg-white/20 disabled:opacity-60"
           >
             {submitting && <Spinner />}
             <span>Save character</span>
-          </button>
+          </Button>
         </form>
       </DialogContent>
     </Dialog>

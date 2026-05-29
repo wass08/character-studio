@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
 import { useConfiguratorStore, GENDERS } from "@/stores/useConfiguratorStore";
 
 const PILL_SPRING = { type: "spring", stiffness: 380, damping: 32 };
@@ -20,11 +21,12 @@ const GenderSelectionBox = () => {
       {OPTIONS.map((opt) => {
         const active = gender === opt.id;
         return (
-          <button
+          <Button
             key={opt.id}
             type="button"
+            variant="ghost"
             onClick={() => setGender(opt.id)}
-            className={`relative flex flex-1 items-center justify-center rounded-md px-4 py-2 text-xs font-medium tracking-tight transition-colors ${
+            className={`relative h-auto flex-1 rounded-md px-4 py-2 text-xs font-medium tracking-tight transition-colors hover:bg-transparent ${
               active ? "text-white" : "text-white/55 hover:text-white/85"
             }`}
           >
@@ -36,7 +38,7 @@ const GenderSelectionBox = () => {
               />
             )}
             <span className="relative">{opt.label}</span>
-          </button>
+          </Button>
         );
       })}
     </div>

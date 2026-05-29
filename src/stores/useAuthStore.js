@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { pb } from "./useConfiguratorStore";
+import { pb, useConfiguratorStore } from "./useConfiguratorStore";
 
 const randomPassword = () =>
   `${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}A1!`;
@@ -68,6 +68,12 @@ export const useAuthStore = create((set, get) => ({
 
   logout: () => {
     pb.authStore.clear();
+    // Drop any cached character so the next visitor on this browser
+    // doesn't land on the previous user's saved character (persisted to
+    // the character-studio-prefs localStorage slice).
+    useConfiguratorStore
+      .getState()
+      .setCurrentCharacter({ id: null, name: null });
     set({ user: null, isLoggedIn: false, isAdmin: false });
   },
 }));

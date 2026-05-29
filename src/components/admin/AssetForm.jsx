@@ -375,13 +375,15 @@ const AssetForm = ({ asset = null }) => {
                 Background
               </Label>
               <div className="flex flex-wrap gap-1.5">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setForm((f) => ({ ...f, thumbnailBg: "" }))}
                   title="No background"
                   aria-label="No background"
                   className={cn(
-                    "relative h-7 w-7 overflow-hidden rounded-md ring-1 transition",
+                    "relative h-7 w-7 overflow-hidden rounded-md bg-transparent p-0 ring-1 transition hover:bg-transparent",
                     form.thumbnailBg === ""
                       ? "ring-2 ring-foreground"
                       : "ring-border hover:ring-foreground/40",
@@ -395,16 +397,18 @@ const AssetForm = ({ asset = null }) => {
                   }}
                 />
                 {THUMBNAIL_BG_COLORS.map((color) => (
-                  <button
+                  <Button
                     key={color}
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() =>
                       setForm((f) => ({ ...f, thumbnailBg: color }))
                     }
                     title={color}
                     aria-label={`Background ${color}`}
                     className={cn(
-                      "h-7 w-7 rounded-md ring-1 transition",
+                      "h-7 w-7 rounded-md p-0 ring-1 transition hover:bg-transparent",
                       form.thumbnailBg === color
                         ? "ring-2 ring-foreground"
                         : "ring-border hover:ring-foreground/40",

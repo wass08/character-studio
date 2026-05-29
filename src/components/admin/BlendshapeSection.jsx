@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { analyzeMorphs } from "./blendshapeRefs";
 
@@ -40,10 +41,11 @@ const CategoryRow = ({ category, defaultOpen = false }) => {
   if (category.total === 0) return null;
   return (
     <div className="border-t border-border first:border-t-0">
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-sm transition-colors hover:bg-accent/30"
+        className="flex h-auto w-full items-center justify-between gap-2 rounded-none px-3 py-2 text-sm font-normal transition-colors hover:bg-accent/30 hover:text-foreground"
       >
         <span className="inline-flex items-center gap-2">
           <ChevronDown
@@ -55,7 +57,7 @@ const CategoryRow = ({ category, defaultOpen = false }) => {
           <span className="font-medium">{category.label}</span>
         </span>
         <StatusBadge found={category.found} total={category.total} />
-      </button>
+      </Button>
       {open && (
         <ul className="grid grid-cols-1 gap-x-3 gap-y-1 px-3 pb-2.5 text-xs sm:grid-cols-2">
           {category.items.map((it) => (

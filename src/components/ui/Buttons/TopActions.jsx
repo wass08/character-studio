@@ -2,11 +2,14 @@
 
 import React, { useState } from "react";
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { Tooltip } from "../primitives/Tooltip";
 import SaveDialog from "../SaveDialog/SaveDialog";
 import { toast } from "../primitives/Toast";
+
+const MotionButton = motion.button;
 
 const SaveIcon = () => (
   <svg
@@ -100,19 +103,24 @@ const TopActions = () => {
   return (
     <>
       <Tooltip label={tooltipLabel} side="bottom">
-        <motion.button
-          type="button"
-          onClick={onSave}
-          disabled={disabled}
-          whileHover={{ scale: disabled ? 1 : 1.04 }}
-          whileTap={{ scale: disabled ? 1 : 0.96 }}
-          transition={{ type: "spring", stiffness: 420, damping: 26 }}
-          aria-label="Save character"
+        <Button
+          asChild
+          variant="default"
           className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/90 px-4 text-sm font-medium tracking-tight text-zinc-900 shadow-[0_0_22px_rgba(255,255,255,0.18)] ring-1 ring-white/40 transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
         >
-          {saving ? <Spinner /> : <SaveIcon />}
-          <span>Save</span>
-        </motion.button>
+          <MotionButton
+            type="button"
+            onClick={onSave}
+            disabled={disabled}
+            whileHover={{ scale: disabled ? 1 : 1.04 }}
+            whileTap={{ scale: disabled ? 1 : 0.96 }}
+            transition={{ type: "spring", stiffness: 420, damping: 26 }}
+            aria-label="Save character"
+          >
+            {saving ? <Spinner /> : <SaveIcon />}
+            <span>Save</span>
+          </MotionButton>
+        </Button>
       </Tooltip>
 
       <SaveDialog

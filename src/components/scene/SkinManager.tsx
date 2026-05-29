@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
-import { useConfiguratorStore, pb } from "@/stores/useConfiguratorStore";
+import { useEffect, useState } from "react";
 import { useCombinedTexture } from "@/hooks/useCombinedTexture";
+import { pb } from "@/stores/useConfiguratorStore";
+import { type CustomizationEntry, useCharacter } from "./CharacterContext";
 
-function useDebounce(value, delay) {
+function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
 
   useEffect(() => {
@@ -17,23 +18,30 @@ function useDebounce(value, delay) {
 }
 
 export const SkinManager = () => {
-  const skinMaterial = useConfiguratorStore((state) => state.skin);
-  const customization = useConfiguratorStore((state) => state.customization);
+  const { skin: skinMaterial, customization } = useCharacter();
 
-  const rawSkinColor =
-    customization["Skin"]?.color || customization["skin"]?.color || "#e7a67a";
+  const rawSkinColor: string =
+    customization.Skin?.color || customization.skin?.color || "#e7a67a";
 
   const debouncedSkinColor = useDebounce(rawSkinColor, 100);
 
   const overlayUrls = Object.values(customization)
-    .map((item) => {
+    .map((item: CustomizationEntry): string | null => {
       const asset = item.asset;
       if (!asset) return null;
-      const url = asset.r2Url || (asset.url ? pb.files.getURL(asset, asset.url) : null);
+      const url =
+        asset.r2Url ||
+        // pb.files.getURL needs the record + a filename; only call when asset.url is set.
+        (asset.url
+          ? pb.files.getURL(
+              asset as { collectionId?: string; id?: string },
+              asset.url,
+            )
+          : null);
       if (!url) return null;
       return url.match(/\.(png|jpg|jpeg|webp)$/i) ? url : null;
     })
-    .filter(Boolean);
+    .filter((u): u is string => Boolean(u));
 
   const combinedTexture = useCombinedTexture(overlayUrls, debouncedSkinColor);
 
@@ -48,7 +56,7 @@ export const SkinManager = () => {
         skinMaterial.color.set(debouncedSkinColor);
       };
     }
-  }, [combinedTexture, skinMaterial, debouncedSkinColor]);
+  }, [combinedTexture, skinMaterial, debouncedSkinColor, rawSkinColor]);
 
   return null;
 };

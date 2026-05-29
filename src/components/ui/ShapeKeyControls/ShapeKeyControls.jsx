@@ -5,6 +5,7 @@ import {
 } from "@/stores/useConfiguratorStore";
 import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { Button } from "@/components/ui/button";
 import { Tooltip } from "../primitives/Tooltip";
 import { cn } from "../primitives/cn";
 
@@ -165,10 +166,11 @@ const MorphGroup = ({
 }) => (
   <div className="flex min-h-0 w-full flex-col">
     <div className="mb-2.5 flex items-center justify-between">
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={onToggle}
-        className="flex items-center gap-2 text-left transition-opacity hover:opacity-80"
+        className="h-auto justify-start gap-2 rounded-none p-0 text-left text-white hover:bg-transparent hover:text-white hover:opacity-80"
       >
         <motion.span
           animate={{ rotate: isOpen ? 0 : -90 }}
@@ -193,15 +195,17 @@ const MorphGroup = ({
         <h3 className="text-[10px] font-semibold tracking-[0.14em] text-white/70 uppercase">
           {title}
         </h3>
-      </button>
+      </Button>
       <Tooltip label={resetLabel} side="top">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={onReset}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-white/55 transition-colors hover:bg-white/10 hover:text-white"
+          className="h-6 w-6 rounded-md text-white/55 transition-colors hover:bg-white/10 hover:text-white"
         >
           <ResetIcon />
-        </button>
+        </Button>
       </Tooltip>
     </div>
     <AnimatePresence initial={false}>

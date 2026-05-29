@@ -68,6 +68,12 @@ const AdminShell = ({ title, subtitle, actions, children }) => {
               <Link href="/admin">Assets</Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
+              <Link href="/admin/characters">Characters</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/admin/voices">Voices</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
               <Link href="/">← Studio</Link>
             </Button>
             <Button variant="ghost" size="sm" onClick={logout}>

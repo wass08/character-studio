@@ -1,13 +1,20 @@
+/// <reference lib="webworker" />
+
 // Web Worker — runs the gltf-transform pipeline off the main thread so the
 // renderer keeps rendering smoothly while we bake morphs, strip bones,
 // optimize and Draco-compress the GLB.
 //
 // Protocol:
-//   main → worker: { id, glb: Uint8Array, options: { visemes, arkit, optimize, draco } }
+//   main → worker: { id, glb: Uint8Array, options: { visemes, arkit, optimize, compression } }
 //   worker → main: { id, ok: true, result: Uint8Array }
 //                  { id, ok: false, error: string }
 
-import { NodeIO } from "@gltf-transform/core";
+import {
+  type Document,
+  type Node as GLTFNode,
+  NodeIO,
+  type TypedArray,
+} from "@gltf-transform/core";
 import {
   EXTMeshoptCompression,
   KHRDracoMeshCompression,
@@ -26,6 +33,25 @@ import {
 } from "@gltf-transform/functions";
 import { MeshoptEncoder } from "meshoptimizer";
 
+type Compression = "none" | "draco" | "meshopt";
+
+type ExportRequest = {
+  id: number;
+  glb: Uint8Array;
+  options: {
+    visemes?: boolean;
+    arkit?: boolean;
+    optimize?: boolean;
+    compression?: Compression;
+  };
+};
+
+type ExportResponse =
+  | { id: number; ok: true; result: Uint8Array }
+  | { id: number; ok: false; error: string };
+
+declare const self: DedicatedWorkerGlobalScope;
+
 // Same-origin Draco. We copied draco3d's universal Emscripten builds (encoder
 // + decoder + WASM) into /public/draco/ at install time. Cross-origin CDNs
 // (gstatic, unpkg) either don't host the encoder or don't set CORS headers
@@ -42,16 +68,28 @@ const DRACO_CDN = `${self.location.origin}/draco/`;
 // dynamic import lands on the browser's native loader instead of getting
 // rewritten into a CJS-shim that rejects blob URLs as "Cannot find module
 // 'unknown'".
-const rawDynamicImport = new Function("url", "return import(url);");
+type DynamicImporter = (url: string) => Promise<{ default: unknown }>;
+const rawDynamicImport = new Function(
+  "url",
+  "return import(url);",
+) as DynamicImporter;
 
 // Lazy WASM warm-up — done once per worker.
-let meshoptReady = null;
-function getMeshoptEncoder() {
+type MeshoptEncoderModule = typeof MeshoptEncoder;
+let meshoptReady: Promise<MeshoptEncoderModule> | null = null;
+function getMeshoptEncoder(): Promise<MeshoptEncoderModule> {
   if (!meshoptReady) {
     meshoptReady = MeshoptEncoder.ready.then(() => MeshoptEncoder);
   }
   return meshoptReady;
 }
+
+// Emscripten module factories are untyped runtime constructs; the encoder/
+// decoder instances they return are passed back into gltf-transform without
+// further inspection from this file.
+type DracoFactory = (config: {
+  locateFile: (file: string) => string;
+}) => Promise<unknown>;
 
 // Load a Draco Emscripten module factory from gstatic by fetching the script
 // text, wrapping it as an ES module that re-exports the global the script
@@ -68,7 +106,10 @@ function getMeshoptEncoder() {
 //     bundler's runtime then rejects with "Cannot find module 'unknown'". We
 //     shadow both `process` and `require` to keep Emscripten on the Web
 //     Worker code path, which loads the WASM via fetch + `locateFile`.
-async function loadDracoFactory(scriptName, globalName) {
+async function loadDracoFactory(
+  scriptName: string,
+  globalName: string,
+): Promise<DracoFactory> {
   const code = await fetch(DRACO_CDN + scriptName).then((res) => {
     if (!res.ok) {
       throw new Error(
@@ -89,17 +130,20 @@ async function loadDracoFactory(scriptName, globalName) {
   );
   try {
     const mod = await rawDynamicImport(blobUrl);
-    return mod.default;
+    return mod.default as DracoFactory;
   } finally {
     URL.revokeObjectURL(blobUrl);
   }
 }
 
-let dracoModulesPromise = null;
+let dracoModulesPromise: Promise<{
+  encoder: unknown;
+  decoder: unknown;
+}> | null = null;
 function getDracoModules() {
   if (!dracoModulesPromise) {
     dracoModulesPromise = (async () => {
-      const locateFile = (file) => DRACO_CDN + file;
+      const locateFile = (file: string) => DRACO_CDN + file;
       const [encoderFactory, decoderFactory] = await Promise.all([
         loadDracoFactory("draco_encoder.js", "DracoEncoderModule"),
         loadDracoFactory("draco_decoder.js", "DracoDecoderModule"),
@@ -118,8 +162,8 @@ function getDracoModules() {
 // is wired up eagerly (it ships with the meshoptimizer package and warms
 // quickly); the Draco encoder/decoder are wired up on demand the first time
 // a Draco export is requested, since fetching them takes a network round-trip.
-let ioPromise = null;
-async function getIO(compression) {
+let ioPromise: Promise<NodeIO> | null = null;
+async function getIO(compression: Compression): Promise<NodeIO> {
   if (!ioPromise) {
     ioPromise = getMeshoptEncoder().then((encoder) =>
       new NodeIO()
@@ -197,17 +241,32 @@ const ARKIT_BLENDSHAPES = new Set(
   ].map((n) => n.toLowerCase()),
 );
 
-function bakeAndPruneMorphs(doc, { keepVisemes, keepArkit }) {
-  const isViseme = (n) => String(n).toLowerCase().startsWith("viseme");
-  const isArkit = (n) => ARKIT_BLENDSHAPES.has(String(n).toLowerCase());
-  const shouldKeep = (name) =>
+type MutableTypedArray =
+  | Float32Array
+  | Uint32Array
+  | Uint16Array
+  | Uint8Array
+  | Int16Array
+  | Int8Array;
+type TypedArrayCtor = new (
+  arg: ArrayLike<number> | number,
+) => MutableTypedArray;
+
+function bakeAndPruneMorphs(
+  doc: Document,
+  { keepVisemes, keepArkit }: { keepVisemes: boolean; keepArkit: boolean },
+) {
+  const isViseme = (n: string) => String(n).toLowerCase().startsWith("viseme");
+  const isArkit = (n: string) => ARKIT_BLENDSHAPES.has(String(n).toLowerCase());
+  const shouldKeep = (name: string) =>
     (keepVisemes && isViseme(name)) || (keepArkit && isArkit(name));
 
   doc
     .getRoot()
     .listMeshes()
     .forEach((mesh) => {
-      const targetNames = mesh.getExtras()?.targetNames || [];
+      const extras = mesh.getExtras() as { targetNames?: string[] } | undefined;
+      const targetNames: string[] = extras?.targetNames ?? [];
       if (targetNames.length === 0) return;
       const weights = mesh.getWeights() || [];
 
@@ -218,11 +277,13 @@ function bakeAndPruneMorphs(doc, { keepVisemes, keepArkit }) {
         const targets = prim.listTargets();
         if (targets.length === 0) return;
 
-        ["POSITION", "NORMAL", "TANGENT"].forEach((attrName) => {
+        (["POSITION", "NORMAL", "TANGENT"] as const).forEach((attrName) => {
           const baseAttr = prim.getAttribute(attrName);
           if (!baseAttr) return;
           const orig = baseAttr.getArray();
-          const baked = new orig.constructor(orig);
+          if (!orig) return;
+          const Ctor = orig.constructor as TypedArrayCtor;
+          const baked = new Ctor(orig) as unknown as Float32Array;
           let modified = false;
 
           targets.forEach((target, i) => {
@@ -232,6 +293,7 @@ function bakeAndPruneMorphs(doc, { keepVisemes, keepArkit }) {
             const targetAttr = target.getAttribute(attrName);
             if (!targetAttr) return;
             const delta = targetAttr.getArray();
+            if (!delta) return;
             for (let j = 0; j < baked.length; j++) {
               baked[j] += w * delta[j];
             }
@@ -250,7 +312,7 @@ function bakeAndPruneMorphs(doc, { keepVisemes, keepArkit }) {
                 baked[j + 2] = z / len;
               }
             }
-            baseAttr.setArray(baked);
+            baseAttr.setArray(baked as TypedArray);
           }
         });
 
@@ -262,8 +324,8 @@ function bakeAndPruneMorphs(doc, { keepVisemes, keepArkit }) {
         });
       });
 
-      const newTargetNames = [];
-      const newWeights = [];
+      const newTargetNames: string[] = [];
+      const newWeights: number[] = [];
       targetNames.forEach((name, i) => {
         if (keepFlags[i]) {
           newTargetNames.push(name);
@@ -275,7 +337,11 @@ function bakeAndPruneMorphs(doc, { keepVisemes, keepArkit }) {
     });
 }
 
-function stripBonesUnder(doc, rootBoneName, { includeRoot = false } = {}) {
+function stripBonesUnder(
+  doc: Document,
+  rootBoneName: string,
+  { includeRoot = false }: { includeRoot?: boolean } = {},
+) {
   const root = doc.getRoot();
   const allNodes = root.listNodes();
   const lowerTarget = rootBoneName.toLowerCase();
@@ -284,9 +350,9 @@ function stripBonesUnder(doc, rootBoneName, { includeRoot = false } = {}) {
     allNodes.find((n) => n.getName()?.toLowerCase() === lowerTarget);
   if (!rootBone) return;
 
-  const toRemove = new Set();
+  const toRemove = new Set<GLTFNode>();
   if (includeRoot) toRemove.add(rootBone);
-  (function walk(node) {
+  (function walk(node: GLTFNode) {
     node.listChildren().forEach((child) => {
       toRemove.add(child);
       walk(child);
@@ -294,7 +360,7 @@ function stripBonesUnder(doc, rootBoneName, { includeRoot = false } = {}) {
   })(rootBone);
   if (toRemove.size === 0) return;
 
-  let fallbackBone = rootBone;
+  let fallbackBone: GLTFNode | null = rootBone;
   if (includeRoot) {
     fallbackBone = null;
     for (const n of root.listNodes()) {
@@ -334,28 +400,33 @@ function stripBonesUnder(doc, rootBoneName, { includeRoot = false } = {}) {
         const jointsAttr = prim.getAttribute("JOINTS_0");
         if (!jointsAttr) continue;
         const arr = jointsAttr.getArray();
-        const next = new arr.constructor(arr.length);
+        if (!arr) continue;
+        const Ctor = arr.constructor as TypedArrayCtor;
+        const next = new Ctor(arr.length) as unknown as Uint8Array;
         for (let i = 0; i < arr.length; i++) {
           const mapped = oldToNew[arr[i]];
           next[i] = mapped === -1 ? fallback : mapped;
         }
-        jointsAttr.setArray(next);
+        jointsAttr.setArray(next as TypedArray);
       }
     }
 
     const ibm = skin.getInverseBindMatrices();
     if (ibm) {
       const oldArr = ibm.getArray();
-      const newArr = new oldArr.constructor(newIdx * 16);
-      let writeIdx = 0;
-      for (let i = 0; i < oldJoints.length; i++) {
-        if (oldToNew[i] === -1) continue;
-        for (let k = 0; k < 16; k++) {
-          newArr[writeIdx * 16 + k] = oldArr[i * 16 + k];
+      if (oldArr) {
+        const Ctor = oldArr.constructor as TypedArrayCtor;
+        const newArr = new Ctor(newIdx * 16) as unknown as Float32Array;
+        let writeIdx = 0;
+        for (let i = 0; i < oldJoints.length; i++) {
+          if (oldToNew[i] === -1) continue;
+          for (let k = 0; k < 16; k++) {
+            newArr[writeIdx * 16 + k] = oldArr[i * 16 + k];
+          }
+          writeIdx++;
         }
-        writeIdx++;
+        ibm.setArray(newArr as TypedArray);
       }
-      ibm.setArray(newArr);
     }
 
     for (let i = 0; i < oldJoints.length; i++) {
@@ -368,7 +439,7 @@ function stripBonesUnder(doc, rootBoneName, { includeRoot = false } = {}) {
   }
 }
 
-self.onmessage = async (e) => {
+self.onmessage = async (e: MessageEvent<ExportRequest>) => {
   const { id, glb, options } = e.data;
   const {
     visemes = false,
@@ -390,8 +461,10 @@ self.onmessage = async (e) => {
     // Three.js's GLTFExporter routinely produces hundreds of coincident
     // vertices per mesh (UV/normal splits, de-interleaved attributes), and
     // Draco's compression ratio collapses on unwelded geometry. dedup +
-    // prune sweep up the orphans left by the bake / bone-strip steps.
-    await doc.transform(weld({ tolerance: 0.0001 }), dedup(), prune());
+    // prune sweep up the orphans left by the bake / bone-strip steps. The
+    // older `weld({ tolerance })` option was dropped in gltf-transform; the
+    // current default is bitwise-identical welding, which is what we want.
+    await doc.transform(weld(), dedup(), prune());
 
     if (optimize) {
       // Heavier lossless transforms (gated by the Optimize toggle).
@@ -421,12 +494,12 @@ self.onmessage = async (e) => {
     }
 
     const result = await io.writeBinary(doc);
-    self.postMessage({ id, ok: true, result }, [result.buffer]);
+    const response: ExportResponse = { id, ok: true, result };
+    self.postMessage(response, [result.buffer as ArrayBuffer]);
   } catch (err) {
-    self.postMessage({
-      id,
-      ok: false,
-      error: String(err?.message || err),
-    });
+    const message =
+      err instanceof Error ? err.message : String(err ?? "Unknown error");
+    const response: ExportResponse = { id, ok: false, error: message };
+    self.postMessage(response);
   }
 };

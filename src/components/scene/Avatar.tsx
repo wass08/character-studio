@@ -1,29 +1,56 @@
-import React, { Suspense, useRef, useEffect, useLayoutEffect } from "react";
+"use client";
+
 import { useAnimations, useGLTF } from "@react-three/drei";
-import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
-import { Asset } from "./Asset";
+import type { ThreeElements } from "@react-three/fiber";
+import { Suspense, useEffect, useRef } from "react";
+import type {
+  AnimationAction,
+  AnimationClip,
+  Group,
+  Object3D,
+  SkinnedMesh,
+} from "three";
 import { GLTFExporter, SkeletonUtils } from "three-stdlib";
+import { pb } from "@/stores/useConfiguratorStore";
+import { Asset } from "./Asset";
+import {
+  type ExportOptions,
+  type ExportPipeline,
+  useCharacter,
+} from "./CharacterContext";
 import { SkinManager } from "./SkinManager";
 
 // ───────── Web Worker bridge ─────────
 // Heavy gltf-transform work (bake morphs, strip bones, optimize, Draco) runs
 // in a worker so the main thread stays free for the renderer.
-let exportWorker = null;
-let nextWorkerRequestId = 0;
-const workerPending = new Map();
+type WorkerSuccess = { id: number; ok: true; result: Uint8Array };
+type WorkerFailure = { id: number; ok: false; error: string };
+type WorkerResponse = WorkerSuccess | WorkerFailure;
 
-function getExportWorker() {
+type PendingHandler = {
+  resolve: (value: Uint8Array) => void;
+  reject: (reason: Error) => void;
+};
+
+let exportWorker: Worker | null = null;
+let nextWorkerRequestId = 0;
+const workerPending = new Map<number, PendingHandler>();
+
+function getExportWorker(): Worker {
   if (exportWorker) return exportWorker;
-  exportWorker = new Worker(new URL("./exportWorker.js", import.meta.url), {
+  exportWorker = new Worker(new URL("./exportWorker.ts", import.meta.url), {
     type: "module",
   });
-  exportWorker.onmessage = (e) => {
-    const { id, ok, result, error } = e.data;
+  exportWorker.onmessage = (e: MessageEvent<WorkerResponse>) => {
+    const { id, ok } = e.data;
     const handler = workerPending.get(id);
     if (!handler) return;
     workerPending.delete(id);
-    if (ok) handler.resolve(result);
-    else handler.reject(new Error(error));
+    if (ok) {
+      handler.resolve(e.data.result);
+    } else {
+      handler.reject(new Error(e.data.error));
+    }
   };
   exportWorker.onerror = (e) => {
     console.error("[export worker]", e.message || e);
@@ -31,7 +58,17 @@ function getExportWorker() {
   return exportWorker;
 }
 
-function runExportPipeline(glb, options) {
+type ExportPipelineOptions = {
+  visemes: boolean;
+  arkit: boolean;
+  optimize: boolean;
+  compression: NonNullable<ExportOptions["compression"]>;
+};
+
+function runExportPipeline(
+  glb: Uint8Array,
+  options: ExportPipelineOptions,
+): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
     const id = ++nextWorkerRequestId;
     workerPending.set(id, { resolve, reject });
@@ -39,26 +76,42 @@ function runExportPipeline(glb, options) {
   });
 }
 
-export default function Model(props) {
-  const group = useRef();
-
-  const gender = useConfiguratorStore((state) => state.gender);
-
-  const { nodes } = useGLTF(`/models/characters/${gender}/Armature.glb`);
-
-  const { animations } = useGLTF(`/models/characters/${gender}/Animations.glb`);
-
-  const { actions, names } = useAnimations(animations, group);
-
-  const customization = useConfiguratorStore((state) => state.customization);
-  const setDownload = useConfiguratorStore((state) => state.setDownload);
-  const height = useConfiguratorStore((state) => state.height);
-
-  const pose = useConfiguratorStore((state) => state.pose);
-
-  const remap = (value, inMin, inMax, outMin, outMax) => {
-    return ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+type ArmatureGLTF = {
+  nodes: {
+    root: Object3D;
+    "MCH-eyes_parent": Object3D;
+    Plane002: SkinnedMesh;
   };
+};
+
+type AnimationsGLTF = {
+  animations: AnimationClip[];
+};
+
+type ModelProps = ThreeElements["group"];
+
+const remap = (
+  value: number,
+  inMin: number,
+  inMax: number,
+  outMin: number,
+  outMax: number,
+) => ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+
+export default function Model(props: ModelProps) {
+  const group = useRef<Group>(null);
+
+  const { gender, customization, height, pose, setDownload } = useCharacter();
+
+  const { nodes } = useGLTF(
+    `/models/characters/${gender}/Armature.glb`,
+  ) as unknown as ArmatureGLTF;
+
+  const { animations } = useGLTF(
+    `/models/characters/${gender}/Animations.glb`,
+  ) as unknown as AnimationsGLTF;
+
+  const { actions } = useAnimations(animations, group);
 
   useEffect(() => {
     animations.forEach((clip) => {
@@ -72,19 +125,33 @@ export default function Model(props) {
     const rig = group.current?.getObjectByName("Rig");
     if (rig) {
       const visualScale = remap(height, 0.5, 2.0, 0.95, 1);
-
       rig.scale.set(visualScale, visualScale, visualScale);
     }
   }, [height]);
 
+  // Crossfade between poses instead of stop/start, otherwise the rig
+  // momentarily collapses to its rest pose (T-pose) during the 0.5s
+  // window when the new clip is ramping up from weight 0. crossFadeFrom
+  // overlaps the two actions' weights so the rig stays fully driven.
+  const prevActionRef = useRef<AnimationAction | null>(null);
+
+  // Drop the stale reference when the animation set changes (gender
+  // swap loads a fresh Animations.glb with new action instances).
   useEffect(() => {
-    const action = actions[pose];
+    prevActionRef.current = null;
+  }, [actions]);
 
-    if (action) {
-      action.reset().fadeIn(0.5).play();
-
-      return () => action.fadeOut(0.2).stop();
+  useEffect(() => {
+    const next = actions[pose];
+    if (!next) return;
+    const prev = prevActionRef.current;
+    if (prev && prev !== next) {
+      next.reset().play();
+      next.crossFadeFrom(prev, 0.4, true);
+    } else {
+      next.reset().fadeIn(0.4).play();
     }
+    prevActionRef.current = next;
   }, [actions, pose]);
 
   useEffect(() => {
@@ -92,12 +159,13 @@ export default function Model(props) {
     link.style.display = "none";
     document.body.appendChild(link); // Firefox workaround, see #6594
 
-    function save(blob, filename) {
+    function save(blob: Blob, filename: string) {
       link.href = URL.createObjectURL(blob);
       link.download = filename;
       link.click();
     }
-    async function download(opts = {}) {
+
+    const download: ExportPipeline = async (opts = {}) => {
       const {
         animations: includeAnimations = true,
         visemes: includeVisemes = false,
@@ -116,7 +184,8 @@ export default function Model(props) {
       const exportRoot = SkeletonUtils.clone(group.current);
       if (tpose) {
         exportRoot.traverse((obj) => {
-          if (obj.isSkinnedMesh) obj.skeleton?.pose();
+          const skinned = obj as SkinnedMesh;
+          if (skinned.isSkinnedMesh) skinned.skeleton?.pose();
         });
       }
 
@@ -125,12 +194,17 @@ export default function Model(props) {
       // baking, bone stripping, optimize passes, Draco compression — runs in
       // a Web Worker so the renderer keeps animating smoothly.
       const exporter = new GLTFExporter();
-      const rawGlb = await new Promise((resolve, reject) => {
-        exporter.parse(exportRoot, resolve, reject, {
-          binary: true,
-          animations: includeAnimations ? animations : [],
-        });
-      });
+      const rawGlb = (await new Promise<ArrayBuffer>((resolve, reject) => {
+        exporter.parse(
+          exportRoot,
+          (result) => resolve(result as ArrayBuffer),
+          reject,
+          {
+            binary: true,
+            animations: includeAnimations ? animations : [],
+          },
+        );
+      })) as ArrayBuffer;
 
       const processed = await runExportPipeline(new Uint8Array(rawGlb), {
         visemes: includeVisemes,
@@ -140,15 +214,17 @@ export default function Model(props) {
       });
 
       if (dryRun) return processed.byteLength;
+      // Blob's TS sig requires Uint8Array<ArrayBuffer>; the worker hands us
+      // Uint8Array<ArrayBufferLike>. The runtime is identical.
       save(
-        new Blob([processed], { type: "application/octet-stream" }),
-        `avatar_${+new Date()}.glb`,
+        new Blob([processed as BlobPart], { type: "application/octet-stream" }),
+        `avatar_${Date.now()}.glb`,
       );
       return processed.byteLength;
-    }
+    };
 
     setDownload(download);
-  }, [animations]);
+  }, [animations, setDownload]);
 
   if (!nodes?.root || !nodes?.["MCH-eyes_parent"] || !nodes?.Plane002) {
     return null;
@@ -173,10 +249,16 @@ export default function Model(props) {
             const asset = customization[key]?.asset;
             if (!asset) return null;
 
-            const url = asset.r2Url || (asset.url ? pb.files.getURL(asset, asset.url) : null);
+            const url =
+              asset.r2Url ||
+              (asset.url
+                ? pb.files.getURL(
+                    asset as { collectionId?: string; id?: string },
+                    asset.url,
+                  )
+                : null);
             if (!url) return null;
             const isImage = url.match(/\.(png|jpg|jpeg)$/i);
-
             if (isImage) return null;
 
             return (

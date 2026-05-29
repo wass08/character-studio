@@ -9,9 +9,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { Environment, OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { EngineCanvas } from "@/components/scene/EngineCanvas";
 
 const Model = ({ url, onFit, onMorphsDetected }) => {
   const { scene } = useGLTF(url);
@@ -83,32 +84,31 @@ const SnapshotBridge = forwardRef((_, ref) => {
   const scene = useThree((s) => s.scene);
   const camera = useThree((s) => s.camera);
   useImperativeHandle(ref, () => ({
-    capture: async (size = 512) =>
-      new Promise((resolve, reject) => {
-        try {
-          gl.render(scene, camera);
-        } catch {
-          // Falls back to last rendered frame (preserveDrawingBuffer is on).
-        }
-        const src = gl.domElement;
-        const out = document.createElement("canvas");
-        out.width = size;
-        out.height = size;
-        const ctx = out.getContext("2d");
-        if (!ctx) return reject(new Error("No 2d context"));
-        const side = Math.min(src.width, src.height);
-        const sx = (src.width - side) / 2;
-        const sy = (src.height - side) / 2;
-        try {
-          ctx.drawImage(src, sx, sy, side, side, 0, 0, size, size);
-        } catch (err) {
-          return reject(err);
-        }
+    capture: async (size = 512) => {
+      try {
+        // Async under the unified Renderer — the canvas wouldn't reflect
+        // the new frame in time for a synchronous drawImage readback.
+        await gl.renderAsync(scene, camera);
+      } catch {
+        // Falls back to last rendered frame (preserveDrawingBuffer is on).
+      }
+      const src = gl.domElement;
+      const out = document.createElement("canvas");
+      out.width = size;
+      out.height = size;
+      const ctx = out.getContext("2d");
+      if (!ctx) throw new Error("No 2d context");
+      const side = Math.min(src.width, src.height);
+      const sx = (src.width - side) / 2;
+      const sy = (src.height - side) / 2;
+      ctx.drawImage(src, sx, sy, side, side, 0, 0, size, size);
+      return new Promise((resolve, reject) => {
         out.toBlob((blob) => {
           if (!blob) reject(new Error("Snapshot failed"));
           else resolve(blob);
         }, "image/png");
-      }),
+      });
+    },
   }));
   return null;
 });
@@ -196,10 +196,7 @@ const AssetPreview = forwardRef(({ url, height = 360, backgroundColor = null, on
       style={wrapperStyle}
       className="relative overflow-hidden rounded-xl border border-white/10"
     >
-      <Canvas
-        camera={{ fov: 35, position: [0, 0.4, -3] }}
-        gl={{ preserveDrawingBuffer: true, antialias: true, alpha: true }}
-      >
+      <EngineCanvas camera={{ fov: 35, position: [0, 0.4, -3] }}>
         <ambientLight intensity={0.6} />
         <directionalLight position={[2, 3, 2]} intensity={1.4} />
         <directionalLight position={[-2, 2, -1]} intensity={0.6} />
@@ -218,7 +215,7 @@ const AssetPreview = forwardRef(({ url, height = 360, backgroundColor = null, on
           target={fit ? [fit.center.x, fit.center.y, fit.center.z] : [0, 0, 0]}
         />
         <SnapshotBridge ref={innerRef} />
-      </Canvas>
+      </EngineCanvas>
       <SnapshotGuides />
     </div>
   );

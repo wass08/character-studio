@@ -15,7 +15,6 @@ import Logo from "./Logo/Logo";
 import HideUIButton from "./Buttons/HideUIButton/HideUIButton";
 import AuthDialog from "./AuthDialog/AuthDialog";
 import AuthBootstrapper from "./AuthBootstrapper";
-import MyCharactersBox from "./MyCharactersBox/MyCharactersBox";
 import UserMenu from "./UserMenu/UserMenu";
 import PhotoGalleryBox from "./PhotoGalleryBox/PhotoGalleryBox";
 import { cn } from "./primitives/cn";
@@ -84,8 +83,6 @@ const UI = () => {
       )}
 
       {mode === UI_MODES.EXPORT && <ExportBox />}
-
-      {mode === UI_MODES.MY_CHARACTERS && <MyCharactersBox />}
     </>
   );
 };
