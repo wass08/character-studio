@@ -41,6 +41,9 @@ const CharacterPageView = ({ id }) => {
   const setCurrentCharacter = useConfiguratorStore(
     (s) => s.setCurrentCharacter,
   );
+  const setCreatingNewCharacter = useConfiguratorStore(
+    (s) => s.setCreatingNewCharacter,
+  );
   const introFinished = useConfiguratorStore((s) => s.introFinished);
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const userId = useAuthStore((s) => s.user?.id);
@@ -94,10 +97,13 @@ const CharacterPageView = ({ id }) => {
     }
     // Drop the id so a Save will create a new record under the new owner,
     // keeping the customization/morphs/height already loaded into the store.
+    // Flag it as a new character so the editor preserves this forked look
+    // instead of resetting to defaults (and AuthBootstrapper won't clobber it).
     setCurrentCharacter({
       id: null,
       name: `${record?.name || "Untitled"} — fork`,
     });
+    setCreatingNewCharacter(true);
     router.push("/editor");
   };
 

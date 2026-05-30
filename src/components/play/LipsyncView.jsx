@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Pause, Play, Upload, Volume2 } from "lucide-react";
+import { ArrowUpRight, Pause, Play, Upload, Volume2 } from "lucide-react";
 import Scene from "@/components/scene/Scene";
 import LipsyncDriver from "@/components/scene/LipsyncDriver";
 import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
@@ -17,6 +17,16 @@ import {
 import { getLipsync } from "@/lib/lipsync";
 import { toast } from "@/components/ui/primitives/Toast";
 import { cn } from "@/lib/utils";
+
+// Maps the active character's gender onto the voice-preset filter so the
+// player opens already showing the most relevant voices.
+const GENDER_TO_FILTER = { man: "man", woman: "woman" };
+
+const VOICE_FILTERS = [
+  { id: "all", label: "All" },
+  { id: "man", label: "Male" },
+  { id: "woman", label: "Female" },
+];
 
 /**
  * /play/lipsync — pick a voice preset (admin-uploaded) or upload your own
@@ -34,10 +44,16 @@ const LipsyncView = () => {
   const gender = useConfiguratorStore((s) => s.gender);
 
   const [presets, setPresets] = useState([]);
+  const [genderFilter, setGenderFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const audioRef = useRef(null);
+
+  const visiblePresets =
+    genderFilter === "all"
+      ? presets
+      : presets.filter((p) => p.gender === genderFilter);
 
   useEffect(() => {
     setMode(UI_MODES.LIPSYNC);
@@ -50,8 +66,9 @@ const LipsyncView = () => {
     setLipsyncPlaying(playing);
   }, [playing, setPose, setLipsyncPlaying]);
 
-  // Load voice presets for the active character's gender first; fall back
-  // to all presets so the player isn't empty for "other" or unset gender.
+  // Load voice presets and prefill the gender filter from the active
+  // character so the player opens on the most relevant voices. Falls back
+  // to "all" when the character's gender has no matching presets.
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -60,13 +77,11 @@ const LipsyncView = () => {
           .collection("CharacterStudioVoicePresets")
           .getFullList({ sort: "position,created" });
         if (cancelled) return;
-        // Sort: gender-matched first
-        list.sort((a, b) => {
-          const aMatch = a.gender === gender ? 0 : 1;
-          const bMatch = b.gender === gender ? 0 : 1;
-          return aMatch - bMatch;
-        });
         setPresets(list);
+        const desired = GENDER_TO_FILTER[gender] || "all";
+        const hasMatch =
+          desired === "all" || list.some((p) => p.gender === desired);
+        setGenderFilter(hasMatch ? desired : "all");
       } catch (e) {
         if (!cancelled) console.warn("voice presets load failed", e);
       }
@@ -179,13 +194,45 @@ const LipsyncView = () => {
             </label>
           </div>
 
-          <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1 py-1">
-            {presets.length === 0 ? (
-              <div className="px-2 py-1 text-[11px] text-white/45">
-                No voice presets yet. Admins can add some at /admin/voices.
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-0.5 rounded-full border border-white/10 bg-white/[0.04] p-0.5">
+              {VOICE_FILTERS.map((opt) => (
+                <button
+                  type="button"
+                  key={opt.id}
+                  onClick={() => setGenderFilter(opt.id)}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-[11px] font-medium tracking-tight transition-colors",
+                    genderFilter === opt.id
+                      ? "bg-white/15 text-white ring-1 ring-white/25"
+                      : "text-white/50 hover:text-white/80",
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <a
+              href="https://github.com/wass08/wawa-lipsync"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex shrink-0 items-center gap-1 text-[11px] tracking-tight text-white/40 transition-colors hover:text-white/75"
+            >
+              Powered by{" "}
+              <span className="font-medium text-white/65">wawa-lipsync</span>
+              <ArrowUpRight className="h-3 w-3" />
+            </a>
+          </div>
+
+          <div className="no-scrollbar flex max-h-40 flex-wrap content-start gap-1.5 overflow-y-auto">
+            {visiblePresets.length === 0 ? (
+              <div className="px-1 py-1 text-[11px] text-white/45">
+                {presets.length === 0
+                  ? "No voice presets yet. Admins can add some at /admin/voices."
+                  : "No voices for this filter."}
               </div>
             ) : (
-              presets.map((p) => {
+              visiblePresets.map((p) => {
                 const url = pb.files.getURL(p, p.audio);
                 const active = selected === p.label;
                 return (
@@ -195,7 +242,7 @@ const LipsyncView = () => {
                     variant="outline"
                     onClick={() => playUrl(url, p.label)}
                     className={cn(
-                      "h-9 shrink-0 gap-1.5 rounded-full border px-3 text-xs font-medium tracking-tight transition-colors",
+                      "h-9 gap-1.5 rounded-full border px-3 text-xs font-medium tracking-tight transition-colors",
                       active
                         ? "border-white/40 bg-white/15 text-white"
                         : "border-white/10 bg-white/[0.04] text-white/75 hover:border-white/25 hover:bg-white/[0.04] hover:text-white",
@@ -203,11 +250,6 @@ const LipsyncView = () => {
                   >
                     <Volume2 className="h-3.5 w-3.5" />
                     <span>{p.label}</span>
-                    {p.gender && (
-                      <span className="text-[10px] text-white/40">
-                        {p.gender}
-                      </span>
-                    )}
                   </Button>
                 );
               })

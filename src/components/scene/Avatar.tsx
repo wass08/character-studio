@@ -101,7 +101,13 @@ const remap = (
 export default function Model(props: ModelProps) {
   const group = useRef<Group>(null);
 
-  const { gender, customization, height, pose, setDownload } = useCharacter();
+  const { gender, customization, height, pose, gesture, setDownload } =
+    useCharacter();
+
+  // The idle-juice gesture (when set) takes over the rig; otherwise the
+  // canonical pose drives the animation. Crossfading between them is handled
+  // by the effect below.
+  const activePose = gesture || pose;
 
   const { nodes } = useGLTF(
     `/models/characters/${gender}/Armature.glb`,
@@ -142,7 +148,7 @@ export default function Model(props: ModelProps) {
   }, [actions]);
 
   useEffect(() => {
-    const next = actions[pose];
+    const next = actions[activePose];
     if (!next) return;
     const prev = prevActionRef.current;
     if (prev && prev !== next) {
@@ -152,7 +158,7 @@ export default function Model(props: ModelProps) {
       next.reset().fadeIn(0.4).play();
     }
     prevActionRef.current = next;
-  }, [actions, pose]);
+  }, [actions, activePose]);
 
   useEffect(() => {
     const link = document.createElement("a");

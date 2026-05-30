@@ -39,6 +39,9 @@ const AuthBootstrapper = () => {
         const rec = await pb
           .collection("CharacterStudioCharacters")
           .getOne(currentCharacterId, { requestKey: null });
+        // The user may have begun a new character while this was in flight —
+        // don't overwrite the fresh look with the persisted one.
+        if (useConfiguratorStore.getState().creatingNewCharacter) return;
         await loadCharacter(rec);
       } catch {
         // Character vanished or was hidden — clear so we don't keep retrying.
@@ -57,6 +60,8 @@ const AuthBootstrapper = () => {
       lastLoadedForRef.current = userId;
       return;
     }
+    // Don't auto-load the main character over a deliberately-started new one.
+    if (useConfiguratorStore.getState().creatingNewCharacter) return;
     lastLoadedForRef.current = userId;
 
     (async () => {
@@ -82,6 +87,9 @@ const AuthBootstrapper = () => {
             });
           record = list.items[0] || null;
         }
+        // Re-check after the awaited fetch: the editor may have started a new
+        // character in the meantime (child effects fire before this resolves).
+        if (useConfiguratorStore.getState().creatingNewCharacter) return;
         if (record) await loadCharacter(record);
       } catch {
         // Silent — auto-load is a convenience, not a guarantee.

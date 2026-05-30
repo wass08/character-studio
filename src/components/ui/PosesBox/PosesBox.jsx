@@ -16,7 +16,7 @@ const PosesBox = () => {
   const pose = useConfiguratorStore((state) => state.pose);
 
   return (
-    <div className="glass-panel no-scrollbar absolute bottom-24 left-1/2 z-30 flex max-w-[90vw] -translate-x-1/2 flex-row items-center gap-1 overflow-x-auto rounded-2xl p-1.5">
+    <div className="glass-panel no-scrollbar absolute bottom-40 left-1/2 z-30 flex max-w-[90vw] -translate-x-1/2 flex-row items-center gap-1 overflow-x-auto rounded-2xl p-1.5 md:bottom-24">
       {Object.keys(PHOTO_POSES).map((label) => {
         const value = PHOTO_POSES[label];
         const active = pose === value;

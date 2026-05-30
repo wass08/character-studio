@@ -68,12 +68,17 @@ const TopActions = () => {
       return;
     }
     if (!currentCharacterId) {
-      setNameDialogOpen(true);
-      return;
+      // If the user already named the character inline (rename field), save
+      // straight away; otherwise fall back to the name prompt.
+      const typed = (currentCharacterName || "").trim();
+      if (!typed) {
+        setNameDialogOpen(true);
+        return;
+      }
     }
     try {
-      await saveCharacter();
-      toast.success(`Saved "${currentCharacterName}"`);
+      const saved = await saveCharacter();
+      toast.success(`Saved "${saved?.name || currentCharacterName}"`);
     } catch (err) {
       toast.error(err?.message || "Failed to save");
     }

@@ -12,10 +12,10 @@ import {
 import { toast } from "@/components/ui/primitives/Toast";
 
 /**
- * Hosts the existing studio canvas + side panels for the /create routes.
+ * Hosts the studio canvas + side panels for the editor routes.
  *
- *   - /create        → fresh character (clears current id on mount)
- *   - /create/:id    → loads the character on mount
+ *   - /editor        → fresh character (resets to gender defaults on mount)
+ *   - /editor/:id    → loads the character on mount
  *
  * On successful save we redirect to /c/:id so the user sees the new profile.
  * (The redirect is wired by subscribing to `currentCharacterId` and bumping
@@ -24,9 +24,7 @@ import { toast } from "@/components/ui/primitives/Toast";
 const EditorView = ({ characterId }) => {
   const router = useRouter();
   const loadCharacter = useConfiguratorStore((s) => s.loadCharacter);
-  const setCurrentCharacter = useConfiguratorStore(
-    (s) => s.setCurrentCharacter,
-  );
+  const beginNewCharacter = useConfiguratorStore((s) => s.beginNewCharacter);
   const setMode = useConfiguratorStore((s) => s.setMode);
   const charactersChangedAt = useConfiguratorStore(
     (s) => s.charactersChangedAt,
@@ -41,11 +39,14 @@ const EditorView = ({ characterId }) => {
   // Sync the active character with the URL.
   useEffect(() => {
     if (!characterId) {
-      if (loadedFor.current !== null) {
-        // Switching from /create/:id back to /create — start fresh.
-        setCurrentCharacter({ id: null, name: null });
-        loadedFor.current = null;
+      // Bare /editor → a brand-new character. beginNewCharacter clears the
+      // loaded id (so Save creates a new record) and resets the look to the
+      // gender defaults. The creatingNewCharacter guard makes this idempotent
+      // and preserves a fork's pre-loaded look (the fork path sets the flag).
+      if (!useConfiguratorStore.getState().creatingNewCharacter) {
+        beginNewCharacter();
       }
+      loadedFor.current = null;
       return;
     }
     if (loadedFor.current === characterId) return;
@@ -61,7 +62,7 @@ const EditorView = ({ characterId }) => {
         router.replace("/editor");
       }
     })();
-  }, [characterId, loadCharacter, setCurrentCharacter, router]);
+  }, [characterId, loadCharacter, beginNewCharacter, router]);
 
   // After save, redirect to the profile.
   const lastBumpRef = useRef(0);

@@ -12,6 +12,7 @@ import PosesBox from "./PosesBox/PosesBox";
 import ModeSelector from "./ModeSelector/ModeSelector";
 import LoadingScreen from "./LoadingScreen/LoadingScreen";
 import Logo from "./Logo/Logo";
+import IdleJuice from "@/components/scene/IdleJuice";
 import HideUIButton from "./Buttons/HideUIButton/HideUIButton";
 import AuthDialog from "./AuthDialog/AuthDialog";
 import AuthBootstrapper from "./AuthBootstrapper";
@@ -54,6 +55,8 @@ const UI = () => {
       <AuthBootstrapper />
 
       <HideUIButton isHidden={isHidden} setIsHidden={setIsHidden} />
+
+      {mode === UI_MODES.CUSTOMIZE && <IdleJuice />}
 
       {mode === UI_MODES.CUSTOMIZE && (
         <div className={isHidden ? "max-md:hidden" : ""}>

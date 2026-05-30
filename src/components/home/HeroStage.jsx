@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import Avatar from "@/components/scene/Avatar";
 import { StoreCharacterProvider } from "@/components/scene/CharacterContext";
+import IdleJuice from "@/components/scene/IdleJuice";
 import { EngineCanvas } from "@/components/scene/EngineCanvas";
 import { Button } from "@/components/ui/button";
 import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
@@ -77,6 +78,7 @@ const HeroStage = () => {
 
   return (
     <section className="relative mx-auto w-full max-w-7xl px-5 pt-8 pb-12 md:px-8 md:pt-12 md:pb-16">
+      <IdleJuice />
       <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-2 md:gap-12">
         {/* Marketing copy */}
         <div className="flex flex-col items-start gap-5">

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { useConfiguratorStore, pb } from "@/stores/useConfiguratorStore";
+import CharacterNameField from "../CharacterNameField/CharacterNameField";
 import GenderSelectionBox from "../GenderSelectionBox/GenderSelectionBox";
 import { HeightSlider } from "../HeightSlider/HeightSlider";
 import {
@@ -319,6 +320,7 @@ const AssetsBox = () => {
                     "max-md:w-full max-md:flex-col max-md:items-stretch",
                 )}
               >
+                <CharacterNameField />
                 <GenderSelectionBox />
                 <HeightSlider />
 

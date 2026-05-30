@@ -60,6 +60,9 @@ export type CharacterContextValue = {
   morphValues: Record<string, number>;
   height: number;
   pose: string;
+  // Ephemeral idle-juice gesture layered over `pose`; null = use `pose`.
+  // Optional so non-store providers needn't supply it.
+  gesture?: string | null;
   skin: MeshStandardMaterial | null;
   lockedGroups: LockedGroups;
 
@@ -104,6 +107,7 @@ export function StoreCharacterProvider({ children }: { children: ReactNode }) {
       morphValues: state.morphValues,
       height: state.height,
       pose: state.pose,
+      gesture: state.gesture,
       skin: state.skin,
       lockedGroups: state.lockedGroups,
       updateColor: state.updateColor,

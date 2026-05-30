@@ -77,7 +77,7 @@ const PhotoFramingBar = () => {
         // overrides Tailwind's bg-white at runtime, producing a black-on-
         // black button. Plain white + ring + shadow gives the right CTA
         // contrast over the scene.
-        className="pointer-events-auto absolute bottom-4 left-1/2 z-30 h-auto -translate-x-1/2 gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-semibold tracking-tight text-zinc-950 shadow-[0_0_28px_rgba(255,255,255,0.18)] ring-1 ring-white/40 transition-colors hover:bg-white/90"
+        className="pointer-events-auto absolute bottom-8 left-1/2 z-30 h-auto -translate-x-1/2 gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-semibold tracking-tight text-zinc-950 shadow-[0_0_28px_rgba(255,255,255,0.18)] ring-1 ring-white/40 transition-colors hover:bg-white/90 md:bottom-4"
       >
         <Camera className="h-4 w-4" />
         <span>Take a photo</span>
@@ -86,7 +86,7 @@ const PhotoFramingBar = () => {
   }
 
   return (
-    <div className="glass-panel pointer-events-auto absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-2xl p-2 pl-2">
+    <div className="glass-panel pointer-events-auto absolute bottom-8 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-2xl p-2 pl-2 md:bottom-4">
       <Tooltip label="Close framing" side="top">
         <Button
           type="button"
