@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,7 +8,7 @@ import {
   UI_MODES,
   useConfiguratorStore,
 } from "@/stores/useConfiguratorStore";
-import { cn } from "../primitives/cn";
+import { cn } from "@/lib/utils";
 
 const COMPRESSION_OPTIONS = [
   { value: COMPRESSION.NONE, label: "None" },

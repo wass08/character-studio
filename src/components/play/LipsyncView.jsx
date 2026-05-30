@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Mic, Pause, Play, Upload, Volume2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Pause, Play, Upload, Volume2 } from "lucide-react";
 import Scene from "@/components/scene/Scene";
 import LipsyncDriver from "@/components/scene/LipsyncDriver";
 import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
@@ -11,6 +10,7 @@ import PlayShell from "./PlayShell";
 import NoCharacterOverlay from "./NoCharacterOverlay";
 import {
   pb,
+  PHOTO_POSES,
   useConfiguratorStore,
   UI_MODES,
 } from "@/stores/useConfiguratorStore";
@@ -27,6 +27,8 @@ import { cn } from "@/lib/utils";
  */
 const LipsyncView = () => {
   const setMode = useConfiguratorStore((s) => s.setMode);
+  const setPose = useConfiguratorStore((s) => s.setPose);
+  const setLipsyncPlaying = useConfiguratorStore((s) => s.setLipsyncPlaying);
   const setVisemes = useConfiguratorStore((s) => s.setVisemes);
   const introFinished = useConfiguratorStore((s) => s.introFinished);
   const gender = useConfiguratorStore((s) => s.gender);
@@ -40,6 +42,13 @@ const LipsyncView = () => {
   useEffect(() => {
     setMode(UI_MODES.LIPSYNC);
   }, [setMode]);
+
+  // Swap to the talking loop while audio plays; rest on idle otherwise.
+  // The playing flag also drives the camera zoom-in (CameraManager).
+  useEffect(() => {
+    setPose(playing ? PHOTO_POSES.Talking : PHOTO_POSES.Idle);
+    setLipsyncPlaying(playing);
+  }, [playing, setPose, setLipsyncPlaying]);
 
   // Load voice presets for the active character's gender first; fall back
   // to all presets so the player isn't empty for "other" or unset gender.
@@ -74,8 +83,9 @@ const LipsyncView = () => {
       audioRef.current?.pause();
       audioRef.current = null;
       setVisemes(null, 0);
+      setLipsyncPlaying(false);
     };
-  }, [setVisemes]);
+  }, [setVisemes, setLipsyncPlaying]);
 
   const playUrl = async (url, label) => {
     audioRef.current?.pause();

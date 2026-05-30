@@ -1,5 +1,6 @@
 "use client";
 
+import { pb } from "@/stores/useConfiguratorStore";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import type { ThreeElements } from "@react-three/fiber";
 import { Suspense, useEffect, useRef } from "react";
@@ -11,7 +12,6 @@ import type {
   SkinnedMesh,
 } from "three";
 import { GLTFExporter, SkeletonUtils } from "three-stdlib";
-import { pb } from "@/stores/useConfiguratorStore";
 import { Asset } from "./Asset";
 import {
   type ExportOptions,
@@ -124,7 +124,7 @@ export default function Model(props: ModelProps) {
   useEffect(() => {
     const rig = group.current?.getObjectByName("Rig");
     if (rig) {
-      const visualScale = remap(height, 0.5, 2.0, 0.95, 1);
+      const visualScale = remap(height, 0.5, 2.0, 0.7, 1.1);
       rig.scale.set(visualScale, visualScale, visualScale);
     }
   }, [height]);

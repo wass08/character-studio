@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 
 import AssetsBox from "./AssetsBox/AssetsBox";
 import ExportBox from "./ExportBox/ExportBox";
@@ -17,7 +17,7 @@ import AuthDialog from "./AuthDialog/AuthDialog";
 import AuthBootstrapper from "./AuthBootstrapper";
 import UserMenu from "./UserMenu/UserMenu";
 import PhotoGalleryBox from "./PhotoGalleryBox/PhotoGalleryBox";
-import { cn } from "./primitives/cn";
+import { cn } from "@/lib/utils";
 
 const showColorPicker = (isSkin, currentCategory, hasAsset) =>
   !isSkin && currentCategory?.colorPalette && hasAsset;

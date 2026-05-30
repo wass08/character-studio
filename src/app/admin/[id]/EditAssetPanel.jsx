@@ -33,7 +33,7 @@ const EditAssetPanel = ({ id }) => {
       title={asset?.name || (loading ? "Loading…" : "Asset")}
       subtitle={
         asset
-          ? `${asset.expand?.group?.name || "—"}${asset.expand?.gender?.name ? " · " + asset.expand.gender.name : ""}`
+          ? `${asset.expand?.group?.name || "—"}${asset.expand?.gender?.name ? ` · ${asset.expand.gender.name}` : ""}`
           : null
       }
     >

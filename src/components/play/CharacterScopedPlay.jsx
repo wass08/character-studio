@@ -17,19 +17,34 @@ import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
  * `/c/[id]`), this is a no-op — the children render immediately.
  */
 const CharacterScopedPlay = ({ characterId, children }) => {
-  const currentCharacterId = useConfiguratorStore((s) => s.currentCharacterId);
   const loadCharacter = useConfiguratorStore((s) => s.loadCharacter);
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!characterId) return;
-    if (currentCharacterId === characterId) return;
+    if (!characterId) return undefined;
+    setReady(false);
+    setError(false);
+
+    // currentCharacterId survives reloads (it's persisted) but the heavy
+    // state — customization, morphs, height, categories — does not. So an
+    // id match alone doesn't mean the avatar is actually dressed; only skip
+    // the fetch when the character is genuinely in memory.
+    const state = useConfiguratorStore.getState();
+    if (
+      state.currentCharacterId === characterId &&
+      Object.keys(state.customization).length > 0
+    ) {
+      setReady(true);
+      return undefined;
+    }
+
     let cancelled = false;
     pb.collection("CharacterStudioCharacters")
       .getOne(characterId, { requestKey: null })
-      .then((rec) => {
-        if (cancelled) return null;
-        return loadCharacter(rec);
+      .then((rec) => (cancelled ? null : loadCharacter(rec)))
+      .then(() => {
+        if (!cancelled) setReady(true);
       })
       .catch(() => {
         if (!cancelled) setError(true);
@@ -37,7 +52,7 @@ const CharacterScopedPlay = ({ characterId, children }) => {
     return () => {
       cancelled = true;
     };
-  }, [characterId, currentCharacterId, loadCharacter]);
+  }, [characterId, loadCharacter]);
 
   if (error) {
     return (
@@ -58,7 +73,7 @@ const CharacterScopedPlay = ({ characterId, children }) => {
     );
   }
 
-  if (currentCharacterId !== characterId) {
+  if (!ready) {
     return (
       <main className="fixed inset-0 flex h-screen w-full items-center justify-center bg-black text-white">
         <Spinner className="h-8 w-8" />

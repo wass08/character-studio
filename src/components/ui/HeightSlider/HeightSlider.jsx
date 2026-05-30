@@ -1,5 +1,5 @@
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
-import { cn } from "../primitives/cn";
+import { cn } from "@/lib/utils";
 
 export const HeightSlider = () => {
   const height = useConfiguratorStore((state) => state.height);

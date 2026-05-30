@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Plus, Play, Trash2, Upload, Loader2 } from "lucide-react";
+import { Plus, Play, Trash2, Loader2 } from "lucide-react";
 import AdminShell from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

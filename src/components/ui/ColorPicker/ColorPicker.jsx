@@ -1,5 +1,4 @@
 "use client";
-import React from "react";
 import { motion } from "motion/react";
 import { CustomPicker } from "react-color";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,12 @@ import {
   EditableInput,
 } from "react-color/lib/components/common";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
-import { cn } from "../primitives/cn";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 const MotionButton = motion.button;
 
@@ -136,6 +140,37 @@ const CustomColorPicker = (props) => {
 
 const StyledPicker = CustomPicker(CustomColorPicker);
 
+// A labelled swatch that opens the full picker in a popover when clicked.
+const ColorSwatch = ({ label, color, onChange }) => (
+  <div className="flex shrink-0 items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+    {label && (
+      <span className="text-[10px] font-semibold tracking-[0.12em] text-white/65 uppercase">
+        {label}
+      </span>
+    )}
+    <Popover>
+      <PopoverTrigger asChild>
+        <motion.button
+          type="button"
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.94 }}
+          aria-label={`${label || "Color"}: ${color}`}
+          className="h-8 w-8 shrink-0 rounded-md ring-1 ring-white/15 ring-offset-1 ring-offset-transparent transition-shadow hover:ring-white/40"
+          style={{ backgroundColor: color }}
+        />
+      </PopoverTrigger>
+      <PopoverContent
+        side="bottom"
+        align="end"
+        sideOffset={10}
+        className="glass-panel w-[clamp(240px,22vw,300px)] rounded-xl border-0 bg-transparent p-4 text-white"
+      >
+        <StyledPicker color={color} onChange={onChange} />
+      </PopoverContent>
+    </Popover>
+  </div>
+);
+
 const ColorPicker = ({ inline = false }) => {
   const updateColor = useConfiguratorStore((state) => state.updateColor);
   const currentCategory = useConfiguratorStore(
@@ -156,15 +191,11 @@ const ColorPicker = ({ inline = false }) => {
   }
 
   const containerClass = inline
-    ? "flex w-full flex-col text-white"
+    ? "flex w-full flex-col divide-y divide-white/[0.08] text-white"
     : cn(
-        "glass-panel thin-scrollbar flex w-full shrink-0 flex-col overflow-hidden rounded-xl p-4 text-white",
+        "glass-panel thin-scrollbar flex w-full shrink-0 flex-col divide-y divide-white/[0.08] overflow-y-auto rounded-xl p-4 text-white",
         "max-h-[clamp(200px,30vh,300px)]",
       );
-
-  const scrollClass = inline
-    ? "flex flex-col gap-3"
-    : "thin-scrollbar flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1";
 
   // Single color — skin or no slots
   if (isSkin || categorySlots.length === 0) {
@@ -172,12 +203,11 @@ const ColorPicker = ({ inline = false }) => {
       customization[currentCategory?.name]?.color || "#ffffff";
     return (
       <div className={containerClass}>
-        <div className={scrollClass}>
-          <StyledPicker
-            color={activeColor}
-            onChange={(c) => updateColor(currentCategory.name, c, undefined)}
-          />
-        </div>
+        <ColorSwatch
+          label={isSkin ? null : "Color"}
+          color={activeColor}
+          onChange={(c) => updateColor(currentCategory.name, c, undefined)}
+        />
       </div>
     );
   }
@@ -187,35 +217,25 @@ const ColorPicker = ({ inline = false }) => {
 
   return (
     <div className={containerClass}>
-      <div className={scrollClass}>
-        {sortedSlots.map((slotName, index) => {
-          const activeColor =
-            customization[currentCategory?.name]?.colors?.[slotName] ||
-            customization[currentCategory?.name]?.color ||
-            "#ffffff";
+      {sortedSlots.map((slotName) => {
+        const activeColor =
+          customization[currentCategory?.name]?.colors?.[slotName] ||
+          customization[currentCategory?.name]?.color ||
+          "#ffffff";
 
-          const label = slotName.replace("Color_", "").replace(/_/g, " ");
+        const label = `${slotName
+          .replace("Color_", "")
+          .replace(/_/g, " ")} Color`;
 
-          return (
-            <React.Fragment key={slotName}>
-              <div className="flex shrink-0 flex-col">
-                <div className="mb-1.5 text-[10px] font-semibold tracking-[0.12em] text-white/65 uppercase">
-                  {label} Color
-                </div>
-                <StyledPicker
-                  color={activeColor}
-                  onChange={(c) =>
-                    updateColor(currentCategory.name, c, slotName)
-                  }
-                />
-              </div>
-              {index < sortedSlots.length - 1 && (
-                <div className="h-px w-full shrink-0 bg-white/10" />
-              )}
-            </React.Fragment>
-          );
-        })}
-      </div>
+        return (
+          <ColorSwatch
+            key={slotName}
+            label={label}
+            color={activeColor}
+            onChange={(c) => updateColor(currentCategory.name, c, slotName)}
+          />
+        );
+      })}
     </div>
   );
 };
