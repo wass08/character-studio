@@ -87,6 +87,40 @@ export const GENDERS = {
   NONE: "none", // In case we don't want to start with a default gender
 };
 
+// Builds the starting customization for a gender from the loaded categories:
+// each category's configured starting asset (per gender), falling back to the
+// first asset for required categories. Shared by the initial category fetch
+// and "start a new character" so both produce an identical default look.
+const buildDefaultCustomization = (categories, gender) => {
+  const customization = {};
+  categories.forEach((category) => {
+    customization[category.name] = {
+      color: category.name === "Skin" ? DEFAULT_SKIN_COLOR : null,
+      asset: null,
+      colors: {},
+    };
+
+    const startingAssetId =
+      gender === GENDERS.MAN
+        ? category.startingAssetMan
+        : category.startingAssetWoman;
+
+    if (startingAssetId) {
+      const foundAsset = category.assets.find((a) => a.id === startingAssetId);
+      if (foundAsset) customization[category.name].asset = foundAsset;
+    }
+
+    if (
+      !category.optional &&
+      !customization[category.name].asset &&
+      category.assets.length > 0
+    ) {
+      customization[category.name].asset = category.assets[0];
+    }
+  });
+  return customization;
+};
+
 export const useConfiguratorStore = create(
   persist(
     (set, get) => ({
@@ -128,6 +162,12 @@ export const useConfiguratorStore = create(
       setPose: (pose) => {
         set({ pose });
       },
+      // Ephemeral "juice" gesture layered over `pose` by the Avatar on the
+      // home + editor surfaces (see IdleJuice). Purely visual: never
+      // persisted and never written into a saved character record. Clearing
+      // it (null) crossfades the rig back to the canonical pose.
+      gesture: null,
+      setGesture: (gesture) => set({ gesture }),
       // Ephemeral: true while lipsync audio is playing. Drives the camera
       // zoom-in on the lipsync route (CameraManager) and is never persisted.
       lipsyncPlaying: false,
@@ -233,6 +273,46 @@ export const useConfiguratorStore = create(
       currentCharacterName: null,
       setCurrentCharacter: ({ id, name }) =>
         set({ currentCharacterId: id, currentCharacterName: name }),
+      // Rename the in-progress character. Marks the look dirty so the Save
+      // affordance lights up; the name is committed to the record on save.
+      setCharacterName: (name) =>
+        set((state) =>
+          state.currentCharacterName === name
+            ? {}
+            : { currentCharacterName: name, isDirty: true },
+        ),
+      // True while the user is composing a brand-new (or forked) character
+      // that hasn't been saved yet. Guards AuthBootstrapper from auto-loading
+      // the user's main character over the fresh one. Never persisted.
+      creatingNewCharacter: false,
+      setCreatingNewCharacter: (value) => set({ creatingNewCharacter: value }),
+      // Start a fresh character from the gender defaults without touching the
+      // currently-selected gender. Clears the loaded-character id so the next
+      // Save creates a new record instead of overwriting the previous one.
+      beginNewCharacter: async () => {
+        set({
+          creatingNewCharacter: true,
+          currentCharacterId: null,
+          currentCharacterName: null,
+        });
+        if (get().categories.length === 0) {
+          await get().fetchCategories();
+        }
+        const customization = buildDefaultCustomization(
+          get().categories,
+          get().gender,
+        );
+        set({
+          customization,
+          morphValues: {},
+          height: 1,
+          pose: PHOTO_POSES.Idle,
+          isDirty: false,
+        });
+        const skinColor = customization.Skin?.color;
+        if (skinColor) get().updateSkin(skinColor);
+        get().applyLockedAssets();
+      },
       saving: false,
       // Bumped after every successful character save — components can subscribe
       // to refresh listings.
@@ -288,6 +368,7 @@ export const useConfiguratorStore = create(
           height: typeof record.height === "number" ? record.height : 1,
           currentCharacterId: record.id,
           currentCharacterName: record.name,
+          creatingNewCharacter: false,
           isDirty: false,
         });
         const skinColor = customization.Skin?.color;
@@ -347,6 +428,7 @@ export const useConfiguratorStore = create(
             currentCharacterId: record.id,
             currentCharacterName: record.name,
             charactersChangedAt: Date.now(),
+            creatingNewCharacter: false,
             isDirty: false,
           });
           return record;
@@ -437,18 +519,19 @@ export const useConfiguratorStore = create(
         const [sections, categories, assets] = await Promise.all([
           pb.collection("CharacterStudioSections").getFullList({
             sort: "+position",
+            requestKey: null,
           }),
           pb.collection("CharacterStudioGroups").getFullList({
             sort: "+position",
             expand: "colorPalette,section",
+            requestKey: null,
           }),
           pb.collection("CharacterStudioAssets").getFullList({
             sort: "-created",
             expand: "gender",
+            requestKey: null,
           }),
         ]);
-
-        const customization = {};
 
         categories.forEach((category) => {
           category.assets = assets.filter(
@@ -456,33 +539,12 @@ export const useConfiguratorStore = create(
               asset.group === category.id &&
               asset.expand?.gender?.name === currentGender,
           );
-
-          customization[category.name] = {
-            color: category.name === "Skin" ? DEFAULT_SKIN_COLOR : null,
-            asset: null,
-            colors: {},
-          };
-
-          const startingAssetId =
-            currentGender === GENDERS.MAN
-              ? category.startingAssetMan
-              : category.startingAssetWoman;
-
-          if (startingAssetId) {
-            const foundAsset = category.assets.find(
-              (a) => a.id === startingAssetId,
-            );
-            if (foundAsset) customization[category.name].asset = foundAsset;
-          }
-
-          if (
-            !category.optional &&
-            !customization[category.name].asset &&
-            category.assets.length > 0
-          ) {
-            customization[category.name].asset = category.assets[0];
-          }
         });
+
+        const customization = buildDefaultCustomization(
+          categories,
+          currentGender,
+        );
 
         set({
           sections,
