@@ -53,6 +53,7 @@ const AssetForm = ({ asset = null }) => {
   const [lookupsLoaded, setLookupsLoaded] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [detectedMorphs, setDetectedMorphs] = useState([]);
+  const [baseModelUrls, setBaseModelUrls] = useState([]);
   const previewRef = useRef(null);
 
   useEffect(() => {
@@ -120,6 +121,19 @@ const AssetForm = ({ asset = null }) => {
     return null;
   }, [localModelUrl, asset]);
 
+  // A texture-only asset (e.g. makeup) carries an image, not a GLB. Detect it
+  // from the freshly-picked file's type, or the saved asset's extension.
+  const isTexture = useMemo(() => {
+    if (form.modelFile) {
+      return (
+        form.modelFile.type?.startsWith("image/") ||
+        /\.(png|jpe?g|webp)$/i.test(form.modelFile.name)
+      );
+    }
+    const u = asset?.r2Url || asset?.url;
+    return u ? /\.(png|jpe?g|webp)$/i.test(u) : false;
+  }, [form.modelFile, asset]);
+
   // Reset detected morphs when the model source changes — the Model effect
   // in AssetPreview will repopulate from the newly-loaded scene.
   useEffect(() => {
@@ -144,6 +158,47 @@ const AssetForm = ({ asset = null }) => {
     }
     setIsDefault(selectedGroup[defaultField] === asset.id);
   }, [asset, selectedGroup, defaultField]);
+
+  // Texture assets (makeup) paint onto the skin material, so the preview needs
+  // a base character to composite against. Resolve the gender's full default
+  // outfit — each group's default asset (or the first asset for non-optional
+  // groups) — mirroring how the live configurator assembles the avatar in
+  // fetchCategories, so the texture is shown on the whole default character.
+  useEffect(() => {
+    if (!isTexture || !form.gender || !defaultField || groups.length === 0) {
+      setBaseModelUrls([]);
+      return;
+    }
+    let cancelled = false;
+    const resolve = async () => {
+      const all = await pb
+        .collection("CharacterStudioAssets")
+        .getFullList({ filter: `gender = "${form.gender}"` })
+        .catch(() => null);
+      if (cancelled || !all) {
+        if (!cancelled) setBaseModelUrls([]);
+        return;
+      }
+      const urls = [];
+      for (const group of groups) {
+        const groupAssets = all.filter((a) => a.group === group.id);
+        let pick = group[defaultField]
+          ? groupAssets.find((a) => a.id === group[defaultField])
+          : null;
+        if (!pick && !group.optional) pick = groupAssets[0];
+        if (!pick) continue;
+        const url =
+          pick.r2Url || (pick.url ? pb.files.getURL(pick, pick.url) : null);
+        // Skip texture assets (e.g. other Face items) — only meshes render.
+        if (url && !/\.(png|jpe?g|webp)$/i.test(url)) urls.push(url);
+      }
+      if (!cancelled) setBaseModelUrls(urls);
+    };
+    resolve();
+    return () => {
+      cancelled = true;
+    };
+  }, [isTexture, form.gender, groups, defaultField]);
 
   const snapshot = async () => {
     if (!previewRef.current) return;
@@ -310,12 +365,12 @@ const AssetForm = ({ asset = null }) => {
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="asset-file">
-              Model file (.glb){!asset && " · required"}
+              Model (.glb) or texture (.png){!asset && " · required"}
             </Label>
             <Input
               id="asset-file"
               type="file"
-              accept=".glb,.gltf,model/gltf-binary"
+              accept=".glb,.gltf,model/gltf-binary,.png,.jpg,.jpeg,.webp,image/*"
               onChange={(e) =>
                 setForm((f) => ({
                   ...f,
@@ -471,16 +526,17 @@ const AssetForm = ({ asset = null }) => {
         <h2 className="text-sm font-semibold tracking-tight">Preview</h2>
         <AssetPreview
           ref={previewRef}
-          url={modelUrl}
+          url={isTexture ? baseModelUrls : modelUrl}
+          textureUrl={isTexture ? modelUrl : null}
           height={480}
           backgroundColor={form.thumbnailBg || null}
-          onMorphsDetected={setDetectedMorphs}
+          onMorphsDetected={isTexture ? undefined : setDetectedMorphs}
         />
         <p className="text-[11px] text-muted-foreground">
           Drag to rotate, scroll to zoom. The snapshot uses the current camera
           angle.
         </p>
-        {modelUrl && <BlendshapeSection morphs={detectedMorphs} />}
+        {modelUrl && !isTexture && <BlendshapeSection morphs={detectedMorphs} />}
       </div>
     </form>
   );

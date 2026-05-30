@@ -128,6 +128,10 @@ export const useConfiguratorStore = create(
       setPose: (pose) => {
         set({ pose });
       },
+      // Ephemeral: true while lipsync audio is playing. Drives the camera
+      // zoom-in on the lipsync route (CameraManager) and is never persisted.
+      lipsyncPlaying: false,
+      setLipsyncPlaying: (lipsyncPlaying) => set({ lipsyncPlaying }),
       backdrop: "studio",
       setBackdrop: (backdrop) => {
         if (!BACKDROP_IDS.includes(backdrop)) return;
@@ -158,7 +162,6 @@ export const useConfiguratorStore = create(
           },
         })),
 
-      detectedMorphsByCategory: {},
       setMorphValue: (key, value) => {
         set((state) => ({
           morphValues: { ...state.morphValues, [key]: value },

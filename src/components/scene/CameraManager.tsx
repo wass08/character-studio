@@ -1,9 +1,9 @@
+import { UI_MODES, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { CameraControls } from "@react-three/drei";
-import { useThree } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { button, useControls } from "leva";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { useConfiguratorStore, UI_MODES } from "@/stores/useConfiguratorStore";
 
 type Triplet = [number, number, number];
 
@@ -11,18 +11,11 @@ export const DEFAULT_CAMERA_POSITION: Triplet = [
   0.1, 1.4059367994699732, -2.990515168885181,
 ];
 export const DEFAULT_CAMERA_TARGET: Triplet = [
-  0.1, 0.9652248734528945, 0.5650397082939782,
+  0, 0.9652248734528945, 0.5650397082939782,
 ];
 
 export const PHOTO_CAMERA_POSITION: Triplet = [0, 1.4, -3.5];
 export const PHOTO_CAMERA_TARGET: Triplet = [0, 1.0, 0];
-
-// Portrait framing for /try/lipsync — face fills ~40% of the viewport.
-// Picks up the head bone's actual world position when available so
-// height-slider tweaks don't crop the chin off; falls back to a
-// reasonable default before the avatar mounts.
-export const LIPSYNC_CAMERA_FALLBACK_POSITION: Triplet = [0, 1.55, -1.4];
-export const LIPSYNC_CAMERA_FALLBACK_TARGET: Triplet = [0, 1.55, 0];
 
 type CameraConfig = {
   bone: string;
@@ -33,7 +26,17 @@ type CameraConfig = {
 const CAMERA_CONFIGS: Record<string, CameraConfig> = {
   Hat: {
     bone: "DEF-head",
-    offset: new THREE.Vector3(0, 0.1, -0.6),
+    offset: new THREE.Vector3(0.3, 0.1, -0.8),
+    targetOffset: new THREE.Vector3(0, 0.1, 0),
+  },
+  Head: {
+    bone: "DEF-head",
+    offset: new THREE.Vector3(-0.2, 0.1, -0.6),
+    targetOffset: new THREE.Vector3(0, 0, 0),
+  },
+  Face: {
+    bone: "DEF-head",
+    offset: new THREE.Vector3(0.1, 0.1, -0.6),
     targetOffset: new THREE.Vector3(0, 0, 0),
   },
   Hair: {
@@ -56,7 +59,17 @@ const CAMERA_CONFIGS: Record<string, CameraConfig> = {
     offset: new THREE.Vector3(0, 0, -0.5),
     targetOffset: new THREE.Vector3(0, 0, 0),
   },
+  "Facial Hair": {
+    bone: "teethB",
+    offset: new THREE.Vector3(0, 0, -0.5),
+    targetOffset: new THREE.Vector3(0, 0, 0),
+  },
   Eyes: {
+    bone: "nose",
+    offset: new THREE.Vector3(0, 0, -0.5),
+    targetOffset: new THREE.Vector3(0, 0, 0),
+  },
+  Glasses: {
     bone: "nose",
     offset: new THREE.Vector3(0, 0, -0.5),
     targetOffset: new THREE.Vector3(0, 0, 0),
@@ -90,6 +103,7 @@ type StoreSlice = {
   height: number;
   mode: string;
   loading: boolean;
+  lipsyncPlaying: boolean;
 };
 
 // `loading` is part of the historic API but currently unused — kept
@@ -97,6 +111,7 @@ type StoreSlice = {
 // remove the field entirely.
 export const CameraManager = (_props: CameraManagerProps = {}) => {
   const controls = useRef<CameraControls | null>(null);
+  const lipsyncZoomed = useRef(false);
   const scene = useThree((state) => state.scene);
   const currentCategory = useConfiguratorStore(
     (state: StoreSlice) => state.currentCategory,
@@ -104,6 +119,9 @@ export const CameraManager = (_props: CameraManagerProps = {}) => {
   const height = useConfiguratorStore((state: StoreSlice) => state.height);
   const mode = useConfiguratorStore((state: StoreSlice) => state.mode);
   const loading = useConfiguratorStore((state: StoreSlice) => state.loading);
+  const lipsyncPlaying = useConfiguratorStore(
+    (state: StoreSlice) => state.lipsyncPlaying,
+  );
 
   useEffect(() => {
     if (!controls.current) return;
@@ -122,33 +140,13 @@ export const CameraManager = (_props: CameraManagerProps = {}) => {
       return;
     }
 
-    // Lipsync mode: head-and-shoulders portrait. Anchored on DEF-head
-    // when present so the face fills the frame regardless of avatar
-    // height. CameraControls' minDistance is dropped to let the camera
-    // sit ~1m from the head.
+    // Lipsync mode: tight head + upper-body framing. The actual setLookAt
+    // happens in the useFrame below, which waits for the DEF-head bone to
+    // exist — the avatar's Armature GLB loads async, so the bone often
+    // isn't in the scene yet when this effect fires on mode change.
     if (mode === UI_MODES.LIPSYNC) {
       controls.current.enabled = false;
       controls.current.minDistance = 0.6;
-      const head = scene.getObjectByName("DEF-head");
-      if (head) {
-        const headPos = new THREE.Vector3();
-        head.getWorldPosition(headPos);
-        controls.current.setLookAt(
-          headPos.x,
-          headPos.y + 0.02,
-          headPos.z - 1.0,
-          headPos.x,
-          headPos.y - 0.05,
-          headPos.z,
-          true,
-        );
-      } else {
-        controls.current.setLookAt(
-          ...LIPSYNC_CAMERA_FALLBACK_POSITION,
-          ...LIPSYNC_CAMERA_FALLBACK_TARGET,
-          true,
-        );
-      }
       return;
     }
 
@@ -195,9 +193,9 @@ export const CameraManager = (_props: CameraManagerProps = {}) => {
       lookAtPos.z,
       true,
     );
-    // `loading` participates so LIPSYNC re-targets DEF-head once the
-    // avatar finishes mounting (head bone isn't in the scene tree
-    // until then).
+    // `loading` participates so per-category framing re-resolves its bone
+    // once the avatar finishes mounting (bones aren't in the scene tree
+    // until then). Lipsync framing is handled separately in useFrame.
   }, [currentCategory, height, scene, mode, loading]);
 
   useEffect(() => {
@@ -209,6 +207,41 @@ export const CameraManager = (_props: CameraManagerProps = {}) => {
       );
     }
   }, []);
+
+  // Lipsync framing. Eases in to a head + chest shot (mirroring the
+  // face-thumbnail framing) while audio plays, and back out to the default
+  // full-body view when it stops. Runs in useFrame rather than an effect
+  // because the DEF-head bone loads async — we wait until it's in the
+  // scene before zooming in.
+  useFrame(() => {
+    if (mode !== UI_MODES.LIPSYNC || !controls.current) {
+      lipsyncZoomed.current = false;
+      return;
+    }
+    if (lipsyncPlaying && !lipsyncZoomed.current) {
+      const head = scene.getObjectByName("DEF-head");
+      if (!head) return;
+      const headPos = new THREE.Vector3();
+      head.getWorldPosition(headPos);
+      controls.current.setLookAt(
+        headPos.x,
+        headPos.y + 0.05,
+        headPos.z - 0.95,
+        headPos.x,
+        headPos.y - 0.12,
+        headPos.z,
+        true,
+      );
+      lipsyncZoomed.current = true;
+    } else if (!lipsyncPlaying && lipsyncZoomed.current) {
+      controls.current.setLookAt(
+        ...DEFAULT_CAMERA_POSITION,
+        ...DEFAULT_CAMERA_TARGET,
+        true,
+      );
+      lipsyncZoomed.current = false;
+    }
+  });
 
   useControls({
     getCameraPosition: button(() => {

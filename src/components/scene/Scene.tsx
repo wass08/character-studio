@@ -1,14 +1,14 @@
 "use client";
+import {
+  PHOTO_ASPECT_RATIOS,
+  useConfiguratorStore,
+} from "@/stores/useConfiguratorStore";
 import { Environment } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { Leva } from "leva";
 import { type ReactNode, useEffect } from "react";
 import * as THREE from "three";
 import type { Renderer } from "three/webgpu";
-import {
-  PHOTO_ASPECT_RATIOS,
-  useConfiguratorStore,
-} from "@/stores/useConfiguratorStore";
 import Avatar from "./Avatar";
 import Backdrop from "./Backdrop";
 import {
@@ -328,7 +328,6 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
 
   return (
     <>
-      <Leva hidden />
       <CameraManager />
       <color attach="background" args={[backdrop.background]} />
       <Environment
@@ -384,11 +383,14 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
 
 const Scene = ({ children }: { children?: ReactNode }) => {
   return (
-    <EngineCanvas shadows camera={{ fov: 40 }}>
-      <StoreCharacterProvider>
-        <SceneContent>{children}</SceneContent>
-      </StoreCharacterProvider>
-    </EngineCanvas>
+    <>
+      <Leva hidden />
+      <EngineCanvas shadows camera={{ fov: 40 }}>
+        <StoreCharacterProvider>
+          <SceneContent>{children}</SceneContent>
+        </StoreCharacterProvider>
+      </EngineCanvas>
+    </>
   );
 };
 

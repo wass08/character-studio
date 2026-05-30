@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import {
   pb,
   useConfiguratorStore,
-  UI_MODES,
 } from "@/stores/useConfiguratorStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { toast } from "@/components/ui/primitives/Toast";
@@ -26,11 +25,6 @@ const MyCharactersPage = () => {
   const setLoginDialogOpen = useAuthStore((s) => s.setLoginDialogOpen);
 
   const setMainCharacter = useConfiguratorStore((s) => s.setMainCharacter);
-  const setMode = useConfiguratorStore((s) => s.setMode);
-  const loadCharacter = useConfiguratorStore((s) => s.loadCharacter);
-  const setCurrentCharacter = useConfiguratorStore(
-    (s) => s.setCurrentCharacter,
-  );
   const charactersChangedAt = useConfiguratorStore(
     (s) => s.charactersChangedAt,
   );

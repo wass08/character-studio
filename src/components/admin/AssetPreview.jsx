@@ -3,6 +3,7 @@
 import {
   Suspense,
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -13,10 +14,58 @@ import { useThree } from "@react-three/fiber";
 import { Environment, OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { EngineCanvas } from "@/components/scene/EngineCanvas";
+import { useCombinedTexture } from "@/hooks/useCombinedTexture";
 
-const Model = ({ url, onFit, onMorphsDetected }) => {
+const DEFAULT_SKIN_COLOR = "#e7a67a";
+const IMAGE_RE = /\.(png|jpe?g|webp)$/i;
+
+// Mirror SkinManager: a texture-only asset (makeup) is composited onto the
+// base models' skin material maps rather than loaded as its own mesh. Loaded
+// in its own component (mounted only when a texture exists) so the useTexture
+// suspense + load never runs for plain GLB assets. The resulting texture is
+// lifted to the parent and shared across every model's skin material.
+const MakeupTextureLoader = ({ textureUrl, onTexture }) => {
+  const tex = useCombinedTexture([textureUrl], DEFAULT_SKIN_COLOR);
+  useEffect(() => {
+    onTexture(tex ?? null);
+  }, [tex, onTexture]);
+  return null;
+};
+
+const SingleModel = ({ url, makeupTexture, onBounds }) => {
   const { scene } = useGLTF(url);
-  const cloned = useMemo(() => scene.clone(true), [scene]);
+  const cloned = useMemo(() => {
+    const c = scene.clone(true);
+    const proxies = [];
+    c.traverse((obj) => {
+      if (obj.isMesh && obj.name.includes("Plane002")) proxies.push(obj);
+    });
+    proxies.forEach((p) => {
+      p.parent?.remove(p);
+    });
+    return c;
+  }, [scene]);
+
+  useEffect(() => {
+    if (!cloned) return undefined;
+    const skinMats = [];
+    cloned.traverse((obj) => {
+      if (!obj.isMesh) return;
+      const mat = obj.material;
+      if (!mat?.name?.toLowerCase().includes("skin")) return;
+      skinMats.push(mat);
+    });
+    skinMats.forEach((mat) => {
+      mat.map = makeupTexture ?? null;
+      mat.needsUpdate = true;
+    });
+    return () => {
+      skinMats.forEach((mat) => {
+        mat.map = null;
+        mat.needsUpdate = true;
+      });
+    };
+  }, [cloned, makeupTexture]);
 
   useEffect(() => {
     if (!cloned) return;
@@ -41,25 +90,84 @@ const Model = ({ url, onFit, onMorphsDetected }) => {
         }
       }
       if (obj.morphTargetDictionary) {
-        Object.keys(obj.morphTargetDictionary).forEach((k) => morphs.add(k));
+        for (const k of Object.keys(obj.morphTargetDictionary)) morphs.add(k);
       }
     });
 
-    onMorphsDetected?.([...morphs]);
-
-    if (!any || box.isEmpty()) {
-      onFit?.({ center: new THREE.Vector3(0, 0, 0), radius: 1 });
-      return;
-    }
-    const center = new THREE.Vector3();
-    const size = new THREE.Vector3();
-    box.getCenter(center);
-    box.getSize(size);
-    const radius = Math.max(size.x, size.y, size.z) * 0.6 || 1;
-    onFit?.({ center, radius });
-  }, [cloned, onFit, onMorphsDetected]);
+    onBounds(url, any && !box.isEmpty() ? box : null, [...morphs]);
+  }, [cloned, url, onBounds]);
 
   return <primitive object={cloned} />;
+};
+
+// Renders one or more GLBs together (a single asset, or the full default
+// character a makeup texture is previewed on top of). Unions every model's
+// bounds into one fit so the camera frames the whole group.
+const Models = ({ urls, textureUrl, onFit, onMorphsDetected }) => {
+  const [makeupTexture, setMakeupTexture] = useState(null);
+  const dataRef = useRef(new Map());
+
+  // Recreated when the model set changes — every mounted SingleModel then
+  // re-reports (its effect depends on this), and stale urls are pruned, so
+  // the unioned fit always reflects exactly the current set with no
+  // child-before-parent effect-ordering races.
+  const handleBounds = useCallback(
+    (url, box, morphs) => {
+      dataRef.current.set(url, { box, morphs });
+      for (const key of [...dataRef.current.keys()]) {
+        if (!urls.includes(key)) dataRef.current.delete(key);
+      }
+      const combined = new THREE.Box3();
+      const allMorphs = new Set();
+      let any = false;
+      dataRef.current.forEach(({ box: b, morphs: m }) => {
+        if (b) {
+          if (any) combined.union(b);
+          else {
+            combined.copy(b);
+            any = true;
+          }
+        }
+        m?.forEach((k) => {
+          allMorphs.add(k);
+        });
+      });
+      if (any) {
+        const center = new THREE.Vector3();
+        const size = new THREE.Vector3();
+        combined.getCenter(center);
+        combined.getSize(size);
+        const radius = Math.max(size.x, size.y, size.z) * 0.6 || 1;
+        onFit?.({ center, radius });
+      } else {
+        onFit?.({ center: new THREE.Vector3(0, 0, 0), radius: 1 });
+      }
+      onMorphsDetected?.([...allMorphs]);
+    },
+    [urls, onFit, onMorphsDetected],
+  );
+
+  return (
+    <>
+      {textureUrl && (
+        <Suspense fallback={null}>
+          <MakeupTextureLoader
+            textureUrl={textureUrl}
+            onTexture={setMakeupTexture}
+          />
+        </Suspense>
+      )}
+      {urls.map((u) => (
+        <Suspense key={u} fallback={null}>
+          <SingleModel
+            url={u}
+            makeupTexture={makeupTexture}
+            onBounds={handleBounds}
+          />
+        </Suspense>
+      ))}
+    </>
+  );
 };
 
 const FitCamera = ({ target }) => {
@@ -145,9 +253,23 @@ const CornerBracket = ({ className = "" }) => (
   />
 );
 
-const AssetPreview = forwardRef(({ url, height = 360, backgroundColor = null, onMorphsDetected }, ref) => {
+const AssetPreview = forwardRef(
+  ({ url, textureUrl = null, height = 360, backgroundColor = null, onMorphsDetected }, ref) => {
   const innerRef = useRef(null);
   const [fit, setFit] = useState(null);
+
+  // GLBs to render in 3D. `url` may be a single GLB (a normal asset) or an
+  // array (the full default character a makeup texture sits on top of). Image
+  // urls are stripped here so they never reach useGLTF, which would parse the
+  // PNG as JSON and crash.
+  const modelUrls = useMemo(() => {
+    const list = Array.isArray(url) ? url : url ? [url] : [];
+    return list.filter((u) => u && !IMAGE_RE.test(u));
+  }, [url]);
+  const overlayUrl =
+    textureUrl ||
+    (typeof url === "string" && IMAGE_RE.test(url) ? url : null);
+  const hasModels = modelUrls.length > 0;
 
   useImperativeHandle(ref, () => ({
     capture: (size) => innerRef.current?.capture(size),
@@ -155,24 +277,44 @@ const AssetPreview = forwardRef(({ url, height = 360, backgroundColor = null, on
 
   useEffect(() => {
     setFit(null);
-  }, [url]);
+  }, [modelUrls]);
 
   // R3F's ResizeObserver can miss the initial size when mounted inside a
   // grid column whose width is computed after layout. Nudge a resize on
   // mount so the canvas fills the wrapper.
   useEffect(() => {
-    if (!url) return;
+    if (!hasModels) return;
     const t = setTimeout(() => window.dispatchEvent(new Event("resize")), 50);
     return () => clearTimeout(t);
-  }, [url]);
+  }, [hasModels]);
 
-  if (!url) {
+  if (!hasModels && !overlayUrl) {
     return (
       <div
         style={{ height }}
         className="flex items-center justify-center rounded-xl border border-dashed border-white/10 bg-black/20 text-xs text-white/40"
       >
-        Upload a .glb to preview
+        Upload a .glb or texture to preview
+      </div>
+    );
+  }
+
+  // Texture with no base models to paint it onto — show the flat image while
+  // the default character resolves, or as a fallback when none is available.
+  if (!hasModels && overlayUrl) {
+    return (
+      <div
+        style={{ height, backgroundColor: backgroundColor || "#1a1a22" }}
+        className="relative flex flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border border-white/10 p-4"
+      >
+        <img
+          src={overlayUrl}
+          alt="texture asset"
+          className="max-h-[80%] max-w-full rounded-lg object-contain ring-1 ring-white/10"
+        />
+        <span className="rounded-full bg-black/55 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white/70">
+          Texture preview
+        </span>
       </div>
     );
   }
@@ -202,8 +344,9 @@ const AssetPreview = forwardRef(({ url, height = 360, backgroundColor = null, on
         <directionalLight position={[-2, 2, -1]} intensity={0.6} />
         <Suspense fallback={null}>
           <Environment preset="city" environmentIntensity={0.6} />
-          <Model
-            url={url}
+          <Models
+            urls={modelUrls}
+            textureUrl={overlayUrl}
             onFit={setFit}
             onMorphsDetected={onMorphsDetected}
           />
@@ -219,7 +362,8 @@ const AssetPreview = forwardRef(({ url, height = 360, backgroundColor = null, on
       <SnapshotGuides />
     </div>
   );
-});
+  },
+);
 AssetPreview.displayName = "AssetPreview";
 
 export default AssetPreview;

@@ -32,7 +32,7 @@ export const useAuthStore = create((set, get) => ({
           password,
           passwordConfirm: password,
         });
-      } catch (e) {
+      } catch {
         // 400 with "validation_invalid_email" or "validation_not_unique" → user exists, ignore.
         // Other errors fall through to requestOTP, which will reveal real problems.
       }

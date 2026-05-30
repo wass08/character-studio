@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { useConfiguratorStore, pb } from "@/stores/useConfiguratorStore";
@@ -12,7 +12,7 @@ import {
 } from "../ShapeKeyControls/ShapeKeyControls";
 import ColorPicker from "../ColorPicker/ColorPicker";
 import { Tooltip } from "../primitives/Tooltip";
-import { cn } from "../primitives/cn";
+import { cn } from "@/lib/utils";
 
 const PILL_SPRING = { type: "spring", stiffness: 380, damping: 32 };
 const ASSET_SPRING = { type: "spring", stiffness: 360, damping: 28 };
@@ -199,6 +199,16 @@ const AssetsBox = () => {
 
   const selectedAssetId = customization[currentCategory?.name]?.asset?.id;
 
+  // No choice to make: required category with a single option.
+  const hasNoChoice =
+    !!currentCategory &&
+    !currentCategory.optional &&
+    (currentCategory.assets?.length ?? 0) <= 1;
+
+  // The Character section always has its own controls (gender/height/body),
+  // so only collapse the panel for plain asset categories.
+  const showAssetsPanel = loading || isCharacterSectionActive || !hasNoChoice;
+
   return (
     <div className={SIDEBAR_CLASS}>
       {/* Nav panel: sections directly on panel, categories in nested lighter sub-box */}
@@ -252,8 +262,7 @@ const AssetsBox = () => {
         </div>
 
         {!isSkinCategory && visibleCategories.length > 0 && (
-          <>
-            <div className={CATEGORIES_RAIL_CLASS}>
+          <div className={CATEGORIES_RAIL_CLASS}>
               {visibleCategories.map((category) => {
                 const active = currentCategory?.id === category.id;
                 return (
@@ -283,11 +292,11 @@ const AssetsBox = () => {
                 );
               })}
             </div>
-          </>
         )}
       </div>
 
       {/* Assets panel */}
+      {showAssetsPanel && (
       <div className={ASSETS_PANEL_CLASS}>
         {loading ? (
           <div className="m-auto text-sm text-white/60">Loading assets…</div>
@@ -356,7 +365,7 @@ const AssetsBox = () => {
               </p>
             )}
 
-            {isCurrentCategoryVisible && !isSkinCategory && (
+            {isCurrentCategoryVisible && !isSkinCategory && !hasNoChoice && (
               <div
                 className={cn(
                   "flex flex-row flex-nowrap items-center gap-2.5 max-md:w-max",
@@ -410,6 +419,7 @@ const AssetsBox = () => {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };

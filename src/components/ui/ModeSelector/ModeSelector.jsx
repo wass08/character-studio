@@ -1,12 +1,11 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { useConfiguratorStore, UI_MODES } from "@/stores/useConfiguratorStore";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { cn } from "../primitives/cn";
+import { cn } from "@/lib/utils";
 import { Tooltip } from "../primitives/Tooltip";
 
 const PILL_SPRING = { type: "spring", stiffness: 380, damping: 32 };

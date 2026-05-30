@@ -3,17 +3,21 @@ import {
   hiddenPrefixes,
   useConfiguratorStore,
 } from "@/stores/useConfiguratorStore";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "../primitives/Tooltip";
-import { cn } from "../primitives/cn";
+import { cn } from "@/lib/utils";
 
-export const CHARACTER_GLOBAL_MORPHS = [
-  "Body Size",
-  "Muscularity",
-  "Eye Spacing",
-];
+export const CHARACTER_GLOBAL_MORPHS = ["Body Size", "Muscularity"];
+
+// Pin a morph to a single category even when its shape key is authored on
+// several meshes in the section. Without this, a shared key (e.g. "Eye Spacing"
+// on both the Head and Eyes meshes) would be classified as a section-wide
+// adjustment. Keyed by morph name → category name (case-insensitive).
+const MORPH_CATEGORY_LOCKS = {
+  "Eye Spacing": "Head",
+};
 
 const ShapeKeyControls = () => {
   const detectedMorphsByCategory = useConfiguratorStore(
@@ -81,7 +85,16 @@ const ShapeKeyControls = () => {
     const specific = [];
 
     Object.keys(counts).forEach((key) => {
-      if (counts[key] > 1) {
+      const lockTarget = MORPH_CATEGORY_LOCKS[key];
+      const lockedCategory =
+        lockTarget &&
+        categoriesPerMorph[key].find(
+          (c) => c.toLowerCase() === lockTarget.toLowerCase(),
+        );
+
+      if (lockedCategory) {
+        specific.push({ key, category: lockedCategory });
+      } else if (counts[key] > 1) {
         universal.push(key);
       } else {
         specific.push({ key, category: categoriesPerMorph[key][0] });
