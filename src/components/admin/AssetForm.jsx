@@ -1,20 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Camera, Star, Trash2 } from "lucide-react";
-import { pb } from "@/stores/useConfiguratorStore";
-import { uploadToR2 } from "@/lib/r2Upload";
-import { toast } from "@/components/ui/primitives/Toast";
-import { Spinner } from "@/components/ui/primitives/Spinner";
-import AssetPreview from "./AssetPreview";
-import BlendshapeSection from "./BlendshapeSection";
-import { THUMBNAIL_BG_COLORS } from "./thumbnailBackgrounds";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/primitives/Spinner";
+import { toast } from "@/components/ui/primitives/Toast";
 import {
   Select,
   SelectContent,
@@ -22,7 +18,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { uploadToR2 } from "@/lib/r2Upload";
 import { cn } from "@/lib/utils";
+import { pb } from "@/stores/useConfiguratorStore";
+import BlendshapeSection from "./BlendshapeSection";
+import { THUMBNAIL_BG_COLORS } from "./thumbnailBackgrounds";
+
+// Client-only: AssetPreview mounts an EngineCanvas (three/webgpu). Lazy so
+// the admin form shell renders without the engine in its first-load JS.
+const AssetPreview = dynamic(() => import("./AssetPreview"), { ssr: false });
 
 const ANY_GENDER = "__any__";
 
@@ -61,7 +65,11 @@ const AssetForm = ({ asset = null }) => {
       pb.collection("CharacterStudioGroups").getFullList({ sort: "+position" }),
       pb
         .collection("CharacterStudioAssets")
-        .getList(1, 200, { sort: "-created", expand: "gender", skipTotal: true }),
+        .getList(1, 200, {
+          sort: "-created",
+          expand: "gender",
+          skipTotal: true,
+        }),
     ])
       .then(([g, a]) => {
         setGroups(g);
@@ -256,9 +264,7 @@ const AssetForm = ({ asset = null }) => {
       }
 
       const record = asset
-        ? await pb
-            .collection("CharacterStudioAssets")
-            .update(asset.id, payload)
+        ? await pb.collection("CharacterStudioAssets").update(asset.id, payload)
         : await pb.collection("CharacterStudioAssets").create(payload);
 
       if (canBeDefault && selectedGroup && defaultField) {
@@ -310,9 +316,7 @@ const AssetForm = ({ asset = null }) => {
               required
               type="text"
               value={form.name}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, name: e.target.value }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
           </div>
 
@@ -504,9 +508,7 @@ const AssetForm = ({ asset = null }) => {
               onClick={async () => {
                 if (!confirm(`Delete "${asset.name}"?`)) return;
                 try {
-                  await pb
-                    .collection("CharacterStudioAssets")
-                    .delete(asset.id);
+                  await pb.collection("CharacterStudioAssets").delete(asset.id);
                   toast.success("Asset deleted");
                   router.push("/admin");
                 } catch (err) {
@@ -536,7 +538,9 @@ const AssetForm = ({ asset = null }) => {
           Drag to rotate, scroll to zoom. The snapshot uses the current camera
           angle.
         </p>
-        {modelUrl && !isTexture && <BlendshapeSection morphs={detectedMorphs} />}
+        {modelUrl && !isTexture && (
+          <BlendshapeSection morphs={detectedMorphs} />
+        )}
       </div>
     </form>
   );

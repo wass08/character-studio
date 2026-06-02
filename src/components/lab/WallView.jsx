@@ -1,10 +1,14 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import HubHeader from "@/components/shell/HubHeader";
 import { cn } from "@/lib/utils";
 import { pb } from "@/stores/useConfiguratorStore";
-import WallScene from "./WallScene";
+
+// Client-only: WallScene mounts an EngineCanvas (three/webgpu). Splitting it
+// keeps the engine bundle out of the /lab/wall first-load JS.
+const WallScene = dynamic(() => import("./WallScene"), { ssr: false });
 
 const WALL_LIMIT = 8;
 

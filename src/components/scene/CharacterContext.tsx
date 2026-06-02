@@ -1,9 +1,28 @@
 "use client";
 
 import { createContext, type ReactNode, useContext } from "react";
-import type { MeshStandardMaterial } from "three";
+import { MeshStandardMaterial } from "three";
 import { useShallow } from "zustand/react/shallow";
-import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
+import {
+  DEFAULT_SKIN_COLOR,
+  useConfiguratorStore,
+} from "@/stores/useConfiguratorStore";
+
+// The shared skin material lives on the store but is a three.js object, so
+// it's created here in the engine chunk (where `three` is already loaded)
+// rather than at store-init — that keeps `three` out of the app-wide store
+// bundle. This module is imported by every engine leaf (Asset, Avatar,
+// SkinManager) and evaluates before any of them render, so `skin` is
+// populated before it's read. updateSkin/SkinManager re-apply the actual
+// character colour + texture afterward, so the placeholder colour is fine.
+if (!useConfiguratorStore.getState().skin) {
+  useConfiguratorStore.setState({
+    skin: new MeshStandardMaterial({
+      color: DEFAULT_SKIN_COLOR,
+      roughness: 1,
+    }),
+  });
+}
 
 /**
  * The single React context every engine leaf reads from to render one

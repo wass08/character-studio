@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import Scene from "@/components/scene/Scene";
+import Scene from "@/components/scene/SceneDynamic";
 import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
 import PhotoGalleryBox from "@/components/ui/PhotoGalleryBox/PhotoGalleryBox";
 import PhotoGallerySheet from "@/components/ui/PhotoGalleryBox/PhotoGallerySheet";

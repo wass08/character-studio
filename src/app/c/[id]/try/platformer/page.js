@@ -1,5 +1,5 @@
 import CharacterScopedPlay from "@/components/play/CharacterScopedPlay";
-import PlatformerView from "@/components/play/PlatformerView";
+import PlatformerView from "@/components/play/PlatformerViewDynamic";
 
 export const metadata = { title: "Try in Platformer — Character Studio" };
 
