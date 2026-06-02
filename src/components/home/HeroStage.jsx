@@ -1,15 +1,17 @@
 "use client";
 
-import { Environment } from "@react-three/drei";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import Avatar from "@/components/scene/Avatar";
-import { StoreCharacterProvider } from "@/components/scene/CharacterContext";
 import IdleJuice from "@/components/scene/IdleJuice";
-import { EngineCanvas } from "@/components/scene/EngineCanvas";
 import { Button } from "@/components/ui/button";
+
+// Client-only: the hero's three.js/WebGPU engine streams in as its own
+// chunk after the copy + CTA have painted (see HeroCanvas).
+const HeroCanvas = dynamic(() => import("./HeroCanvas"), { ssr: false });
+
 import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 
 /**
@@ -134,45 +136,7 @@ const HeroStage = () => {
           transition={{ duration: 1, delay: 0.15 }}
           className="relative h-[420px] w-full overflow-hidden rounded-2xl md:h-[520px] lg:h-[600px]"
         >
-          <EngineCanvas
-            dpr={[1, 1.5]}
-            shadows={false}
-            camera={{ position: [0, 1.05, -3.6], fov: 38 }}
-            // R3F's default lookAt is origin (feet). Aim at chest height
-            // so the head sits in the upper third of the frame.
-            onCreated={({ camera }) => {
-              camera.lookAt(0, 1.0, 0);
-              camera.updateProjectionMatrix();
-            }}
-          >
-            <color attach="background" args={["#1c1c2a"]} />
-            <Environment
-              background={false}
-              environmentIntensity={0.55}
-              environmentRotation={[0, Math.PI / 2, 0]}
-              preset="city"
-            />
-            <ambientLight intensity={0.45} />
-            <hemisphereLight args={["#fff4ec", "#33344a", 0.55]} />
-            <directionalLight
-              position={[-3, 5, -3]}
-              intensity={1.2}
-              color="#ffebe3"
-            />
-            <directionalLight
-              position={[-5, 5, 5]}
-              intensity={1.4}
-              color="#ffebe3"
-            />
-            <directionalLight
-              position={[0.8, 2, -4]}
-              intensity={0.8}
-              color="#fff2e7"
-            />
-            <StoreCharacterProvider>
-              <Avatar />
-            </StoreCharacterProvider>
-          </EngineCanvas>
+          <HeroCanvas />
         </motion.div>
       </div>
     </section>

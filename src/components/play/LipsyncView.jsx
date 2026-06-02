@@ -1,22 +1,29 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Pause, Play, Upload, Volume2 } from "lucide-react";
-import Scene from "@/components/scene/Scene";
-import LipsyncDriver from "@/components/scene/LipsyncDriver";
-import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
+import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
+import Scene from "@/components/scene/SceneDynamic";
 import { Button } from "@/components/ui/button";
-import PlayShell from "./PlayShell";
-import NoCharacterOverlay from "./NoCharacterOverlay";
-import {
-  pb,
-  PHOTO_POSES,
-  useConfiguratorStore,
-  UI_MODES,
-} from "@/stores/useConfiguratorStore";
-import { getLipsync } from "@/lib/lipsync";
+import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
 import { toast } from "@/components/ui/primitives/Toast";
+import { getLipsync } from "@/lib/lipsync";
 import { cn } from "@/lib/utils";
+import {
+  PHOTO_POSES,
+  pb,
+  UI_MODES,
+  useConfiguratorStore,
+} from "@/stores/useConfiguratorStore";
+import NoCharacterOverlay from "./NoCharacterOverlay";
+import PlayShell from "./PlayShell";
+
+// Renders inside the canvas; lazy so its three / @react-three/fiber imports
+// stay out of the route's first-load JS and land in the engine chunk.
+const LipsyncDriver = dynamic(
+  () => import("@/components/scene/LipsyncDriver"),
+  { ssr: false },
+);
 
 // Maps the active character's gender onto the voice-preset filter so the
 // player opens already showing the most relevant voices.

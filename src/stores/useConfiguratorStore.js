@@ -1,5 +1,4 @@
 import PocketBase from "pocketbase";
-import { MeshStandardMaterial } from "three";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -13,7 +12,7 @@ export const pb = new PocketBase(pocketBaseUrl);
 const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const randFloat = (min, max) => Math.random() * (max - min) + min;
 
-const DEFAULT_SKIN_COLOR = "#E7AF91";
+export const DEFAULT_SKIN_COLOR = "#E7AF91";
 
 export const hiddenPrefixes = [
   "viseme",
@@ -187,10 +186,12 @@ export const useConfiguratorStore = create(
       height: 1,
       setHeight: (height) => set({ height, isDirty: true }),
       isDirty: false,
-      skin: new MeshStandardMaterial({
-        color: DEFAULT_SKIN_COLOR,
-        roughness: 1,
-      }),
+      // The shared skin material is a three.js object, so it's created
+      // lazily by the engine layer (scene/CharacterContext) once that
+      // client-only chunk loads — keeping `three` out of this store's
+      // module graph, which is imported app-wide. updateSkin + SkinManager
+      // both tolerate `skin` being null until then.
+      skin: null,
       morphValues: {},
       detectedMorphsByCategory: {},
       detectedColorSlotsByCategory: {},

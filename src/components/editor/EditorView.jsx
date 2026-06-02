@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Scene from "@/components/scene/Scene";
+import Scene from "@/components/scene/SceneDynamic";
 import UI from "@/components/ui/UI";
 import {
   pb,

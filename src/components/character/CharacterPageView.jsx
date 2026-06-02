@@ -13,7 +13,7 @@ import { motion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import Scene from "@/components/scene/Scene";
+import Scene from "@/components/scene/SceneDynamic";
 import HubHeader from "@/components/shell/HubHeader";
 import { Button } from "@/components/ui/button";
 import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
