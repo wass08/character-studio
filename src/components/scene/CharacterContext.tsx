@@ -93,6 +93,10 @@ export type CharacterContextValue = {
   registerMorphs: (categoryName: string, keys: string[]) => void;
   registerColorSlots: (categoryName: string, slots: string[]) => void;
   setDownload: (downloader: ExportPipeline) => void;
+  // Engine → store feedback while a part swap is preloading. Optional so
+  // non-store providers (read-only plaza surfaces with no asset panel) can
+  // skip it; defaults to a no-op.
+  setAssetLoading?: (categoryName: string, isLoading: boolean) => void;
 };
 
 const CharacterContext = createContext<CharacterContextValue | null>(null);
@@ -133,6 +137,7 @@ export function StoreCharacterProvider({ children }: { children: ReactNode }) {
       registerMorphs: state.registerMorphs,
       registerColorSlots: state.registerColorSlots,
       setDownload: state.setDownload,
+      setAssetLoading: state.setAssetLoading,
     })),
   );
   return (

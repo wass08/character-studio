@@ -13,6 +13,7 @@ import {
 } from "../ShapeKeyControls/ShapeKeyControls";
 import ColorPicker from "../ColorPicker/ColorPicker";
 import { Tooltip } from "../primitives/Tooltip";
+import Spinner from "../Spinner/Spinner";
 import { cn } from "@/lib/utils";
 
 const PILL_SPRING = { type: "spring", stiffness: 380, damping: 32 };
@@ -134,6 +135,7 @@ const AssetsBox = () => {
     lockedGroups,
     customization,
     randomize,
+    assetLoading,
   } = useConfiguratorStore();
 
   const prevGenderRef = useRef(null);
@@ -199,6 +201,10 @@ const AssetsBox = () => {
       currentCategory.name?.toLowerCase() === "skin");
 
   const selectedAssetId = customization[currentCategory?.name]?.asset?.id;
+  // The engine flips this while it preloads the requested part and keeps the
+  // current one on screen. Only the selected (requested) thumbnail can be
+  // pending, so the spinner rides whichever thumbnail the user just applied.
+  const isCurrentCategoryLoading = Boolean(assetLoading?.[currentCategory?.name]);
 
   // No choice to make: required category with a single option.
   const hasNoChoice =
@@ -403,6 +409,7 @@ const AssetsBox = () => {
                     key={asset.id}
                     onClick={() => changeAsset(currentCategory.name, asset)}
                     selected={asset.id === selectedAssetId}
+                    loading={asset.id === selectedAssetId && isCurrentCategoryLoading}
                     label={asset.name}
                     backgroundColor={asset.thumbnailBg}
                   >
@@ -428,7 +435,14 @@ const AssetsBox = () => {
 
 export default AssetsBox;
 
-const AssetButton = ({ children, onClick, selected, label, backgroundColor }) => (
+const AssetButton = ({
+  children,
+  onClick,
+  selected,
+  loading,
+  label,
+  backgroundColor,
+}) => (
   <Tooltip label={label} side="top">
     <Button
       asChild
@@ -454,6 +468,11 @@ const AssetButton = ({ children, onClick, selected, label, backgroundColor }) =>
         style={backgroundColor ? { backgroundColor } : undefined}
       >
         {children}
+        {loading && (
+          <span className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/45 backdrop-blur-[1px]">
+            <Spinner className="h-5 w-5 border-[2.5px]" />
+          </span>
+        )}
       </MotionButton>
     </Button>
   </Tooltip>

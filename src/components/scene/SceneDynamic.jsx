@@ -1,6 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import EngineBoot from "@/components/ui/EngineBoot/EngineBoot";
+// Side-effect import: starts the shared WebGPU device request immediately (at
+// view mount), before the heavy engine chunk below finishes loading — so the
+// device is ready when the canvas mounts and init() resolves before R3F's
+// StrictMode teardown window. three-free, so it doesn't pull in the engine.
+import "@/lib/gpu-device";
 
 /**
  * Client-only boundary for the studio `<Scene>`.
@@ -16,9 +22,13 @@ import dynamic from "next/dynamic";
  * off the server entirely. Consumers import this in place of `./Scene` with
  * no API change — it forwards children and props straight through.
  *
- * The views that render this already overlay their own `<LoadingScreen>` /
- * `<Spinner>` tied to store state, so no `loading` placeholder is needed here.
+ * The `loading` bridge (EngineBoot: logo + spinner) covers the engine-boot gap
+ * — chunk download + WebGPU init — before the canvas is live. Once it is, the
+ * in-canvas 3D diamond takes over until the character's meshes decode.
  */
-const Scene = dynamic(() => import("./Scene"), { ssr: false });
+const Scene = dynamic(() => import("./Scene"), {
+  ssr: false,
+  loading: () => <EngineBoot />,
+});
 
 export default Scene;
