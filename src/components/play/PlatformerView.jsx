@@ -18,6 +18,7 @@ import * as THREE from "three";
 import Avatar from "@/components/scene/Avatar";
 import { StoreCharacterProvider } from "@/components/scene/CharacterContext";
 import { EngineCanvas } from "@/components/scene/EngineCanvas";
+import FrameLimiter from "@/components/scene/FrameLimiter";
 import { UI_MODES, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import NoCharacterOverlay from "./NoCharacterOverlay";
 import PlayShell from "./PlayShell";
@@ -309,11 +310,15 @@ const PlatformerView = () => {
 
   return (
     <PlayShell title="Platformer">
+      {/* frameloop="never" + <FrameLimiter> drive rendering off R3F's `_roots`
+          set, so React StrictMode's deferred `_roots.delete(canvas)` can't
+          freeze the canvas on a cold reload (same cure as the studio Scene). */}
       <EngineCanvas
         shadows
-        frameloop="always"
+        frameloop="never"
         camera={{ position: [0, 4, 8], fov: 50 }}
       >
+        <FrameLimiter fps={60} />
         <PlatformerScene />
       </EngineCanvas>
       <NoCharacterOverlay />
