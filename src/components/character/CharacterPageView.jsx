@@ -16,7 +16,6 @@ import { useEffect, useState } from "react";
 import Scene from "@/components/scene/SceneDynamic";
 import HubHeader from "@/components/shell/HubHeader";
 import { Button } from "@/components/ui/button";
-import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
 import { toast } from "@/components/ui/primitives/Toast";
 import { useAuthStore } from "@/stores/useAuthStore";
 import {
@@ -44,7 +43,6 @@ const CharacterPageView = ({ id }) => {
   const setCreatingNewCharacter = useConfiguratorStore(
     (s) => s.setCreatingNewCharacter,
   );
-  const introFinished = useConfiguratorStore((s) => s.introFinished);
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const userId = useAuthStore((s) => s.user?.id);
   const setLoginDialogOpen = useAuthStore((s) => s.setLoginDialogOpen);
@@ -143,7 +141,6 @@ const CharacterPageView = ({ id }) => {
       <HubHeader variant="fixed" />
       <div className="relative flex-1">
         <Scene />
-        {!introFinished && <LoadingScreen />}
 
         {/* Info panel */}
         <motion.aside

@@ -13,6 +13,15 @@ const workspaceRoot = path.dirname(projectRoot);
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactCompiler: true,
+  // StrictMode is ON. The dev-only mount→unmount→mount races R3F's async
+  // WebGPU renderer init on a cold reload: R3F's deferred `unmountComponentAtNode`
+  // runs a 500ms-later `_roots.delete(canvas)` that drops the root from the
+  // global render loop, freezing the canvas (no error). We handle it without
+  // opting out of StrictMode via: (1) an adapter pre-warm so cold init is fast
+  // enough to usually dodge the window (EngineCanvas), and (2) a frame-stall
+  // watchdog that remounts the Canvas on a fresh node if the loop dies — which
+  // also recovers real GPU device loss (GPUDeviceWatcher + Scene watchdog).
+  reactStrictMode: true,
   turbopack: {
     root: workspaceRoot,
   },

@@ -31,6 +31,21 @@ export const hiddenPrefixes = [
 
 const excludedColorCategories = ["Eyes"];
 
+// In-flight dedup for fetchCategories. The catalog fetch ends by writing the
+// DEFAULT customization, so two concurrent callers (e.g. loadCharacter's
+// internal fetch + GlobalChrome's mount fetch) would each finish and stomp the
+// store — the last writer wins, and defaults can clobber a just-loaded
+// character. Sharing one promise means the catalog (and its default
+// customization) is written exactly once; loadCharacter then applies the real
+// customization after awaiting it.
+let categoriesFetchPromise = null;
+
+// Monotonic token so only the most-recent loadCharacter writes the store. Two
+// can race on a profile page — the route's viewed character and
+// AuthBootstrapper's persisted/main character — and an older one resolving
+// last would clobber the newer with stale (or default-looking) data.
+let loadCharacterSeq = 0;
+
 // Aspect-ratio presets for the Photo Booth crop. Values are width/height.
 // The framing overlay draws a box at this ratio; capturePhoto crops the
 // rendered frame to match. Order = display order in the bottom bar.
@@ -124,13 +139,32 @@ export const useConfiguratorStore = create(
   persist(
     (set, get) => ({
       loading: true,
-      introFinished: false,
-      setIntroFinished: (value) => set({ introFinished: value }),
+      // Per-category "a swap is in flight" flags. The engine sets these while
+      // it preloads a replacement part (GLB or makeup texture) and keeps the
+      // current one on screen; the asset panel reads them to spin the
+      // thumbnail being applied. Keyed by category name.
+      assetLoading: {},
+      setAssetLoading: (categoryName, isLoading) =>
+        set((state) => {
+          if (Boolean(state.assetLoading[categoryName]) === isLoading) {
+            return state;
+          }
+          const next = { ...state.assetLoading };
+          if (isLoading) {
+            next[categoryName] = true;
+          } else {
+            delete next[categoryName];
+          }
+          return { assetLoading: next };
+        }),
       gender: GENDERS.WOMAN,
       // gender: Math.random() > 0.5 ? GENDERS.MAN : GENDERS.WOMAN,
       setGender: (gender) => {
         if (get().gender === gender) return;
 
+        // Any in-flight catalog fetch is for the old gender — drop it so the
+        // next fetchCategories rebuilds with the new gender's assets.
+        categoriesFetchPromise = null;
         set({
           gender: gender,
           loading: true,
@@ -330,8 +364,15 @@ export const useConfiguratorStore = create(
         return updated;
       },
       loadCharacter: async (record) => {
+        const seq = ++loadCharacterSeq;
+        // Cover the whole load with `loading` (drives the boot diamond) so the
+        // avatar never renders the previous/default look before the saved
+        // customization is applied. Cleared by the final set below.
+        set({ loading: true });
         // Switch gender first (this clears state + triggers refetch via AssetsBox).
         if (record.gender && get().gender !== record.gender) {
+          // Drop any old-gender catalog fetch (see setGender).
+          categoriesFetchPromise = null;
           set({
             gender: record.gender,
             loading: true,
@@ -363,6 +404,12 @@ export const useConfiguratorStore = create(
             colors: slot?.colors || {},
           };
         });
+        // A newer loadCharacter started while we were fetching — let it win
+        // rather than clobbering it with this (now stale) character.
+        if (seq !== loadCharacterSeq) return;
+        // Apply the real customization AND clear loading together, so the
+        // diamond only hands off once the saved look is in place (not after the
+        // catalog fetch, which writes defaults first).
         set({
           customization,
           morphValues: record.morphValues || {},
@@ -371,6 +418,7 @@ export const useConfiguratorStore = create(
           currentCharacterName: record.name,
           creatingNewCharacter: false,
           isDirty: false,
+          loading: false,
         });
         const skinColor = customization.Skin?.color;
         if (skinColor) get().updateSkin(skinColor);
@@ -514,47 +562,59 @@ export const useConfiguratorStore = create(
       },
       fetchCategories: async () => {
         if (get().categories.length > 0) return;
+        // Share one in-flight fetch so concurrent callers don't each write the
+        // catalog + default customization (which races loadCharacter's real
+        // customization). See `categoriesFetchPromise`.
+        if (categoriesFetchPromise) return categoriesFetchPromise;
 
-        const currentGender = get().gender;
+        categoriesFetchPromise = (async () => {
+          try {
+            const currentGender = get().gender;
 
-        const [sections, categories, assets] = await Promise.all([
-          pb.collection("CharacterStudioSections").getFullList({
-            sort: "+position",
-            requestKey: null,
-          }),
-          pb.collection("CharacterStudioGroups").getFullList({
-            sort: "+position",
-            expand: "colorPalette,section",
-            requestKey: null,
-          }),
-          pb.collection("CharacterStudioAssets").getFullList({
-            sort: "-created",
-            expand: "gender",
-            requestKey: null,
-          }),
-        ]);
+            const [sections, categories, assets] = await Promise.all([
+              pb.collection("CharacterStudioSections").getFullList({
+                sort: "+position",
+                requestKey: null,
+              }),
+              pb.collection("CharacterStudioGroups").getFullList({
+                sort: "+position",
+                expand: "colorPalette,section",
+                requestKey: null,
+              }),
+              pb.collection("CharacterStudioAssets").getFullList({
+                sort: "-created",
+                expand: "gender",
+                requestKey: null,
+              }),
+            ]);
 
-        categories.forEach((category) => {
-          category.assets = assets.filter(
-            (asset) =>
-              asset.group === category.id &&
-              asset.expand?.gender?.name === currentGender,
-          );
-        });
+            categories.forEach((category) => {
+              category.assets = assets.filter(
+                (asset) =>
+                  asset.group === category.id &&
+                  asset.expand?.gender?.name === currentGender,
+              );
+            });
 
-        const customization = buildDefaultCustomization(
-          categories,
-          currentGender,
-        );
+            const customization = buildDefaultCustomization(
+              categories,
+              currentGender,
+            );
 
-        set({
-          sections,
-          categories,
-          assets,
-          customization,
-          loading: false,
-        });
-        get().applyLockedAssets();
+            set({
+              sections,
+              categories,
+              assets,
+              customization,
+              loading: false,
+            });
+            get().applyLockedAssets();
+          } finally {
+            categoriesFetchPromise = null;
+          }
+        })();
+
+        return categoriesFetchPromise;
       },
 
       setCurrentCategory: (category) => set({ currentCategory: category }),

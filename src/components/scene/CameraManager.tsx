@@ -14,8 +14,13 @@ export const DEFAULT_CAMERA_TARGET: Triplet = [
   0, 0.9652248734528945, 0.5650397082939782,
 ];
 
-export const PHOTO_CAMERA_POSITION: Triplet = [0, 1.4, -3.5];
-export const PHOTO_CAMERA_TARGET: Triplet = [0, 1.0, 0];
+// The avatar's body center sits at z≈0.565 (the customize-mode default
+// target), not z=0. Orbiting around z=0 swung the pivot ~0.5m in front of
+// the character, so rotating threw it off-screen. Re-center the pivot on
+// the body and shift the camera by the same +0.565 so the framing distance
+// (~3.5m) is preserved.
+export const PHOTO_CAMERA_POSITION: Triplet = [0, 1.4, -2.935];
+export const PHOTO_CAMERA_TARGET: Triplet = [0, 1.0, 0.565];
 
 type CameraConfig = {
   bone: string;

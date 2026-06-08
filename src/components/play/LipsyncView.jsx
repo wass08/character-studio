@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import Scene from "@/components/scene/SceneDynamic";
 import { Button } from "@/components/ui/button";
-import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
 import { toast } from "@/components/ui/primitives/Toast";
 import { getLipsync } from "@/lib/lipsync";
 import { cn } from "@/lib/utils";
@@ -47,7 +46,6 @@ const LipsyncView = () => {
   const setPose = useConfiguratorStore((s) => s.setPose);
   const setLipsyncPlaying = useConfiguratorStore((s) => s.setLipsyncPlaying);
   const setVisemes = useConfiguratorStore((s) => s.setVisemes);
-  const introFinished = useConfiguratorStore((s) => s.introFinished);
   const gender = useConfiguratorStore((s) => s.gender);
 
   const [presets, setPresets] = useState([]);
@@ -153,7 +151,6 @@ const LipsyncView = () => {
       <Scene>
         <LipsyncDriver />
       </Scene>
-      {!introFinished && <LoadingScreen />}
       <NoCharacterOverlay />
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-6">

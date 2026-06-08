@@ -10,7 +10,6 @@ import { UI_MODES, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import ShapeKeyControls from "./ShapeKeyControls/ShapeKeyControls";
 import PosesBox from "./PosesBox/PosesBox";
 import ModeSelector from "./ModeSelector/ModeSelector";
-import LoadingScreen from "./LoadingScreen/LoadingScreen";
 import Logo from "./Logo/Logo";
 import IdleJuice from "@/components/scene/IdleJuice";
 import HideUIButton from "./Buttons/HideUIButton/HideUIButton";
@@ -40,12 +39,9 @@ const UI = () => {
 
   const mode = useConfiguratorStore((state) => state.mode);
 
-  const introFinished = useConfiguratorStore((state) => state.introFinished);
-
   return (
     <>
       <Logo />
-      {!introFinished && <LoadingScreen />}
       <ModeSelector />
       <div className="absolute top-5 right-5 z-30 flex items-center gap-2">
         <UserMenu />

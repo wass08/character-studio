@@ -2,7 +2,7 @@
 
 import { pb } from "@/stores/useConfiguratorStore";
 import { useAnimations, useGLTF } from "@react-three/drei";
-import type { ThreeElements } from "@react-three/fiber";
+import { type ThreeElements, useFrame } from "@react-three/fiber";
 import { Suspense, useEffect, useRef } from "react";
 import type {
   AnimationAction,
@@ -12,12 +12,12 @@ import type {
   SkinnedMesh,
 } from "three";
 import { GLTFExporter, SkeletonUtils } from "three-stdlib";
-import { Asset } from "./Asset";
 import {
   type ExportOptions,
   type ExportPipeline,
   useCharacter,
 } from "./CharacterContext";
+import { DeferredAsset } from "./DeferredAsset";
 import { SkinManager } from "./SkinManager";
 
 // ───────── Web Worker bridge ─────────
@@ -117,7 +117,41 @@ export default function Model(props: ModelProps) {
     `/models/characters/${gender}/Animations.glb`,
   ) as unknown as AnimationsGLTF;
 
-  const { actions } = useAnimations(animations, group);
+  const { actions, mixer } = useAnimations(animations, group);
+
+  // R3F runs every useFrame subscriber in one RAF tick with NO per-subscriber
+  // error isolation: if drei's useAnimations `mixer.update(delta)` throws —
+  // which it does when a clip has a track bound to a bone that isn't in the
+  // current rig (a half-applied gender/skeleton swap, a mismatched character) —
+  // the throw stops the RAF chain and freezes the ENTIRE canvas until remount.
+  // Error boundaries can't catch it (it's outside React render). Wrapping
+  // mixer.update means a bad frame is logged and skipped instead of dead.
+  useEffect(() => {
+    // Idempotent: never wrap an already-wrapped update (StrictMode re-run /
+    // HMR / a recovery remount), or we'd nest try/catch layers and, on
+    // cleanup, restore a wrapper instead of the real method. Tag the wrapper
+    // so we can detect + unwrap precisely.
+    type GuardedUpdate = typeof mixer.update & { __guarded?: boolean };
+    if ((mixer.update as GuardedUpdate).__guarded) return;
+    const original = mixer.update.bind(mixer);
+    const guarded = ((delta: number) => {
+      try {
+        return original(delta);
+      } catch (err) {
+        console.warn(
+          "[avatar] animation mixer.update threw — skipping frame",
+          err,
+        );
+        return mixer;
+      }
+    }) as GuardedUpdate;
+    guarded.__guarded = true;
+    mixer.update = guarded;
+    return () => {
+      // Only restore if we're still the active wrapper.
+      if (mixer.update === guarded) mixer.update = original;
+    };
+  }, [mixer]);
 
   useEffect(() => {
     animations.forEach((clip) => {
@@ -159,6 +193,22 @@ export default function Model(props: ModelProps) {
     }
     prevActionRef.current = next;
   }, [actions, activePose]);
+
+  // Self-heal the "stuck in T-pose" race: drei's `actions[name]` is a lazy
+  // getter that returns undefined until the root group's ref is attached, and
+  // the `actions` object is memoized on the clips alone — it never changes
+  // reference when the armature becomes ready. So the play effect above can run
+  // once, get undefined, bail, and never re-fire → the Idle clip never starts.
+  // If nothing has been played yet (prevActionRef null — also reset on every
+  // clip change), start the active clip the first frame it's resolvable. Once
+  // something is playing this no-ops, so it never replays one-shot poses.
+  useFrame(() => {
+    if (prevActionRef.current) return;
+    const next = actions[activePose];
+    if (!next) return;
+    next.reset().fadeIn(0.3).play();
+    prevActionRef.current = next;
+  });
 
   useEffect(() => {
     const link = document.createElement("a");
@@ -267,14 +317,16 @@ export default function Model(props: ModelProps) {
             const isImage = url.match(/\.(png|jpg|jpeg)$/i);
             if (isImage) return null;
 
+            // Keyed by category (not asset.id) so the wrapper persists across
+            // swaps and can keep the old part on screen while the new one
+            // preloads, instead of unmounting into a Suspense gap.
             return (
-              <Suspense key={asset.id}>
-                <Asset
-                  categoryName={key}
-                  url={url}
-                  skeleton={nodes.Plane002.skeleton}
-                />
-              </Suspense>
+              <DeferredAsset
+                key={key}
+                categoryName={key}
+                url={url}
+                skeleton={nodes.Plane002.skeleton}
+              />
             );
           })}
         </group>

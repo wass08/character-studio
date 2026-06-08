@@ -6,11 +6,20 @@ import {
 import { Environment } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { Leva } from "leva";
-import { type ReactNode, useEffect } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import * as THREE from "three";
 import type { Renderer } from "three/webgpu";
 import Avatar from "./Avatar";
+import { BootDiamond } from "./BootDiamond";
 import Backdrop from "./Backdrop";
+import FrameLimiter from "./FrameLimiter";
+import { GPUDeviceWatcher } from "./GPUDeviceWatcher";
 import {
   BACKDROP_PRESETS,
   type BackdropPresetId,
@@ -376,18 +385,51 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
       />
 
       <Avatar key={gender} />
+      {/* First-load placeholder: a lit 3D octahedron that hides the avatar
+          (imperatively) until its meshes decode. Self-contained leaf — never
+          re-renders SceneContent, so the engine scene isn't disturbed. */}
+      <BootDiamond />
       {children}
     </>
   );
 };
 
+const MAX_RECOVERIES = 3; // cap so a permanently-broken GPU can't loop forever
+
 const Scene = ({ children }: { children?: ReactNode }) => {
+  // Bumping this key fully unmounts + remounts the Canvas on a FRESH <canvas>
+  // DOM node → a fresh WebGPURenderer on a clean GPU device. Recovery path for a
+  // real device-loss, triggered by GPUDeviceWatcher. (The StrictMode cold-reload
+  // freeze itself is CURED by <FrameLimiter>, which drives rendering off R3F's
+  // `_roots` set — so no frame-stall watchdog is needed anymore.)
+  const [engineKey, setEngineKey] = useState(0);
+  const recoveriesRef = useRef(0);
+
+  const recover = useCallback(() => {
+    if (recoveriesRef.current >= MAX_RECOVERIES) return;
+    recoveriesRef.current += 1;
+    setEngineKey((k) => k + 1);
+  }, []);
+
   return (
     <>
       <Leva hidden />
-      <EngineCanvas shadows camera={{ fov: 40 }}>
+      {/* frameloop="never" on the PROP (not just imperatively in FrameLimiter):
+          R3F's Canvas re-runs configure() on every re-render and would reset
+          frameloop to the prop, re-activating its internal loop → the mixer
+          would advance twice per frame (double-speed animation). */}
+      <EngineCanvas
+        key={engineKey}
+        frameloop="never"
+        shadows
+        camera={{ fov: 40 }}
+      >
         <StoreCharacterProvider>
+          {/* Drives rendering off `_roots` so R3F's StrictMode teardown can't
+              freeze the canvas (the actual cure). */}
+          <FrameLimiter fps={60} />
           <SceneContent>{children}</SceneContent>
+          <GPUDeviceWatcher onLost={recover} />
         </StoreCharacterProvider>
       </EngineCanvas>
     </>

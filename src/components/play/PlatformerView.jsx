@@ -18,7 +18,6 @@ import * as THREE from "three";
 import Avatar from "@/components/scene/Avatar";
 import { StoreCharacterProvider } from "@/components/scene/CharacterContext";
 import { EngineCanvas } from "@/components/scene/EngineCanvas";
-import LoadingScreen from "@/components/ui/LoadingScreen/LoadingScreen";
 import { UI_MODES, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import NoCharacterOverlay from "./NoCharacterOverlay";
 import PlayShell from "./PlayShell";
@@ -299,7 +298,6 @@ const TOUCH_BTN_CAP = {
 const PlatformerView = () => {
   const setMode = useConfiguratorStore((s) => s.setMode);
   const setGesture = useConfiguratorStore((s) => s.setGesture);
-  const introFinished = useConfiguratorStore((s) => s.introFinished);
 
   useEffect(() => {
     // Start from a clean idle; the AnimationBridge drives the pose from here.
@@ -318,7 +316,6 @@ const PlatformerView = () => {
       >
         <PlatformerScene />
       </EngineCanvas>
-      {!introFinished && <LoadingScreen />}
       <NoCharacterOverlay />
 
       {/* Desktop key hints */}
