@@ -309,6 +309,12 @@ const AssetPreview = forwardRef(
       >
         <img
           src={overlayUrl}
+          // This same URL is later fetched as a WebGL texture with
+          // crossOrigin="anonymous". A plain (no-CORS) <img> request would
+          // cache the CDN response without its Access-Control-Allow-Origin
+          // header (R2 only emits it when the request has an Origin), and the
+          // browser then reuses that entry for the texture fetch → CORS error.
+          crossOrigin="anonymous"
           alt="texture asset"
           className="max-h-[80%] max-w-full rounded-lg object-contain ring-1 ring-white/10"
         />
