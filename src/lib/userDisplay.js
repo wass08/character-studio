@@ -11,11 +11,8 @@ export const needsUsernameSetup = (user) => {
 };
 
 export const getUserDisplayName = (user, fallback = "Creator") => {
-  const name = clean(user?.name);
-  if (name && !isGeneratedUsername(name)) return name;
-
   const username = clean(user?.username);
-  if (username && !isGeneratedUsername(username)) return `@${username}`;
+  if (username && !isGeneratedUsername(username)) return username;
 
   return fallback;
 };

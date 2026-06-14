@@ -13,12 +13,12 @@ import {
 import { Spinner } from "../primitives/Spinner";
 import { toast } from "../primitives/Toast";
 
-const USERNAME_RX = /^[a-z0-9_]{3,28}$/;
+const USERNAME_RX = /^[A-Za-z0-9 _-]{3,40}$/;
 
 const usernameError = (value) => {
   if (!value) return "Choose a username.";
   if (!USERNAME_RX.test(value)) {
-    return "Use 3-28 lowercase letters, numbers, or underscores.";
+    return "Use 3-40 letters, numbers, spaces, underscores, or hyphens.";
   }
   if (isGeneratedUsername(value)) {
     return "Choose a more personal username.";
@@ -54,7 +54,7 @@ const UsernameDialog = () => {
 
   const onSubmit = async (event) => {
     event.preventDefault();
-    const nextUsername = username.trim().toLowerCase();
+    const nextUsername = username.trim().replace(/\s+/g, " ");
     const nextError = usernameError(nextUsername);
     if (nextError) {
       setError(nextError);
@@ -98,21 +98,21 @@ const UsernameDialog = () => {
           <label className="flex flex-col gap-2 text-xs font-medium tracking-tight text-white/70">
             Username
             <div className="flex items-center rounded-lg border border-white/10 bg-white/[0.04] px-3 text-sm text-white focus-within:border-white/35">
-              <span className="text-white/35">@</span>
               <input
                 type="text"
                 autoComplete="username"
                 value={username}
                 onChange={(event) => {
-                  const value = event.target.value
-                    .toLowerCase()
-                    .replace(/[^a-z0-9_]/g, "");
-                  setUsername(value.slice(0, 28));
+                  const value = event.target.value.replace(
+                    /[^A-Za-z0-9 _-]/g,
+                    "",
+                  );
+                  setUsername(value.slice(0, 40));
                   if (error) setError("");
                 }}
                 autoFocus
-                className="min-w-0 flex-1 bg-transparent px-1.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
-                placeholder="creator_name"
+                className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                placeholder="Creator Name"
               />
             </div>
           </label>

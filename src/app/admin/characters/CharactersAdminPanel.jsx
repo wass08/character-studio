@@ -1,14 +1,15 @@
 "use client";
 
+import { ArrowUpRight, Eye, EyeOff, Search, Star, StarOff } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUpRight, EyeOff, Eye, Search, Star, StarOff } from "lucide-react";
 import AdminShell from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { pb } from "@/stores/useConfiguratorStore";
-import { useAuthStore } from "@/stores/useAuthStore";
 import { toast } from "@/components/ui/primitives/Toast";
+import { getUserDisplayName } from "@/lib/userDisplay";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { pb } from "@/stores/useConfiguratorStore";
 
 /**
  * Moderation + curation. Admins see every character (including hidden),
@@ -37,7 +38,7 @@ const CharactersAdminPanel = () => {
     return items.filter(
       (i) =>
         i.name?.toLowerCase().includes(term) ||
-        i.expand?.user?.name?.toLowerCase().includes(term) ||
+        getUserDisplayName(i.expand?.user, "").toLowerCase().includes(term) ||
         i.expand?.user?.email?.toLowerCase().includes(term),
     );
   }, [items, q]);
@@ -49,7 +50,9 @@ const CharactersAdminPanel = () => {
       const updated = await pb
         .collection("CharacterStudioCharacters")
         .update(rec.id, change);
-      setItems((l) => l.map((x) => (x.id === rec.id ? { ...x, ...updated } : x)));
+      setItems((l) =>
+        l.map((x) => (x.id === rec.id ? { ...x, ...updated } : x)),
+      );
     } catch (e) {
       toast.error(e?.message || "Failed");
     } finally {
@@ -94,7 +97,9 @@ const CharactersAdminPanel = () => {
               const featured = !!c.featured;
               const hidden = !!c.hidden;
               const author =
-                c.expand?.user?.name || c.expand?.user?.email || "—";
+                getUserDisplayName(c.expand?.user, "") ||
+                c.expand?.user?.email ||
+                "—";
               return (
                 <div
                   key={c.id}
