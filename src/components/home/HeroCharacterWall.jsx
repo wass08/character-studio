@@ -1,0 +1,89 @@
+"use client";
+
+import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
+import { pb } from "@/stores/useConfiguratorStore";
+
+const WallScene = dynamic(() => import("@/components/lab/WallScene"), {
+  ssr: false,
+});
+
+const HERO_CHARACTER_LIMIT = 8;
+const PUBLIC_CHARACTER_FILTER = 'hidden != true && thumbnail != ""';
+const SKELETON_KEYS = Array.from(
+  { length: HERO_CHARACTER_LIMIT },
+  (_, index) => `hero-wall-skeleton-${index}`,
+);
+
+function HeroWallSkeleton() {
+  return (
+    <div className="grid h-full w-full grid-cols-4 items-end gap-3 p-5">
+      {SKELETON_KEYS.map((key, index) => (
+        <div
+          key={key}
+          className="h-[72%] animate-pulse rounded-lg bg-white/[0.05]"
+          style={{ animationDelay: `${index * 70}ms` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+const HeroCharacterWall = () => {
+  const [items, setItems] = useState([]);
+  const [assetsById, setAssetsById] = useState(() => new Map());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    Promise.all([
+      pb
+        .collection("CharacterStudioCharacters")
+        .getList(1, HERO_CHARACTER_LIMIT, {
+          sort: "@random",
+          filter: PUBLIC_CHARACTER_FILTER,
+          skipTotal: true,
+          expand: "user",
+          requestKey: null,
+        }),
+      pb.collection("CharacterStudioAssets").getFullList({
+        batch: 1000,
+        requestKey: null,
+      }),
+    ])
+      .then(([characters, assets]) => {
+        if (cancelled) return;
+        const map = new Map();
+        for (const asset of assets) map.set(asset.id, asset);
+        setAssetsById(map);
+        setItems(characters.items);
+      })
+      .catch(() => {
+        if (!cancelled) setItems([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) return <HeroWallSkeleton />;
+
+  if (items.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-white/45">
+        No public characters yet.
+      </div>
+    );
+  }
+
+  return (
+    <WallScene characters={items} assetsById={assetsById} variant="hero" />
+  );
+};
+
+export default HeroCharacterWall;

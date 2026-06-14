@@ -11,13 +11,17 @@ import { pb } from "@/stores/useConfiguratorStore";
 const WallScene = dynamic(() => import("./WallScene"), { ssr: false });
 
 const WALL_LIMIT = 8;
+const WALL_SKELETON_KEYS = Array.from(
+  { length: WALL_LIMIT },
+  (_, index) => `lab-wall-skeleton-${index}`,
+);
 
 function WallSkeleton() {
   return (
     <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4">
-      {Array.from({ length: WALL_LIMIT }).map((_, index) => (
+      {WALL_SKELETON_KEYS.map((key) => (
         <div
-          key={index}
+          key={key}
           className={cn(
             "aspect-square animate-pulse rounded-2xl bg-white/[0.04]",
           )}
@@ -85,8 +89,6 @@ export default function WallView() {
               <p className="mt-1 max-w-2xl text-sm tracking-tight text-white/45">
                 Prototype. Renders {renderedCount} random non-hidden characters
                 from PocketBase in one canvas with their saved customization.
-                Skin textures and morphs are not yet wired up (handed to the
-                engine rewrite).
               </p>
             </div>
 

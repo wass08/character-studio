@@ -2,6 +2,7 @@
 
 import { useGLTF } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
+import * as THREE from "three";
 import { pb } from "@/stores/useConfiguratorStore";
 
 function urlOf(asset) {
@@ -11,17 +12,36 @@ function urlOf(asset) {
   return null;
 }
 
-export default function WallAsset({ entry, skeleton }) {
+function cloneWallMaterial(material) {
+  if (!material) return material;
+  if (Array.isArray(material)) return material.map(cloneWallMaterial);
+  if (material.type === "MeshPhysicalMaterial") {
+    const downgraded = new THREE.MeshStandardMaterial();
+    downgraded.copy(material);
+    downgraded.needsUpdate = true;
+    return downgraded;
+  }
+  return material.clone ? material.clone() : material;
+}
+
+export default function WallAsset({ entry, skeleton, skinMaterial }) {
   const asset = entry?.asset;
   const url = urlOf(asset);
 
   if (!url) return null;
   if (/\.(png|jpg|jpeg|webp)$/i.test(url)) return null;
 
-  return <WallAssetGLB url={url} entry={entry} skeleton={skeleton} />;
+  return (
+    <WallAssetGLB
+      url={url}
+      entry={entry}
+      skeleton={skeleton}
+      skinMaterial={skinMaterial}
+    />
+  );
 }
 
-function WallAssetGLB({ url, entry, skeleton }) {
+function WallAssetGLB({ url, entry, skeleton, skinMaterial }) {
   const { scene } = useGLTF(url);
   const colors = entry?.colors || {};
   const fallbackColor = entry?.color;
@@ -32,9 +52,11 @@ function WallAssetGLB({ url, entry, skeleton }) {
 
     scene.traverse((child) => {
       if (child.isMesh && !child.name?.includes("Plane002")) {
+        const matName = child.material?.name || "";
+        const isSkin = matName.toLowerCase().includes("skin");
         out.push({
           geometry: child.geometry,
-          material: child.material,
+          material: isSkin ? skinMaterial : cloneWallMaterial(child.material),
           morphTargetDictionary: child.morphTargetDictionary,
           morphTargetInfluences: child.morphTargetInfluences,
         });
@@ -42,19 +64,28 @@ function WallAssetGLB({ url, entry, skeleton }) {
     });
 
     return out;
-  }, [scene]);
+  }, [scene, skinMaterial]);
 
   useEffect(() => {
-    scene.traverse((child) => {
-      if (!child.isMesh) return;
-
-      const matName = child.material?.name;
+    items.forEach((item) => {
+      const matName = item.material?.name;
       if (!matName?.includes("Color")) return;
 
       const target = colors[matName] || fallbackColor;
-      if (target) child.material.color.set(target);
+      if (target) item.material.color?.set(target);
     });
-  }, [scene, colors, fallbackColor]);
+  }, [items, colors, fallbackColor]);
+
+  useEffect(
+    () => () => {
+      items.forEach((item) => {
+        if (item.material && item.material !== skinMaterial) {
+          item.material.dispose?.();
+        }
+      });
+    },
+    [items, skinMaterial],
+  );
 
   return items.map((item, index) => (
     // geometry.uuid is stable per source-scene mesh, unlike the array
@@ -69,6 +100,7 @@ function WallAssetGLB({ url, entry, skeleton }) {
       material={item.material}
       morphTargetDictionary={item.morphTargetDictionary}
       morphTargetInfluences={item.morphTargetInfluences}
+      frustumCulled={false}
     />
   ));
 }

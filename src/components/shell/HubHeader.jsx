@@ -1,15 +1,18 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import AccountIdentity from "./AccountIdentity";
 import CharacterChip from "./CharacterChip";
 
-// Home has no nav label (the logo carries it). /studio is the user's
-// character library.
-const NAV = [{ href: "/studio", label: "My Characters" }];
+const NAV = [
+  { href: "/community", label: "Community" },
+  { href: "/studio", label: "My Characters" },
+];
 
 /**
  * Persistent top chrome for hub-style pages and experiences.
@@ -22,6 +25,10 @@ const NAV = [{ href: "/studio", label: "My Characters" }];
 // /c/[id]/* page. Hub pages already surface the roster via /studio.
 const isCharacterRoute = (pathname) =>
   !!pathname && (pathname.startsWith("/c/") || pathname.startsWith("/editor"));
+
+const isActiveNavItem = (item, pathname) => {
+  return item.href === "/" ? pathname === "/" : pathname?.startsWith(item.href);
+};
 
 const HubHeader = ({ variant = "hub", className }) => {
   const pathname = usePathname();
@@ -51,10 +58,7 @@ const HubHeader = ({ variant = "hub", className }) => {
 
       <nav className="hidden md:flex items-center gap-1 ml-3">
         {NAV.map((item) => {
-          const active =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname?.startsWith(item.href);
+          const active = isActiveNavItem(item, pathname);
           return (
             <Link
               key={item.href}
@@ -79,6 +83,16 @@ const HubHeader = ({ variant = "hub", className }) => {
 
       <div className="ml-auto flex items-center gap-2">
         {showChip && <CharacterChip />}
+        <Button
+          asChild
+          size="sm"
+          className="hidden h-8 rounded-full bg-white px-3 text-xs font-semibold tracking-tight text-zinc-950 hover:bg-white sm:inline-flex"
+        >
+          <Link href="/editor">
+            <Plus className="h-3.5 w-3.5" />
+            Create
+          </Link>
+        </Button>
         <AccountIdentity />
       </div>
     </header>

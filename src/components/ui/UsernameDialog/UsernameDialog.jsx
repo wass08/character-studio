@@ -1,0 +1,139 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  getUserDisplayName,
+  isGeneratedUsername,
+  normalizeDisplayUsername,
+} from "@/lib/userDisplay";
+import { useAuthStore } from "@/stores/useAuthStore";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "../primitives/Dialog";
+import { Spinner } from "../primitives/Spinner";
+import { toast } from "../primitives/Toast";
+
+const USERNAME_RX = /^[A-Za-z0-9 _-]{3,40}$/;
+
+const usernameError = (value) => {
+  if (!value) return "Choose a username.";
+  if (!USERNAME_RX.test(value)) {
+    return "Use 3-40 letters, numbers, spaces, underscores, or hyphens.";
+  }
+  if (isGeneratedUsername(value)) {
+    return "Choose a more personal username.";
+  }
+  return "";
+};
+
+const apiMessage = (error) =>
+  error?.response?.data?.displayUsername?.message ||
+  error?.response?.data?.username?.message ||
+  error?.response?.message ||
+  error?.message ||
+  "Could not save username";
+
+const UsernameDialog = () => {
+  const open = useAuthStore((s) => s.usernameDialogOpen);
+  const required = useAuthStore((s) => s.usernameDialogRequired);
+  const user = useAuthStore((s) => s.user);
+  const pending = useAuthStore((s) => s.usernameUpdatePending);
+  const completeUsernameSetup = useAuthStore((s) => s.completeUsernameSetup);
+  const closeUsernameDialog = useAuthStore((s) => s.closeUsernameDialog);
+  const [username, setUsername] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    const currentUsername = getUserDisplayName(user, "");
+    setUsername(currentUsername);
+    setError("");
+  }, [open, user]);
+
+  const onSubmit = async (event) => {
+    event.preventDefault();
+    const nextUsername = normalizeDisplayUsername(username);
+    const nextError = usernameError(nextUsername);
+    if (nextError) {
+      setError(nextError);
+      return;
+    }
+
+    try {
+      await completeUsernameSetup(nextUsername);
+      setUsername("");
+      setError("");
+      toast.success("Username saved");
+    } catch (err) {
+      setError(apiMessage(err));
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) closeUsernameDialog();
+      }}
+    >
+      <DialogContent
+        showCloseButton={!required}
+        onEscapeKeyDown={(event) => {
+          if (required) event.preventDefault();
+        }}
+        onPointerDownOutside={(event) => {
+          if (required) event.preventDefault();
+        }}
+      >
+        <DialogTitle>
+          {required ? "Choose a username" : "Update username"}
+        </DialogTitle>
+        <DialogDescription>
+          This is shown with your public characters.
+        </DialogDescription>
+
+        <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-3">
+          <label className="flex flex-col gap-2 text-xs font-medium tracking-tight text-white/70">
+            Username
+            <div className="flex items-center rounded-lg border border-white/10 bg-white/[0.04] px-3 text-sm text-white focus-within:border-white/35">
+              <input
+                type="text"
+                autoComplete="username"
+                value={username}
+                onChange={(event) => {
+                  const value = event.target.value.replace(
+                    /[^A-Za-z0-9 _-]/g,
+                    "",
+                  );
+                  setUsername(value.slice(0, 40));
+                  if (error) setError("");
+                }}
+                autoFocus
+                className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                placeholder="Creator Name"
+              />
+            </div>
+          </label>
+
+          {error && <p className="text-xs text-red-300">{error}</p>}
+
+          <Button
+            type="submit"
+            variant="default"
+            disabled={pending}
+            className="h-auto gap-2 rounded-lg bg-white/15 px-4 py-2.5 text-sm font-medium tracking-tight text-white ring-1 ring-white/25 transition-colors hover:bg-white/20 disabled:opacity-60"
+          >
+            {pending && <Spinner />}
+            <span>{required ? "Save username" : "Update username"}</span>
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default UsernameDialog;

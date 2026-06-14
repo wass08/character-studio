@@ -12,20 +12,6 @@ import { pb } from "@/stores/useConfiguratorStore";
 import { type AssetRecord, useCharacter } from "./CharacterContext";
 import { EngineErrorBoundary } from "./EngineErrorBoundary";
 
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-
-  return debouncedValue;
-}
-
 const isImageUrl = (url: string) => /\.(png|jpg|jpeg|webp)$/i.test(url);
 
 const resolveAssetUrl = (asset: AssetRecord): string | null =>
@@ -55,8 +41,6 @@ export const SkinManager = () => {
 
   const rawSkinColor: string =
     customization.Skin?.color || customization.skin?.color || "#e7a67a";
-
-  const debouncedSkinColor = useDebounce(rawSkinColor, 100);
 
   // Makeup overlays are PNG/JPG textures composited onto the skin map (not
   // meshes). Track the requested url per category so we can both keep the
@@ -90,11 +74,24 @@ export const SkinManager = () => {
   // An overlay set that threw on load (e.g. a stale cross-gender url). Don't
   // retry or commit it — keep the previous composite so the skin never breaks.
   const [failedKey, setFailedKey] = useState("");
-  const pending = committed.key !== requestedKey && requestedKey !== failedKey;
+  const pending =
+    requestedKey !== "" &&
+    committed.key !== requestedKey &&
+    requestedKey !== failedKey;
 
   const commit = useCallback(() => {
     setCommitted({ urls: requestedUrls, key: requestedKey });
   }, [requestedUrls, requestedKey]);
+
+  // Removing the selected makeup yields an empty requested set. There is no
+  // texture to preload in that case, so commit the empty set directly instead
+  // of waiting for SkinTextureGate. Without this, the previously committed
+  // makeup map stays on the skin.
+  useEffect(() => {
+    if (requestedKey !== "") return;
+    if (committed.key !== "") setCommitted({ urls: [], key: "" });
+    if (failedKey !== "") setFailedKey("");
+  }, [requestedKey, committed.key, failedKey]);
 
   // Report per-category loading: a makeup category is loading while its
   // requested texture isn't yet in the committed set. Clear categories we
@@ -114,17 +111,23 @@ export const SkinManager = () => {
       if (!nextFlagged.has(categoryName)) setAssetLoading(categoryName, false);
     });
     flaggedRef.current = nextFlagged;
-  }, [requestedByCategory, committed, requestedKey, failedKey, setAssetLoading]);
+  }, [
+    requestedByCategory,
+    committed,
+    requestedKey,
+    failedKey,
+    setAssetLoading,
+  ]);
 
   // Composite the committed overlays (already decoded → no suspense here).
-  const combinedTexture = useCombinedTexture(committed.urls, debouncedSkinColor);
+  const combinedTexture = useCombinedTexture(committed.urls, rawSkinColor);
 
   useEffect(() => {
-    if (!skinMaterial) return;
-    skinMaterial.color.set(rawSkinColor);
-    skinMaterial.map = combinedTexture ?? null;
+    if (!skinMaterial || !combinedTexture) return;
+    skinMaterial.map = combinedTexture;
+    skinMaterial.color.set("#ffffff");
     skinMaterial.needsUpdate = true;
-  }, [combinedTexture, skinMaterial, rawSkinColor]);
+  }, [combinedTexture, skinMaterial]);
 
   return pending ? (
     <EngineErrorBoundary

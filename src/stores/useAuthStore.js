@@ -1,10 +1,17 @@
 "use client";
 
 import { create } from "zustand";
+import {
+  backendUsernameFromDisplay,
+  isGeneratedUsername,
+  needsUsernameSetup,
+  normalizeDisplayUsername,
+} from "@/lib/userDisplay";
 import { pb, useConfiguratorStore } from "./useConfiguratorStore";
 
 const randomPassword = () =>
   `${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}A1!`;
+const randomUsernameSuffix = () => `_${Math.random().toString(36).slice(2, 6)}`;
 
 export const useAuthStore = create((set, get) => ({
   user: pb.authStore.record,
@@ -12,6 +19,20 @@ export const useAuthStore = create((set, get) => ({
   isAdmin: pb.authStore.record?.role === "admin",
   loginDialogOpen: false,
   setLoginDialogOpen: (open) => set({ loginDialogOpen: open }),
+  usernameDialogOpen:
+    pb.authStore.isValid && needsUsernameSetup(pb.authStore.record),
+  usernameDialogRequired:
+    pb.authStore.isValid && needsUsernameSetup(pb.authStore.record),
+  usernameUpdatePending: false,
+  openUsernameDialog: () =>
+    set({
+      usernameDialogOpen: true,
+      usernameDialogRequired: needsUsernameSetup(get().user),
+    }),
+  closeUsernameDialog: () => {
+    if (needsUsernameSetup(get().user)) return;
+    set({ usernameDialogOpen: false, usernameDialogRequired: false });
+  },
 
   // OTP state
   otpId: null,
@@ -23,21 +44,21 @@ export const useAuthStore = create((set, get) => ({
     if (get().otpRequestPending) return;
     set({ otpRequestPending: true });
     try {
+      const normalizedEmail = email.trim().toLowerCase();
       // Pre-create the user if missing (no signup endpoint with OTP-only).
       // Create is idempotent: ignore "email already in use".
       try {
         const password = randomPassword();
         await pb.collection("users").create({
-          email,
+          email: normalizedEmail,
           password,
           passwordConfirm: password,
         });
       } catch {
-        // 400 with "validation_invalid_email" or "validation_not_unique" → user exists, ignore.
-        // Other errors fall through to requestOTP, which will reveal real problems.
+        // 400 with "validation_invalid_email" or "validation_not_unique" -> user exists, ignore.
       }
-      const result = await pb.collection("users").requestOTP(email);
-      set({ otpId: result.otpId, otpEmail: email });
+      const result = await pb.collection("users").requestOTP(normalizedEmail);
+      set({ otpId: result.otpId, otpEmail: normalizedEmail });
       return result;
     } finally {
       set({ otpRequestPending: false });
@@ -50,15 +71,18 @@ export const useAuthStore = create((set, get) => ({
     set({ otpVerifyPending: true });
     try {
       const result = await pb.collection("users").authWithOTP(otpId, code);
+      const record = result.record;
       set({
         otpId: null,
         otpEmail: null,
         loginDialogOpen: false,
-        user: result.record,
+        usernameDialogOpen: needsUsernameSetup(record),
+        usernameDialogRequired: needsUsernameSetup(record),
+        user: record,
         isLoggedIn: true,
-        isAdmin: result.record?.role === "admin",
+        isAdmin: record?.role === "admin",
       });
-      return result;
+      return { ...result, record };
     } finally {
       set({ otpVerifyPending: false });
     }
@@ -74,16 +98,80 @@ export const useAuthStore = create((set, get) => ({
     useConfiguratorStore
       .getState()
       .setCurrentCharacter({ id: null, name: null });
-    set({ user: null, isLoggedIn: false, isAdmin: false });
+    set({
+      user: null,
+      isLoggedIn: false,
+      isAdmin: false,
+      usernameDialogOpen: false,
+      usernameDialogRequired: false,
+      usernameUpdatePending: false,
+    });
+  },
+
+  completeUsernameSetup: async (username) => {
+    const { user, usernameUpdatePending } = get();
+    if (!user?.id || usernameUpdatePending) return null;
+
+    const displayUsername = normalizeDisplayUsername(username);
+    const needsBackendUsername =
+      !user.username?.trim() || isGeneratedUsername(user.username);
+    let lastError = null;
+
+    set({ usernameUpdatePending: true });
+    try {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const payload = {
+          displayUsername,
+        };
+        if (needsBackendUsername) {
+          payload.username = backendUsernameFromDisplay(
+            displayUsername,
+            attempt > 0 ? randomUsernameSuffix() : "",
+          );
+        }
+
+        try {
+          const updated = await pb.collection("users").update(user.id, payload);
+          pb.authStore.save(pb.authStore.token, updated);
+          set({
+            user: updated,
+            isLoggedIn: pb.authStore.isValid,
+            isAdmin: updated?.role === "admin",
+            usernameDialogOpen: false,
+            usernameDialogRequired: false,
+          });
+          return updated;
+        } catch (err) {
+          lastError = err;
+          if (!needsBackendUsername) throw err;
+        }
+      }
+
+      throw lastError;
+    } finally {
+      set({ usernameUpdatePending: false });
+    }
   },
 }));
 
+const syncAuthState = () => {
+  const record = pb.authStore.record;
+  const requiresUsername = pb.authStore.isValid && needsUsernameSetup(record);
+  useAuthStore.setState({
+    user: record,
+    isLoggedIn: pb.authStore.isValid,
+    isAdmin: record?.role === "admin",
+    usernameDialogOpen: requiresUsername,
+    usernameDialogRequired: requiresUsername,
+  });
+};
+
 if (typeof window !== "undefined") {
   pb.authStore.onChange(() => {
-    useAuthStore.setState({
-      user: pb.authStore.record,
-      isLoggedIn: pb.authStore.isValid,
-      isAdmin: pb.authStore.record?.role === "admin",
-    });
+    syncAuthState();
+  });
+
+  queueMicrotask(() => {
+    syncAuthState();
   });
 }
