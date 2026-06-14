@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { isGeneratedUsername } from "@/lib/userDisplay";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -34,10 +34,23 @@ const apiMessage = (error) =>
 
 const UsernameDialog = () => {
   const open = useAuthStore((s) => s.usernameDialogOpen);
+  const required = useAuthStore((s) => s.usernameDialogRequired);
+  const user = useAuthStore((s) => s.user);
   const pending = useAuthStore((s) => s.usernameUpdatePending);
   const completeUsernameSetup = useAuthStore((s) => s.completeUsernameSetup);
+  const closeUsernameDialog = useAuthStore((s) => s.closeUsernameDialog);
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    const currentUsername =
+      user?.username && !isGeneratedUsername(user.username)
+        ? user.username
+        : "";
+    setUsername(currentUsername);
+    setError("");
+  }, [open, user?.username]);
 
   const onSubmit = async (event) => {
     event.preventDefault();
@@ -59,12 +72,24 @@ const UsernameDialog = () => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) closeUsernameDialog();
+      }}
+    >
       <DialogContent
-        onEscapeKeyDown={(event) => event.preventDefault()}
-        onPointerDownOutside={(event) => event.preventDefault()}
+        showCloseButton={!required}
+        onEscapeKeyDown={(event) => {
+          if (required) event.preventDefault();
+        }}
+        onPointerDownOutside={(event) => {
+          if (required) event.preventDefault();
+        }}
       >
-        <DialogTitle>Choose a username</DialogTitle>
+        <DialogTitle>
+          {required ? "Choose a username" : "Update username"}
+        </DialogTitle>
         <DialogDescription>
           This is shown with your public characters.
         </DialogDescription>
@@ -101,7 +126,7 @@ const UsernameDialog = () => {
             className="h-auto gap-2 rounded-lg bg-white/15 px-4 py-2.5 text-sm font-medium tracking-tight text-white ring-1 ring-white/25 transition-colors hover:bg-white/20 disabled:opacity-60"
           >
             {pending && <Spinner />}
-            <span>Save username</span>
+            <span>{required ? "Save username" : "Update username"}</span>
           </Button>
         </form>
       </DialogContent>

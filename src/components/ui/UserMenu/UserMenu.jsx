@@ -53,6 +53,7 @@ const UserMenu = () => {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const user = useAuthStore((s) => s.user);
   const setLoginDialogOpen = useAuthStore((s) => s.setLoginDialogOpen);
+  const openUsernameDialog = useAuthStore((s) => s.openUsernameDialog);
   const logout = useAuthStore((s) => s.logout);
 
   if (!isLoggedIn) {
@@ -80,15 +81,27 @@ const UserMenu = () => {
 
   return (
     <div className="glass-panel inline-flex h-10 items-center gap-1 rounded-xl px-1 pl-1">
-      <Tooltip label={user?.email || "Account"} side="bottom">
-        <div className="inline-flex h-8 items-center gap-2 rounded-lg px-2 text-xs font-medium tracking-tight text-white/90">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/15 text-[11px] ring-1 ring-white/20">
-            {initial(user)}
-          </span>
-          <span className="max-w-[110px] truncate">
-            {getUserDisplayName(user, "You")}
-          </span>
-        </div>
+      <Tooltip label="Edit username" side="bottom">
+        <Button
+          asChild
+          variant="ghost"
+          className="inline-flex h-8 items-center gap-2 rounded-lg px-2 text-xs font-medium tracking-tight text-white/90 transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <MotionButton
+            type="button"
+            onClick={openUsernameDialog}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.96 }}
+            aria-label="Edit username"
+          >
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/15 text-[11px] ring-1 ring-white/20">
+              {initial(user)}
+            </span>
+            <span className="max-w-[110px] truncate">
+              {getUserDisplayName(user, "You")}
+            </span>
+          </MotionButton>
+        </Button>
       </Tooltip>
       <Tooltip label="Sign out" side="bottom">
         <Button

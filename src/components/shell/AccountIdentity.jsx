@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Settings, User } from "lucide-react";
+import { AtSign, LogOut, Settings, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +27,7 @@ const AccountIdentity = () => {
   const isAdmin = useAuthStore((s) => s.isAdmin);
   const user = useAuthStore((s) => s.user);
   const setLoginDialogOpen = useAuthStore((s) => s.setLoginDialogOpen);
+  const openUsernameDialog = useAuthStore((s) => s.openUsernameDialog);
   const logout = useAuthStore((s) => s.logout);
 
   if (!isLoggedIn) {
@@ -68,6 +69,13 @@ const AccountIdentity = () => {
         >
           <User className="h-3.5 w-3.5 text-white/55" />
           My characters
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={openUsernameDialog}
+          className="cursor-pointer rounded-lg px-3 py-2 text-xs focus:bg-white/[0.06] focus:text-white"
+        >
+          <AtSign className="h-3.5 w-3.5 text-white/55" />
+          Username
         </DropdownMenuItem>
         {isAdmin && (
           <DropdownMenuItem

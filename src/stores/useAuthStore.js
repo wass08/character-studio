@@ -15,7 +15,18 @@ export const useAuthStore = create((set, get) => ({
   setLoginDialogOpen: (open) => set({ loginDialogOpen: open }),
   usernameDialogOpen:
     pb.authStore.isValid && needsUsernameSetup(pb.authStore.record),
+  usernameDialogRequired:
+    pb.authStore.isValid && needsUsernameSetup(pb.authStore.record),
   usernameUpdatePending: false,
+  openUsernameDialog: () =>
+    set({
+      usernameDialogOpen: true,
+      usernameDialogRequired: needsUsernameSetup(get().user),
+    }),
+  closeUsernameDialog: () => {
+    if (needsUsernameSetup(get().user)) return;
+    set({ usernameDialogOpen: false, usernameDialogRequired: false });
+  },
 
   // OTP state
   otpId: null,
@@ -60,6 +71,7 @@ export const useAuthStore = create((set, get) => ({
         otpEmail: null,
         loginDialogOpen: false,
         usernameDialogOpen: needsUsernameSetup(record),
+        usernameDialogRequired: needsUsernameSetup(record),
         user: record,
         isLoggedIn: true,
         isAdmin: record?.role === "admin",
@@ -85,6 +97,7 @@ export const useAuthStore = create((set, get) => ({
       isLoggedIn: false,
       isAdmin: false,
       usernameDialogOpen: false,
+      usernameDialogRequired: false,
       usernameUpdatePending: false,
     });
   },
@@ -104,6 +117,7 @@ export const useAuthStore = create((set, get) => ({
         isLoggedIn: pb.authStore.isValid,
         isAdmin: updated?.role === "admin",
         usernameDialogOpen: false,
+        usernameDialogRequired: false,
       });
       return updated;
     } finally {
@@ -114,11 +128,13 @@ export const useAuthStore = create((set, get) => ({
 
 const syncAuthState = () => {
   const record = pb.authStore.record;
+  const requiresUsername = pb.authStore.isValid && needsUsernameSetup(record);
   useAuthStore.setState({
     user: record,
     isLoggedIn: pb.authStore.isValid,
     isAdmin: record?.role === "admin",
-    usernameDialogOpen: pb.authStore.isValid && needsUsernameSetup(record),
+    usernameDialogOpen: requiresUsername,
+    usernameDialogRequired: requiresUsername,
   });
 };
 
