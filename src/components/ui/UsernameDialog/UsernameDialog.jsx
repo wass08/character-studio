@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { isGeneratedUsername } from "@/lib/userDisplay";
+import {
+  getUserDisplayName,
+  isGeneratedUsername,
+  normalizeDisplayUsername,
+} from "@/lib/userDisplay";
 import { useAuthStore } from "@/stores/useAuthStore";
 import {
   Dialog,
@@ -27,6 +31,7 @@ const usernameError = (value) => {
 };
 
 const apiMessage = (error) =>
+  error?.response?.data?.displayUsername?.message ||
   error?.response?.data?.username?.message ||
   error?.response?.message ||
   error?.message ||
@@ -44,17 +49,14 @@ const UsernameDialog = () => {
 
   useEffect(() => {
     if (!open) return;
-    const currentUsername =
-      user?.username && !isGeneratedUsername(user.username)
-        ? user.username
-        : "";
+    const currentUsername = getUserDisplayName(user, "");
     setUsername(currentUsername);
     setError("");
-  }, [open, user?.username]);
+  }, [open, user]);
 
   const onSubmit = async (event) => {
     event.preventDefault();
-    const nextUsername = username.trim().replace(/\s+/g, " ");
+    const nextUsername = normalizeDisplayUsername(username);
     const nextError = usernameError(nextUsername);
     if (nextError) {
       setError(nextError);

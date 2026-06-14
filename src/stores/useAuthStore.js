@@ -1,11 +1,17 @@
 "use client";
 
 import { create } from "zustand";
-import { needsUsernameSetup } from "@/lib/userDisplay";
+import {
+  backendUsernameFromDisplay,
+  isGeneratedUsername,
+  needsUsernameSetup,
+  normalizeDisplayUsername,
+} from "@/lib/userDisplay";
 import { pb, useConfiguratorStore } from "./useConfiguratorStore";
 
 const randomPassword = () =>
   `${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}A1!`;
+const randomUsernameSuffix = () => `_${Math.random().toString(36).slice(2, 6)}`;
 
 export const useAuthStore = create((set, get) => ({
   user: pb.authStore.record,
@@ -106,20 +112,42 @@ export const useAuthStore = create((set, get) => ({
     const { user, usernameUpdatePending } = get();
     if (!user?.id || usernameUpdatePending) return null;
 
+    const displayUsername = normalizeDisplayUsername(username);
+    const needsBackendUsername =
+      !user.username?.trim() || isGeneratedUsername(user.username);
+    let lastError = null;
+
     set({ usernameUpdatePending: true });
     try {
-      const updated = await pb.collection("users").update(user.id, {
-        username,
-      });
-      pb.authStore.save(pb.authStore.token, updated);
-      set({
-        user: updated,
-        isLoggedIn: pb.authStore.isValid,
-        isAdmin: updated?.role === "admin",
-        usernameDialogOpen: false,
-        usernameDialogRequired: false,
-      });
-      return updated;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const payload = {
+          displayUsername,
+        };
+        if (needsBackendUsername) {
+          payload.username = backendUsernameFromDisplay(
+            displayUsername,
+            attempt > 0 ? randomUsernameSuffix() : "",
+          );
+        }
+
+        try {
+          const updated = await pb.collection("users").update(user.id, payload);
+          pb.authStore.save(pb.authStore.token, updated);
+          set({
+            user: updated,
+            isLoggedIn: pb.authStore.isValid,
+            isAdmin: updated?.role === "admin",
+            usernameDialogOpen: false,
+            usernameDialogRequired: false,
+          });
+          return updated;
+        } catch (err) {
+          lastError = err;
+          if (!needsBackendUsername) throw err;
+        }
+      }
+
+      throw lastError;
     } finally {
       set({ usernameUpdatePending: false });
     }
