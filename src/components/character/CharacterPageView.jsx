@@ -17,6 +17,7 @@ import Scene from "@/components/scene/SceneDynamic";
 import HubHeader from "@/components/shell/HubHeader";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/primitives/Toast";
+import { getUserDisplayName } from "@/lib/userDisplay";
 import { useAuthStore } from "@/stores/useAuthStore";
 import {
   pb,
@@ -86,7 +87,7 @@ const CharacterPageView = ({ id }) => {
   }, [id, loadCharacter]);
 
   const isOwner = record && userId && record.user === userId;
-  const author = record?.expand?.user?.name || "Anonymous";
+  const author = getUserDisplayName(record?.expand?.user, "Anonymous");
 
   const onFork = () => {
     if (!isLoggedIn) {

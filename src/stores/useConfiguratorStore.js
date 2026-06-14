@@ -101,11 +101,14 @@ export const GENDERS = {
   NONE: "none", // In case we don't want to start with a default gender
 };
 
+export const resolveStartingAssetId = (value) =>
+  Array.isArray(value) ? value[0] || "" : value || "";
+
 // Builds the starting customization for a gender from the loaded categories:
 // each category's configured starting asset (per gender), falling back to the
 // first asset for required categories. Shared by the initial category fetch
 // and "start a new character" so both produce an identical default look.
-const buildDefaultCustomization = (categories, gender) => {
+export const buildDefaultCustomization = (categories, gender) => {
   const customization = {};
   categories.forEach((category) => {
     customization[category.name] = {
@@ -114,10 +117,11 @@ const buildDefaultCustomization = (categories, gender) => {
       colors: {},
     };
 
-    const startingAssetId =
+    const startingAssetId = resolveStartingAssetId(
       gender === GENDERS.MAN
         ? category.startingAssetMan
-        : category.startingAssetWoman;
+        : category.startingAssetWoman,
+    );
 
     if (startingAssetId) {
       const foundAsset = category.assets.find((a) => a.id === startingAssetId);
@@ -467,6 +471,12 @@ export const useConfiguratorStore = create(
           }
 
           const id = get().currentCharacterId;
+          if (!thumbBlob && !id) {
+            throw new Error(
+              "Thumbnail capture is not ready yet. Wait for the character preview to finish loading, then save again.",
+            );
+          }
+
           const record = id
             ? await pb
                 .collection("CharacterStudioCharacters")

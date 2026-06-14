@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { LogOut, Settings, User } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,8 +10,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { getUserDisplayName } from "@/lib/userDisplay";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 /**
  * Account-side identity in the chrome.
@@ -41,7 +42,7 @@ const AccountIdentity = () => {
     );
   }
 
-  const display = user?.name || user?.email?.split("@")[0] || "You";
+  const display = getUserDisplayName(user, "You");
 
   return (
     <DropdownMenu>

@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "motion/react";
-import { pb } from "@/stores/useConfiguratorStore";
+import Link from "next/link";
+import { getUserDisplayName } from "@/lib/userDisplay";
 import { cn } from "@/lib/utils";
+import { pb } from "@/stores/useConfiguratorStore";
 
 /**
  * Card used by the living wall and the featured row.
@@ -19,14 +20,14 @@ const CharacterCard = ({ character, size = "wall", overlay }) => {
         thumb: size === "featured" ? "512x512" : "256x256",
       })
     : null;
-  const author = character.expand?.user?.name;
+  const author = getUserDisplayName(character.expand?.user, "");
 
   return (
     <motion.div
       whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 380, damping: 28 }}
       className={cn(
-        "group relative isolate overflow-hidden rounded-2xl bg-zinc-900 ring-1 ring-white/10 transition-shadow hover:ring-white/25",
+        "group relative isolate overflow-hidden rounded-lg bg-zinc-900 ring-1 ring-white/10 transition-shadow hover:ring-white/25",
         size === "wall" && "aspect-square",
         size === "featured" && "aspect-[3/4]",
         size === "owned" && "aspect-square",

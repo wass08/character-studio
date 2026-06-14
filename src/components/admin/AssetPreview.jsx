@@ -1,8 +1,10 @@
 "use client";
 
+import { Environment, OrbitControls, useGLTF } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
 import {
-  Suspense,
   forwardRef,
+  Suspense,
   useCallback,
   useEffect,
   useImperativeHandle,
@@ -10,14 +12,29 @@ import {
   useRef,
   useState,
 } from "react";
-import { useThree } from "@react-three/fiber";
-import { Environment, OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import {
+  BACKDROP_PRESETS,
+  DEFAULT_BACKDROP,
+} from "@/components/scene/backdropPresets";
 import { EngineCanvas } from "@/components/scene/EngineCanvas";
 import { useCombinedTexture } from "@/hooks/useCombinedTexture";
+import { DEFAULT_SKIN_COLOR } from "@/stores/useConfiguratorStore";
 
-const DEFAULT_SKIN_COLOR = "#e7a67a";
 const IMAGE_RE = /\.(png|jpe?g|webp)$/i;
+const STUDIO_BACKDROP = BACKDROP_PRESETS[DEFAULT_BACKDROP];
+
+function clonePreviewMaterial(material) {
+  if (!material) return material;
+  if (Array.isArray(material)) return material.map(clonePreviewMaterial);
+  if (material.type === "MeshPhysicalMaterial") {
+    const downgraded = new THREE.MeshStandardMaterial();
+    downgraded.copy(material);
+    downgraded.needsUpdate = true;
+    return downgraded;
+  }
+  return material.clone ? material.clone() : material;
+}
 
 // Mirror SkinManager: a texture-only asset (makeup) is composited onto the
 // base models' skin material maps rather than loaded as its own mesh. Loaded
@@ -39,6 +56,7 @@ const SingleModel = ({ url, makeupTexture, onBounds }) => {
     const proxies = [];
     c.traverse((obj) => {
       if (obj.isMesh && obj.name.includes("Plane002")) proxies.push(obj);
+      if (obj.isMesh) obj.material = clonePreviewMaterial(obj.material);
     });
     proxies.forEach((p) => {
       p.parent?.remove(p);
@@ -56,12 +74,16 @@ const SingleModel = ({ url, makeupTexture, onBounds }) => {
       skinMats.push(mat);
     });
     skinMats.forEach((mat) => {
-      mat.map = makeupTexture ?? null;
+      if (makeupTexture) {
+        mat.map = makeupTexture;
+        mat.color?.set("#ffffff");
+      } else {
+        mat.color?.set(DEFAULT_SKIN_COLOR);
+      }
       mat.needsUpdate = true;
     });
     return () => {
       skinMats.forEach((mat) => {
-        mat.map = null;
         mat.needsUpdate = true;
       });
     };
@@ -106,6 +128,10 @@ const SingleModel = ({ url, makeupTexture, onBounds }) => {
 const Models = ({ urls, textureUrl, onFit, onMorphsDetected }) => {
   const [makeupTexture, setMakeupTexture] = useState(null);
   const dataRef = useRef(new Map());
+
+  useEffect(() => {
+    if (!textureUrl) setMakeupTexture(null);
+  }, [textureUrl]);
 
   // Recreated when the model set changes — every mounted SingleModel then
   // re-reports (its effect depends on this), and stale urls are pruned, so
@@ -254,120 +280,160 @@ const CornerBracket = ({ className = "" }) => (
 );
 
 const AssetPreview = forwardRef(
-  ({ url, textureUrl = null, height = 360, backgroundColor = null, onMorphsDetected }, ref) => {
-  const innerRef = useRef(null);
-  const [fit, setFit] = useState(null);
+  (
+    {
+      url,
+      textureUrl = null,
+      height = 360,
+      backgroundColor = null,
+      onMorphsDetected,
+    },
+    ref,
+  ) => {
+    const innerRef = useRef(null);
+    const [fit, setFit] = useState(null);
 
-  // GLBs to render in 3D. `url` may be a single GLB (a normal asset) or an
-  // array (the full default character a makeup texture sits on top of). Image
-  // urls are stripped here so they never reach useGLTF, which would parse the
-  // PNG as JSON and crash.
-  const modelUrls = useMemo(() => {
-    const list = Array.isArray(url) ? url : url ? [url] : [];
-    return list.filter((u) => u && !IMAGE_RE.test(u));
-  }, [url]);
-  const overlayUrl =
-    textureUrl ||
-    (typeof url === "string" && IMAGE_RE.test(url) ? url : null);
-  const hasModels = modelUrls.length > 0;
+    // GLBs to render in 3D. `url` may be a single GLB (a normal asset) or an
+    // array (the full default character a makeup texture sits on top of). Image
+    // urls are stripped here so they never reach useGLTF, which would parse the
+    // PNG as JSON and crash.
+    const modelUrls = useMemo(() => {
+      const list = Array.isArray(url) ? url : url ? [url] : [];
+      return list.filter((u) => u && !IMAGE_RE.test(u));
+    }, [url]);
+    const overlayUrl =
+      textureUrl ||
+      (typeof url === "string" && IMAGE_RE.test(url) ? url : null);
+    const hasModels = modelUrls.length > 0;
 
-  useImperativeHandle(ref, () => ({
-    capture: (size) => innerRef.current?.capture(size),
-  }));
+    useImperativeHandle(ref, () => ({
+      capture: (size) => innerRef.current?.capture(size),
+    }));
 
-  useEffect(() => {
-    setFit(null);
-  }, [modelUrls]);
+    useEffect(() => {
+      void modelUrls;
+      setFit(null);
+    }, [modelUrls]);
 
-  // R3F's ResizeObserver can miss the initial size when mounted inside a
-  // grid column whose width is computed after layout. Nudge a resize on
-  // mount so the canvas fills the wrapper.
-  useEffect(() => {
-    if (!hasModels) return;
-    const t = setTimeout(() => window.dispatchEvent(new Event("resize")), 50);
-    return () => clearTimeout(t);
-  }, [hasModels]);
+    // R3F's ResizeObserver can miss the initial size when mounted inside a
+    // grid column whose width is computed after layout. Nudge a resize on
+    // mount so the canvas fills the wrapper.
+    useEffect(() => {
+      if (!hasModels) return;
+      const t = setTimeout(() => window.dispatchEvent(new Event("resize")), 50);
+      return () => clearTimeout(t);
+    }, [hasModels]);
 
-  if (!hasModels && !overlayUrl) {
-    return (
-      <div
-        style={{ height }}
-        className="flex items-center justify-center rounded-xl border border-dashed border-white/10 bg-black/20 text-xs text-white/40"
-      >
-        Upload a .glb or texture to preview
-      </div>
-    );
-  }
+    if (!hasModels && !overlayUrl) {
+      return (
+        <div
+          style={{ height }}
+          className="flex items-center justify-center rounded-xl border border-dashed border-white/10 bg-black/20 text-xs text-white/40"
+        >
+          Upload a .glb or texture to preview
+        </div>
+      );
+    }
 
-  // Texture with no base models to paint it onto — show the flat image while
-  // the default character resolves, or as a fallback when none is available.
-  if (!hasModels && overlayUrl) {
-    return (
-      <div
-        style={{ height, backgroundColor: backgroundColor || "#1a1a22" }}
-        className="relative flex flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border border-white/10 p-4"
-      >
-        <img
-          src={overlayUrl}
-          // This same URL is later fetched as a WebGL texture with
-          // crossOrigin="anonymous". A plain (no-CORS) <img> request would
-          // cache the CDN response without its Access-Control-Allow-Origin
-          // header (R2 only emits it when the request has an Origin), and the
-          // browser then reuses that entry for the texture fetch → CORS error.
-          crossOrigin="anonymous"
-          alt="texture asset"
-          className="max-h-[80%] max-w-full rounded-lg object-contain ring-1 ring-white/10"
-        />
-        <span className="rounded-full bg-black/55 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white/70">
-          Texture preview
-        </span>
-      </div>
-    );
-  }
-
-  // When a thumbnail background is picked, render it underneath the model
-  // so the user can preview how the saved tile will look. Falls back to a
-  // checkerboard so transparent pixels read as "transparent".
-  const wrapperStyle = backgroundColor
-    ? { height, backgroundColor }
-    : {
-        height,
-        backgroundImage:
-          "linear-gradient(45deg, rgba(255,255,255,0.04) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.04) 75%), linear-gradient(45deg, rgba(255,255,255,0.04) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.04) 75%)",
-        backgroundSize: "16px 16px",
-        backgroundPosition: "0 0, 8px 8px",
-        backgroundColor: "#1a1a22",
-      };
-
-  return (
-    <div
-      style={wrapperStyle}
-      className="relative overflow-hidden rounded-xl border border-white/10"
-    >
-      <EngineCanvas camera={{ fov: 35, position: [0, 0.4, -3] }}>
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[2, 3, 2]} intensity={1.4} />
-        <directionalLight position={[-2, 2, -1]} intensity={0.6} />
-        <Suspense fallback={null}>
-          <Environment preset="city" environmentIntensity={0.6} />
-          <Models
-            urls={modelUrls}
-            textureUrl={overlayUrl}
-            onFit={setFit}
-            onMorphsDetected={onMorphsDetected}
+    // Texture with no base models to paint it onto — show the flat image while
+    // the default character resolves, or as a fallback when none is available.
+    if (!hasModels && overlayUrl) {
+      return (
+        <div
+          style={{ height, backgroundColor: backgroundColor || "#1a1a22" }}
+          className="relative flex flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border border-white/10 p-4"
+        >
+          <img
+            src={overlayUrl}
+            // This same URL is later fetched as a WebGL texture with
+            // crossOrigin="anonymous". A plain (no-CORS) <img> request would
+            // cache the CDN response without its Access-Control-Allow-Origin
+            // header (R2 only emits it when the request has an Origin), and the
+            // browser then reuses that entry for the texture fetch → CORS error.
+            crossOrigin="anonymous"
+            alt="texture asset"
+            className="max-h-[80%] max-w-full rounded-lg object-contain ring-1 ring-white/10"
           />
-        </Suspense>
-        <FitCamera target={fit} />
-        <OrbitControls
-          makeDefault
-          enableDamping
-          target={fit ? [fit.center.x, fit.center.y, fit.center.z] : [0, 0, 0]}
-        />
-        <SnapshotBridge ref={innerRef} />
-      </EngineCanvas>
-      <SnapshotGuides />
-    </div>
-  );
+          <span className="rounded-full bg-black/55 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white/70">
+            Texture preview
+          </span>
+        </div>
+      );
+    }
+
+    // When a thumbnail background is picked, render it underneath the model
+    // so the user can preview how the saved tile will look. Falls back to a
+    // checkerboard so transparent pixels read as "transparent".
+    const wrapperStyle = backgroundColor
+      ? { height, backgroundColor }
+      : {
+          height,
+          backgroundImage:
+            "linear-gradient(45deg, rgba(255,255,255,0.04) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.04) 75%), linear-gradient(45deg, rgba(255,255,255,0.04) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.04) 75%)",
+          backgroundSize: "16px 16px",
+          backgroundPosition: "0 0, 8px 8px",
+          backgroundColor: "#1a1a22",
+        };
+
+    return (
+      <div
+        style={wrapperStyle}
+        className="relative overflow-hidden rounded-xl border border-white/10"
+      >
+        <EngineCanvas camera={{ fov: 35, position: [0, 0.4, -3] }}>
+          <ambientLight
+            color={STUDIO_BACKDROP.ambient.color}
+            intensity={STUDIO_BACKDROP.ambient.intensity}
+          />
+          <hemisphereLight
+            args={[
+              STUDIO_BACKDROP.hemisphere.sky,
+              STUDIO_BACKDROP.hemisphere.ground,
+              STUDIO_BACKDROP.hemisphere.intensity,
+            ]}
+          />
+          <directionalLight
+            position={[-3, 5, -3]}
+            intensity={STUDIO_BACKDROP.keyLight.intensity}
+            color={STUDIO_BACKDROP.keyLight.color}
+          />
+          <directionalLight
+            position={[-5, 5, 5]}
+            intensity={STUDIO_BACKDROP.fillLight.intensity}
+            color={STUDIO_BACKDROP.fillLight.color}
+          />
+          <directionalLight
+            position={[0.8, 2, -4]}
+            intensity={STUDIO_BACKDROP.rimLight.intensity}
+            color={STUDIO_BACKDROP.rimLight.color}
+          />
+          <Suspense fallback={null}>
+            <Environment
+              background={false}
+              environmentIntensity={STUDIO_BACKDROP.environment.intensity}
+              environmentRotation={[0, Math.PI / 2, 0]}
+              preset={STUDIO_BACKDROP.environment.preset}
+            />
+            <Models
+              urls={modelUrls}
+              textureUrl={overlayUrl}
+              onFit={setFit}
+              onMorphsDetected={onMorphsDetected}
+            />
+          </Suspense>
+          <FitCamera target={fit} />
+          <OrbitControls
+            makeDefault
+            enableDamping
+            target={
+              fit ? [fit.center.x, fit.center.y, fit.center.z] : [0, 0, 0]
+            }
+          />
+          <SnapshotBridge ref={innerRef} />
+        </EngineCanvas>
+        <SnapshotGuides />
+      </div>
+    );
   },
 );
 AssetPreview.displayName = "AssetPreview";

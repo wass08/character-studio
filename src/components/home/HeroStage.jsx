@@ -1,114 +1,79 @@
 "use client";
 
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Compass, Sparkles, UsersRound } from "lucide-react";
 import { motion } from "motion/react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
 import IdleJuice from "@/components/scene/IdleJuice";
 import { Button } from "@/components/ui/button";
 
-// Client-only: the hero's three.js/WebGPU engine streams in as its own
-// chunk after the copy + CTA have painted (see HeroCanvas).
-const HeroCanvas = dynamic(() => import("./HeroCanvas"), { ssr: false });
+// Client-only: the hero's three.js/WebGPU wall streams in as its own
+// chunk after the copy + CTA have painted.
+const HeroCharacterWall = dynamic(() => import("./HeroCharacterWall"), {
+  ssr: false,
+});
 
-import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
+const HERO_SIGNALS = [
+  { value: "GLB", label: "Three.js, Unity, Unreal" },
+  { value: "3D", label: "Editor, poses, voice" },
+  { value: "Open", label: "Source on GitHub" },
+];
 
 /**
- * The homepage hero: one big live 3D character on the right, marketing
- * copy + CTA on the left.
- *
- * The character is whatever sits in `useConfiguratorStore`:
- *   - Signed-in user with a main character → AuthBootstrapper loads it.
- *   - Anonymous user with a persisted `currentCharacterId` → AuthBootstrapper
- *     re-fetches it.
- *   - Otherwise → this component fetches one curator-featured (or most
- *     recent non-hidden) character and loads it as the demo hero.
- *
- * We deliberately reuse the editor's `<Avatar />` and the singleton
- * configurator store rather than spawning per-character clones — the
- * proven path animates correctly. Multi-character "plaza" is the
- * deferred phase 6 of plans/app-nav-and-positioning.md.
+ * The homepage hero: random public characters on the right, marketing copy +
+ * CTA on the left. The wall fetches a fresh random set on each mount instead
+ * of binding the homepage to the viewer's active editor character.
  */
 const HeroStage = () => {
-  const currentCharacterId = useConfiguratorStore((s) => s.currentCharacterId);
-  const loadCharacter = useConfiguratorStore((s) => s.loadCharacter);
-
-  // Run the demo bootstrap exactly once per mount. The ref survives
-  // React strict-mode's mount → unmount → mount without re-dispatching.
-  const triedDemoRef = useRef(false);
-  useEffect(() => {
-    if (currentCharacterId) return;
-    if (triedDemoRef.current) return;
-    triedDemoRef.current = true;
-    (async () => {
-      try {
-        // Featured first, then most-recent non-hidden as fallback.
-        let rec = null;
-        const featured = await pb
-          .collection("CharacterStudioCharacters")
-          .getList(1, 1, {
-            filter: "featured = true && hidden != true",
-            sort: "-updated",
-            skipTotal: true,
-            requestKey: null,
-          });
-        rec = featured.items[0] || null;
-        if (!rec) {
-          const latest = await pb
-            .collection("CharacterStudioCharacters")
-            .getList(1, 1, {
-              filter: "hidden != true",
-              sort: "-updated",
-              skipTotal: true,
-              requestKey: null,
-            });
-          rec = latest.items[0] || null;
-        }
-        // Race guard: AuthBootstrapper may have populated the store
-        // while we were fetching.
-        if (rec && !useConfiguratorStore.getState().currentCharacterId) {
-          await loadCharacter(rec);
-        }
-      } catch {
-        // Quietly fall through — the hero canvas just shows the
-        // default rig (which is invisible, but Featured/Wall below
-        // still carry the page).
-      }
-    })();
-  }, [currentCharacterId, loadCharacter]);
-
   return (
-    <section className="relative mx-auto w-full max-w-7xl px-5 pt-8 pb-12 md:px-8 md:pt-12 md:pb-16">
+    <section className="relative isolate min-h-[calc(100svh-3.75rem)] overflow-hidden border-b border-white/[0.07]">
       <IdleJuice />
-      <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-2 md:gap-12">
-        {/* Marketing copy */}
-        <div className="flex flex-col items-start gap-5">
+      <div className="absolute inset-0">
+        <HeroCharacterWall />
+      </div>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_16%,rgba(255,255,255,0.16),transparent_26rem),radial-gradient(circle_at_18%_20%,rgba(255,196,137,0.14),transparent_30rem)]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,#0a0a0d_0%,rgba(10,10,13,0.92)_28%,rgba(10,10,13,0.56)_56%,rgba(10,10,13,0.08)_100%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-[#0a0a0d] to-transparent"
+      />
+
+      <div className="relative z-10 mx-auto flex min-h-[calc(100svh-3.75rem)] w-full max-w-7xl items-center px-5 py-12 md:px-8 md:py-16">
+        <div className="flex max-w-2xl flex-col items-start gap-6 py-4 lg:py-10">
           <motion.span
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium tracking-tight text-white/75"
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[11px] font-medium tracking-tight text-white/75 backdrop-blur-md"
           >
-            <Sparkles className="h-3 w-3 text-amber-200" />
-            Character Studio
+            <UsersRound className="h-3.5 w-3.5 text-amber-200" />
+            Open 3D character studio
           </motion.span>
           <motion.h1
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="text-4xl font-semibold tracking-tight text-white md:text-5xl lg:text-6xl"
+            className="text-balance text-5xl font-semibold tracking-tight text-white sm:text-6xl lg:text-7xl"
           >
-            Create your character.
+            Make yours.
+            <br />
+            Export anywhere.
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.05 }}
-            className="max-w-xl text-base text-white/65 md:text-lg"
+            className="max-w-xl text-base leading-7 text-white/65 md:text-lg md:leading-8"
           >
-            Build a character that's yours. Pose them, make them speak, take
-            them for a walk — then drop them into whatever you build next.
+            Design a character that feels like yours, tune the look in 3D, test
+            poses and voice, then export a GLB for Three.js, Unity, or Unreal
+            Engine. Share it with the community when it is ready.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -119,25 +84,51 @@ const HeroStage = () => {
             <Button
               asChild
               size="lg"
-              className="h-auto gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold tracking-tight text-zinc-950 shadow-[0_0_32px_rgba(255,255,255,0.18)] hover:bg-white hover:scale-[1.02] transition-transform"
+              className="h-auto gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold tracking-tight text-zinc-950 shadow-[0_0_32px_rgba(255,255,255,0.18)] transition-transform hover:scale-[1.02] hover:bg-white"
             >
               <Link href="/editor">
                 Create your character
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="ghost"
+              className="h-auto gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold tracking-tight text-white hover:bg-white/10 hover:text-white"
+            >
+              <Link href="/community">
+                Explore community
+                <Compass className="h-4 w-4" />
+              </Link>
+            </Button>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.16 }}
+            className="hidden w-full max-w-xl grid-cols-3 gap-2 pt-2 sm:grid"
+          >
+            {HERO_SIGNALS.map((signal) => (
+              <div
+                key={signal.label}
+                className="rounded-lg border border-white/10 bg-white/[0.035] px-3 py-3 backdrop-blur"
+              >
+                <div className="text-sm font-semibold tracking-tight text-white">
+                  {signal.value}
+                </div>
+                <div className="mt-1 text-[11px] leading-4 text-white/45">
+                  {signal.label}
+                </div>
+              </div>
+            ))}
           </motion.div>
         </div>
-
-        {/* Live character stage */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.15 }}
-          className="relative h-[420px] w-full overflow-hidden rounded-2xl md:h-[520px] lg:h-[600px]"
-        >
-          <HeroCanvas />
-        </motion.div>
+      </div>
+      <div className="absolute right-5 bottom-6 z-10 hidden items-center gap-2 rounded-full border border-white/10 bg-black/45 px-3 py-1.5 text-[11px] font-medium tracking-tight text-white/65 backdrop-blur-md md:flex">
+        <Sparkles className="h-3.5 w-3.5 text-amber-200" />
+        New lineup every visit
       </div>
     </section>
   );

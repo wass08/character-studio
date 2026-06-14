@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { uploadToR2 } from "@/lib/r2Upload";
 import { cn } from "@/lib/utils";
-import { pb } from "@/stores/useConfiguratorStore";
+import { buildDefaultCustomization, pb } from "@/stores/useConfiguratorStore";
 import BlendshapeSection from "./BlendshapeSection";
 import { THUMBNAIL_BG_COLORS } from "./thumbnailBackgrounds";
 
@@ -63,13 +63,11 @@ const AssetForm = ({ asset = null }) => {
   useEffect(() => {
     Promise.all([
       pb.collection("CharacterStudioGroups").getFullList({ sort: "+position" }),
-      pb
-        .collection("CharacterStudioAssets")
-        .getList(1, 200, {
-          sort: "-created",
-          expand: "gender",
-          skipTotal: true,
-        }),
+      pb.collection("CharacterStudioAssets").getList(1, 200, {
+        sort: "-created",
+        expand: "gender",
+        skipTotal: true,
+      }),
     ])
       .then(([g, a]) => {
         setGroups(g);
@@ -120,7 +118,7 @@ const AssetForm = ({ asset = null }) => {
     const url = URL.createObjectURL(form.modelFile);
     setLocalModelUrl(url);
     return () => URL.revokeObjectURL(url);
-  }, [form.modelFile]);
+  }, [form.modelFile, localModelUrl]);
 
   const modelUrl = useMemo(() => {
     if (localModelUrl) return localModelUrl;
@@ -145,6 +143,7 @@ const AssetForm = ({ asset = null }) => {
   // Reset detected morphs when the model source changes — the Model effect
   // in AssetPreview will repopulate from the newly-loaded scene.
   useEffect(() => {
+    void modelUrl;
     setDetectedMorphs([]);
   }, [modelUrl]);
 
@@ -181,19 +180,26 @@ const AssetForm = ({ asset = null }) => {
     const resolve = async () => {
       const all = await pb
         .collection("CharacterStudioAssets")
-        .getFullList({ filter: `gender = "${form.gender}"` })
+        .getFullList({
+          filter: `gender = "${form.gender}"`,
+          sort: "-created",
+        })
         .catch(() => null);
       if (cancelled || !all) {
         if (!cancelled) setBaseModelUrls([]);
         return;
       }
       const urls = [];
-      for (const group of groups) {
-        const groupAssets = all.filter((a) => a.group === group.id);
-        let pick = group[defaultField]
-          ? groupAssets.find((a) => a.id === group[defaultField])
-          : null;
-        if (!pick && !group.optional) pick = groupAssets[0];
+      const groupsWithAssets = groups.map((group) => ({
+        ...group,
+        assets: all.filter((a) => a.group === group.id),
+      }));
+      const defaultCustomization = buildDefaultCustomization(
+        groupsWithAssets,
+        selectedGenderName,
+      );
+      for (const entry of Object.values(defaultCustomization)) {
+        const pick = entry?.asset;
         if (!pick) continue;
         const url =
           pick.r2Url || (pick.url ? pb.files.getURL(pick, pick.url) : null);
@@ -206,7 +212,7 @@ const AssetForm = ({ asset = null }) => {
     return () => {
       cancelled = true;
     };
-  }, [isTexture, form.gender, groups, defaultField]);
+  }, [isTexture, form.gender, groups, defaultField, selectedGenderName]);
 
   const snapshot = async () => {
     if (!previewRef.current) return;
@@ -480,8 +486,12 @@ const AssetForm = ({ asset = null }) => {
           </div>
 
           {canBeDefault && (
-            <label className="flex cursor-pointer items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm">
+            <Label
+              htmlFor="asset-default-toggle"
+              className="flex cursor-pointer items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm"
+            >
               <Checkbox
+                id="asset-default-toggle"
                 checked={isDefault}
                 onCheckedChange={(v) => setIsDefault(Boolean(v))}
               />
@@ -492,7 +502,7 @@ const AssetForm = ({ asset = null }) => {
                   {selectedGroup?.name}
                 </span>
               </span>
-            </label>
+            </Label>
           )}
 
           <Button type="submit" disabled={busy} className="mt-2">

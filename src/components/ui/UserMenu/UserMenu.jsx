@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
+import { getUserDisplayName } from "@/lib/userDisplay";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { Tooltip } from "../primitives/Tooltip";
 
@@ -15,6 +16,7 @@ const UserIcon = () => (
     strokeWidth={1.5}
     stroke="currentColor"
     className="h-5 w-5"
+    aria-hidden="true"
   >
     <path
       strokeLinecap="round"
@@ -32,6 +34,7 @@ const LogoutIcon = () => (
     strokeWidth={1.5}
     stroke="currentColor"
     className="h-5 w-5"
+    aria-hidden="true"
   >
     <path
       strokeLinecap="round"
@@ -42,7 +45,7 @@ const LogoutIcon = () => (
 );
 
 const initial = (user) => {
-  const src = user?.name || user?.email || "?";
+  const src = getUserDisplayName(user, "You");
   return src.trim().charAt(0).toUpperCase();
 };
 
@@ -83,7 +86,7 @@ const UserMenu = () => {
             {initial(user)}
           </span>
           <span className="max-w-[110px] truncate">
-            {user?.name || user?.email?.split("@")[0] || "You"}
+            {getUserDisplayName(user, "You")}
           </span>
         </div>
       </Tooltip>

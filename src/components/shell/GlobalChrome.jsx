@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import AuthDialog from "@/components/ui/AuthDialog/AuthDialog";
+import { useEffect } from "react";
 import AuthBootstrapper from "@/components/ui/AuthBootstrapper";
+import AuthDialog from "@/components/ui/AuthDialog/AuthDialog";
+import UsernameDialog from "@/components/ui/UsernameDialog/UsernameDialog";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 
 /**
@@ -32,6 +33,7 @@ const GlobalChrome = () => {
   const gender = useConfiguratorStore((s) => s.gender);
 
   useEffect(() => {
+    void gender;
     fetchCategories().catch(() => {});
   }, [fetchCategories, gender]);
 
@@ -46,6 +48,7 @@ const GlobalChrome = () => {
   return (
     <>
       <AuthDialog />
+      <UsernameDialog />
       <AuthBootstrapper />
     </>
   );
