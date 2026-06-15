@@ -109,16 +109,13 @@ const AssetForm = ({ asset = null }) => {
 
   useEffect(() => {
     if (!form.modelFile) {
-      if (localModelUrl) {
-        URL.revokeObjectURL(localModelUrl);
-        setLocalModelUrl(null);
-      }
+      setLocalModelUrl(null);
       return;
     }
     const url = URL.createObjectURL(form.modelFile);
     setLocalModelUrl(url);
     return () => URL.revokeObjectURL(url);
-  }, [form.modelFile, localModelUrl]);
+  }, [form.modelFile]);
 
   const modelUrl = useMemo(() => {
     if (localModelUrl) return localModelUrl;
