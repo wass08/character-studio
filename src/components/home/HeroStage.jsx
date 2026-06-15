@@ -26,22 +26,26 @@ const HERO_SIGNALS = [
  */
 const HeroStage = () => {
   return (
-    <section className="relative isolate min-h-[calc(100svh-3.75rem)] overflow-hidden border-b border-white/[0.07]">
+    <section className="relative isolate min-h-[calc(100svh-3.75rem)] overflow-hidden border-b border-white/[0.07] bg-[#08080b]">
       <IdleJuice />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,#08080b_0%,#141119_44%,#1d1913_66%,#09090c_100%)]"
+      />
       <div className="absolute inset-0">
         <HeroCharacterWall />
       </div>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_16%,rgba(255,255,255,0.16),transparent_26rem),radial-gradient(circle_at_18%_20%,rgba(255,196,137,0.14),transparent_30rem)]"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(8,8,11,0.97)_0%,rgba(8,8,11,0.84)_29%,rgba(8,8,11,0.44)_54%,rgba(8,8,11,0.06)_100%)]"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,#0a0a0d_0%,rgba(10,10,13,0.92)_28%,rgba(10,10,13,0.56)_56%,rgba(10,10,13,0.08)_100%)]"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-52 bg-[linear-gradient(0deg,#08080b_0%,rgba(8,8,11,0.8)_38%,rgba(8,8,11,0)_100%)]"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-[#0a0a0d] to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(180deg,rgba(8,8,11,0.72)_0%,rgba(8,8,11,0)_100%)]"
       />
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100svh-3.75rem)] w-full max-w-7xl items-center px-5 py-12 md:px-8 md:py-16">
@@ -59,7 +63,7 @@ const HeroStage = () => {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="text-balance text-5xl font-semibold tracking-tight text-white sm:text-6xl lg:text-7xl"
+            className="text-balance text-5xl font-semibold tracking-tight text-white/95 [text-shadow:0_12px_38px_rgba(0,0,0,0.62)] sm:text-6xl lg:text-7xl"
           >
             Make yours.
             <br />

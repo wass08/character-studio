@@ -5,6 +5,8 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { pb } from "@/stores/useConfiguratorStore";
 
+const noopRaycast = () => {};
+
 function urlOf(asset) {
   if (!asset) return null;
   if (asset.r2Url) return asset.r2Url;
@@ -24,7 +26,21 @@ function cloneWallMaterial(material) {
   return material.clone ? material.clone() : material;
 }
 
-export default function WallAsset({ entry, skeleton, skinMaterial }) {
+function cloneMorphInfluences(influences, dictionary) {
+  const dictionaryLength = dictionary
+    ? Math.max(0, ...Object.values(dictionary)) + 1
+    : 0;
+  const length = Math.max(influences?.length || 0, dictionaryLength);
+  return Array.from({ length }, (_, index) => influences?.[index] || 0);
+}
+
+export default function WallAsset({
+  entry,
+  skeleton,
+  skinMaterial,
+  morphValues = {},
+  onReady,
+}) {
   const asset = entry?.asset;
   const url = urlOf(asset);
 
@@ -37,11 +53,20 @@ export default function WallAsset({ entry, skeleton, skinMaterial }) {
       entry={entry}
       skeleton={skeleton}
       skinMaterial={skinMaterial}
+      morphValues={morphValues}
+      onReady={onReady}
     />
   );
 }
 
-function WallAssetGLB({ url, entry, skeleton, skinMaterial }) {
+function WallAssetGLB({
+  url,
+  entry,
+  skeleton,
+  skinMaterial,
+  morphValues,
+  onReady,
+}) {
   const { scene } = useGLTF(url);
   const colors = entry?.colors || {};
   const fallbackColor = entry?.color;
@@ -58,7 +83,15 @@ function WallAssetGLB({ url, entry, skeleton, skinMaterial }) {
           geometry: child.geometry,
           material: isSkin ? skinMaterial : cloneWallMaterial(child.material),
           morphTargetDictionary: child.morphTargetDictionary,
-          morphTargetInfluences: child.morphTargetInfluences,
+          baseMorphTargetInfluences: cloneMorphInfluences(
+            child.morphTargetInfluences,
+            child.morphTargetDictionary,
+          ),
+          morphTargetInfluences: cloneMorphInfluences(
+            child.morphTargetInfluences,
+            child.morphTargetDictionary,
+          ),
+          isSkinned: child.isSkinnedMesh,
         });
       }
     });
@@ -76,6 +109,31 @@ function WallAssetGLB({ url, entry, skeleton, skinMaterial }) {
     });
   }, [items, colors, fallbackColor]);
 
+  useEffect(() => {
+    onReady?.();
+  }, [onReady]);
+
+  useEffect(() => {
+    items.forEach((item) => {
+      const dict = item.morphTargetDictionary;
+      const influences = item.morphTargetInfluences;
+      if (!dict || !influences) return;
+
+      item.baseMorphTargetInfluences.forEach((value, index) => {
+        influences[index] = value;
+      });
+
+      Object.entries(morphValues || {}).forEach(([key, value]) => {
+        const index = dict[key];
+        if (index === undefined) return;
+        const numeric = Number(value);
+        if (Number.isFinite(numeric)) {
+          influences[index] = THREE.MathUtils.clamp(numeric, -1, 1);
+        }
+      });
+    });
+  }, [items, morphValues]);
+
   useEffect(
     () => () => {
       items.forEach((item) => {
@@ -87,20 +145,43 @@ function WallAssetGLB({ url, entry, skeleton, skinMaterial }) {
     [items, skinMaterial],
   );
 
-  return items.map((item, index) => (
+  return items.map((item, index) => {
+    const setRef = (el) => {
+      meshRefs.current[index] = el;
+    };
+
     // geometry.uuid is stable per source-scene mesh, unlike the array
     // index — keys this map across re-renders even if items reorders.
-    <skinnedMesh
-      key={item.geometry.uuid}
-      ref={(el) => {
-        meshRefs.current[index] = el;
-      }}
-      skeleton={skeleton}
-      geometry={item.geometry}
-      material={item.material}
-      morphTargetDictionary={item.morphTargetDictionary}
-      morphTargetInfluences={item.morphTargetInfluences}
-      frustumCulled={false}
-    />
-  ));
+    if (item.isSkinned) {
+      return (
+        <skinnedMesh
+          key={item.geometry.uuid}
+          ref={setRef}
+          skeleton={skeleton}
+          geometry={item.geometry}
+          material={item.material}
+          morphTargetDictionary={item.morphTargetDictionary}
+          morphTargetInfluences={item.morphTargetInfluences}
+          castShadow
+          receiveShadow
+          frustumCulled={false}
+          raycast={noopRaycast}
+        />
+      );
+    }
+
+    return (
+      <mesh
+        key={item.geometry.uuid}
+        ref={setRef}
+        geometry={item.geometry}
+        material={item.material}
+        morphTargetDictionary={item.morphTargetDictionary}
+        morphTargetInfluences={item.morphTargetInfluences}
+        castShadow
+        receiveShadow
+        raycast={noopRaycast}
+      />
+    );
+  });
 }

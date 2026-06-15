@@ -1,7 +1,7 @@
 "use client";
 
 import { Html } from "@react-three/drei";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { EngineCanvas } from "@/components/scene/EngineCanvas";
 import { getUserDisplayName } from "@/lib/userDisplay";
 import { cn } from "@/lib/utils";
@@ -20,18 +20,18 @@ const WALL_SLOTS = [
 ];
 
 const HERO_SLOTS = [
-  { x: -3.25, z: 0.24, scale: 1.0, rotationY: 0.72 },
-  { x: -2.15, z: -0.82, scale: 1.16, rotationY: -0.28 },
-  { x: -1.05, z: 0.05, scale: 1.04, rotationY: 0.2 },
-  { x: 0.04, z: -0.96, scale: 1.2, rotationY: -0.14 },
-  { x: 1.16, z: -0.18, scale: 1.08, rotationY: 0.34 },
-  { x: 2.2, z: -0.72, scale: 1.16, rotationY: -0.46 },
-  { x: 3.18, z: 0.05, scale: 1.04, rotationY: 0.62 },
-  { x: 4.02, z: -0.55, scale: 1.1, rotationY: -0.82 },
+  { x: -3.55, z: -1.5, scale: 0.92, rotationY: 0.7 },
+  { x: -2.45, z: 0.38, scale: 1.04, rotationY: -0.34 },
+  { x: -1.25, z: -0.86, scale: 0.96, rotationY: 0.22 },
+  { x: -0.12, z: 0.82, scale: 1.08, rotationY: -0.16 },
+  { x: 1.02, z: -1.42, scale: 0.92, rotationY: 0.36 },
+  { x: 2.08, z: 0.68, scale: 1.06, rotationY: -0.48 },
+  { x: 3.18, z: -0.48, scale: 0.98, rotationY: 0.62 },
+  { x: 4.34, z: -1.16, scale: 0.98, rotationY: -0.82 },
 ];
 
 const WALL_CAMERA = { position: [0, 1.45, 10.2], fov: 30 };
-const HERO_CAMERA = { position: [0.6, 1.3, 7.2], fov: 34 };
+const HERO_CAMERA = { position: [0.72, 1.32, 7.05], fov: 34 };
 
 function creatorName(character) {
   return getUserDisplayName(character.expand?.user, "Creator");
@@ -43,7 +43,6 @@ export default function WallScene({
   variant = "wall",
 }) {
   const [hovered, setHovered] = useState(null);
-  const [readyIds, setReadyIds] = useState(() => new Set());
   const compact = variant === "hero";
   const slots = compact ? HERO_SLOTS : WALL_SLOTS;
   const camera = compact ? HERO_CAMERA : WALL_CAMERA;
@@ -52,28 +51,11 @@ export default function WallScene({
     () => characters.slice(0, maxCharacters),
     [characters, maxCharacters],
   );
-  const visibleCharacterKey = useMemo(
-    () => visibleCharacters.map((character) => character.id).join("|"),
-    [visibleCharacters],
-  );
-  const markCharacterReady = useCallback((id) => {
-    setReadyIds((current) => {
-      if (current.has(id)) return current;
-      const next = new Set(current);
-      next.add(id);
-      return next;
-    });
-  }, []);
-
-  useEffect(() => {
-    void visibleCharacterKey;
-    setReadyIds(new Set());
-  }, [visibleCharacterKey]);
 
   return (
     <EngineCanvas
       className="h-full w-full"
-      shadows={false}
+      shadows
       dpr={[1, 1.5]}
       camera={camera}
       onCreated={({ camera, gl }) => {
@@ -86,12 +68,24 @@ export default function WallScene({
       }}
     >
       {!compact && <color attach="background" args={["#101018"]} />}
-      <hemisphereLight args={["#fff4ec", "#33344a", 0.72]} />
-      <ambientLight intensity={0.42} />
+      {compact && <fog attach="fog" args={["#0b0a0d", 6.8, 10.6]} />}
+      <hemisphereLight args={["#fff4ec", "#2f3140", compact ? 0.58 : 0.72]} />
+      <ambientLight intensity={compact ? 0.26 : 0.42} />
       <directionalLight
         position={[-3, 5, 4]}
-        intensity={1.45}
+        intensity={compact ? 1.8 : 1.45}
         color="#ffebe3"
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-near={1}
+        shadow-camera-far={16}
+        shadow-camera-left={-6.2}
+        shadow-camera-right={6.2}
+        shadow-camera-top={5.8}
+        shadow-camera-bottom={-4.2}
+        shadow-bias={-0.0001}
+        shadow-normalBias={0.06}
       />
       <directionalLight position={[3, 4, -2]} intensity={0.9} color="#cfd4ff" />
       <directionalLight
@@ -100,23 +94,35 @@ export default function WallScene({
         color="#ffffff"
       />
 
-      <mesh rotation-x={-Math.PI / 2} position-y={-0.02}>
-        <circleGeometry args={[7.2, 64]} />
+      {compact && (
+        <mesh position={[0.9, 1.24, -2.32]}>
+          <planeGeometry args={[10.6, 3.3]} />
+          <meshBasicMaterial
+            color="#17131a"
+            depthWrite={false}
+            opacity={0.34}
+            transparent
+          />
+        </mesh>
+      )}
+
+      <mesh rotation-x={-Math.PI / 2} position-y={-0.025} receiveShadow>
+        <planeGeometry args={compact ? [11.8, 5.8] : [9.6, 6.8]} />
         <meshStandardMaterial
-          color={compact ? "#242330" : "#1c1d2a"}
-          opacity={compact ? 0.74 : 1}
-          roughness={1}
+          color={compact ? "#242128" : "#1c1d2a"}
+          metalness={0}
+          opacity={compact ? 0.78 : 1}
+          roughness={0.92}
           transparent={compact}
         />
       </mesh>
 
-      <Suspense fallback={null}>
-        {visibleCharacters.map((character, index) => {
-          const slot = slots[index % slots.length];
+      {visibleCharacters.map((character, index) => {
+        const slot = slots[index % slots.length];
 
-          return (
+        return (
+          <Suspense key={character.id} fallback={null}>
             <WallCharacter
-              key={character.id}
               character={character}
               assetsById={assetsById}
               index={index}
@@ -124,35 +130,19 @@ export default function WallScene({
               rotationY={slot.rotationY}
               scale={slot.scale}
               onHover={compact ? undefined : setHovered}
-              onReady={markCharacterReady}
+              label={
+                compact
+                  ? {
+                      name: character.name || "Untitled",
+                      creator: creatorName(character),
+                    }
+                  : null
+              }
+              motionMode={compact ? "hero" : "wall"}
             />
-          );
-        })}
-      </Suspense>
-
-      {compact &&
-        visibleCharacters.map((character, index) => {
-          if (!readyIds.has(character.id)) return null;
-          const slot = slots[index % slots.length];
-
-          return (
-            <group
-              key={`${character.id}-label`}
-              position={[slot.x, 2.08 * slot.scale, slot.z]}
-            >
-              <Html center distanceFactor={7.2}>
-                <div className="min-w-24 whitespace-nowrap rounded-lg border border-white/10 bg-black/55 px-2.5 py-1.5 text-center shadow-[0_12px_28px_rgba(0,0,0,0.28)] backdrop-blur-md">
-                  <div className="max-w-28 truncate text-[11px] font-semibold tracking-tight text-white">
-                    {character.name || "Untitled"}
-                  </div>
-                  <div className="max-w-28 truncate text-[9px] font-medium tracking-tight text-white/50">
-                    by {creatorName(character)}
-                  </div>
-                </div>
-              </Html>
-            </group>
-          );
-        })}
+          </Suspense>
+        );
+      })}
 
       {hovered != null && (
         <group position={hovered.headWorldPos.toArray()}>
