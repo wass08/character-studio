@@ -77,7 +77,7 @@ export const UI_MODES = {
   LIPSYNC: "lipsync",
 };
 
-export const BACKDROP_IDS = ["studio", "sunset", "night"];
+export const BACKDROP_IDS = ["studio", "daylight", "sunset", "night", "rose"];
 
 export const COMPRESSION = {
   NONE: "none",
@@ -738,6 +738,9 @@ export const useConfiguratorStore = create(
         currentCharacterId: state.currentCharacterId,
         currentCharacterName: state.currentCharacterName,
         photoAspectRatio: state.photoAspectRatio,
+        // The backdrop is now switchable from every studio topbar; persist it
+        // so the chosen mood carries across routes and reloads.
+        backdrop: state.backdrop,
       }),
       migrate: (persisted, version) => {
         if (!persisted?.exportSettings) return persisted;

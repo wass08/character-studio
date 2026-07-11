@@ -151,10 +151,21 @@
 
 @utility hub-bg {
   background:
-    radial-gradient(1100px 700px at 20% -10%, rgba(255, 220, 180, 0.10), transparent 65%),
-    radial-gradient(900px 600px at 110% 10%, rgba(135, 110, 255, 0.12), transparent 65%),
-    radial-gradient(1200px 800px at 50% 110%, rgba(255, 255, 255, 0.06), transparent 70%),
-    #0a0a0d;
+    radial-gradient(
+      1100px 700px at 20% -10%,
+      rgba(255, 220, 180, 0.1),
+      transparent 65%
+    ),
+    radial-gradient(
+      900px 600px at 110% 10%,
+      rgba(135, 110, 255, 0.12),
+      transparent 65%
+    ),
+    radial-gradient(
+      1200px 800px at 50% 110%,
+      rgba(255, 255, 255, 0.06),
+      transparent 70%
+    ), #0a0a0d;
 }
 
 @layer base {
@@ -174,6 +185,58 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(16px) saturate(1.1);
   -webkit-backdrop-filter: blur(16px) saturate(1.1);
+}
+
+/* Animated conic border for character cards: a 1px ring lit by a rotating
+   highlight, revealed on hover. Browsers without @property (no registered
+   custom property animation) simply keep a static highlight — still a nice
+   hover ring, no breakage. */
+@property --card-border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes card-border-spin {
+  to {
+    --card-border-angle: 360deg;
+  }
+}
+
+@utility card-glow-border {
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--card-border-angle),
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.95) 10%,
+      rgba(255, 214, 170, 0.7) 20%,
+      rgba(255, 255, 255, 0) 34%,
+      rgba(255, 255, 255, 0) 55%,
+      rgba(160, 150, 255, 0.55) 68%,
+      rgba(255, 255, 255, 0) 82%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+  &:hover::before {
+    opacity: 1;
+    animation: card-border-spin 2.8s linear infinite;
+  }
 }
 
 @utility no-scrollbar {

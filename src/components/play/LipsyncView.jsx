@@ -4,6 +4,7 @@ import { ArrowUpRight, Pause, Play, Upload, Volume2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import Scene from "@/components/scene/SceneDynamic";
+import BackdropMenu from "@/components/ui/BackdropMenu/BackdropMenu";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/primitives/Toast";
 import { getLipsync } from "@/lib/lipsync";
@@ -147,7 +148,7 @@ const LipsyncView = () => {
   };
 
   return (
-    <PlayShell title="Lipsync">
+    <PlayShell title="Lipsync" actions={<BackdropMenu />}>
       <Scene>
         <LipsyncDriver />
       </Scene>

@@ -1,8 +1,4 @@
 "use client";
-import {
-  PHOTO_ASPECT_RATIOS,
-  useConfiguratorStore,
-} from "@/stores/useConfiguratorStore";
 import { Environment } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { Leva } from "leva";
@@ -15,11 +11,13 @@ import {
 } from "react";
 import * as THREE from "three";
 import type { Renderer } from "three/webgpu";
+import {
+  PHOTO_ASPECT_RATIOS,
+  useConfiguratorStore,
+} from "@/stores/useConfiguratorStore";
 import Avatar from "./Avatar";
-import { BootDiamond } from "./BootDiamond";
 import Backdrop from "./Backdrop";
-import FrameLimiter from "./FrameLimiter";
-import { GPUDeviceWatcher } from "./GPUDeviceWatcher";
+import { BootDiamond } from "./BootDiamond";
 import {
   BACKDROP_PRESETS,
   type BackdropPresetId,
@@ -28,6 +26,8 @@ import {
 import { CameraManager } from "./CameraManager";
 import { StoreCharacterProvider } from "./CharacterContext";
 import { EngineCanvas } from "./EngineCanvas";
+import FrameLimiter from "./FrameLimiter";
+import { GPUDeviceWatcher } from "./GPUDeviceWatcher";
 
 type ScreenshotFn = () => Promise<void>;
 type CaptureFn = () => Promise<Blob | null>;
@@ -364,6 +364,9 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-bias={-0.0001}
+        // Widen the PCF kernel so the floor shadow gets a soft penumbra
+        // instead of a hard cutout.
+        shadow-radius={7}
         // Belt-and-braces with the per-asset castShadow=false on cloth
         // (Asset.tsx): the skin body still casts the floor shadow but
         // can't self-acne, while normalBias offsets the depth-compare
@@ -421,7 +424,10 @@ const Scene = ({ children }: { children?: ReactNode }) => {
       <EngineCanvas
         key={engineKey}
         frameloop="never"
-        shadows
+        // VSM: the only shadow filter in three's WebGPU backend that honors
+        // shadow.radius — gives the floor shadow a soft penumbra instead of
+        // the harsh PCF cutout.
+        shadows="variance"
         camera={{ fov: 40 }}
       >
         <StoreCharacterProvider>

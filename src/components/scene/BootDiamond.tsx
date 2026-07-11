@@ -85,10 +85,10 @@ export const BootDiamond = () => {
     if (rig) rig.visible = false;
 
     elapsed.current += delta;
-    g.rotation.y += delta * 1.2;
-    g.position.y = 1.25 + Math.sin(elapsed.current * 1.6) * 0.06;
+    g.rotation.y += delta * 0.9;
+    g.position.y = 1.25 + Math.sin(elapsed.current * 1.4) * 0.045;
 
-    const pulse = 1 + Math.sin(elapsed.current * 3) * 0.05;
+    const pulse = 1 + Math.sin(elapsed.current * 2.4) * 0.04;
     const exiting = phase === "exiting";
     const target = exiting ? 0 : pulse;
     scale.current = THREE.MathUtils.lerp(
@@ -97,9 +97,9 @@ export const BootDiamond = () => {
       exiting ? 0.2 : 0.12,
     );
     // Narrower in x/z than tall in y → an elongated gem rather than a fat
-    // octahedron.
+    // octahedron. Kept small — it's a placeholder, not the star of the scene.
     const s = scale.current;
-    g.scale.set(s * 0.17, s * 0.3, s * 0.17);
+    g.scale.set(s * 0.105, s * 0.185, s * 0.105);
 
     // Once collapsed, hand off: render null → the phase effect reveals the
     // avatar.
@@ -110,14 +110,20 @@ export const BootDiamond = () => {
 
   return (
     <group ref={group} position={[0, 1.25, 0.565]} scale={0}>
+      {/* Translucent gem: flat-shaded faces + a faint inner glow read as a
+          polished crystal instead of an opaque white blob. */}
       <mesh>
         <octahedronGeometry args={[1, 0]} />
         <meshStandardMaterial
-          color="#f4f4f5"
-          roughness={0.25}
-          metalness={0.1}
-          emissive="#2a2a2e"
-          emissiveIntensity={0.5}
+          color="#e8e9f2"
+          roughness={0.12}
+          metalness={0.05}
+          emissive="#8b8fa8"
+          emissiveIntensity={0.22}
+          flatShading
+          transparent
+          opacity={0.55}
+          depthWrite={false}
         />
       </mesh>
     </group>

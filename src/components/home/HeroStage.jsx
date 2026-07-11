@@ -4,7 +4,6 @@ import { ArrowRight, Compass, Sparkles, UsersRound } from "lucide-react";
 import { motion } from "motion/react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import IdleJuice from "@/components/scene/IdleJuice";
 import { Button } from "@/components/ui/button";
 
 // Client-only: the hero's three.js/WebGPU wall streams in as its own
@@ -27,7 +26,6 @@ const HERO_SIGNALS = [
 const HeroStage = () => {
   return (
     <section className="relative isolate min-h-[calc(100svh-3.75rem)] overflow-hidden border-b border-white/[0.07] bg-[#08080b]">
-      <IdleJuice />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,#08080b_0%,#141119_44%,#1d1913_66%,#09090c_100%)]"

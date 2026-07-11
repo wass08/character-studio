@@ -27,7 +27,7 @@ const CharacterCard = ({ character, size = "wall", overlay }) => {
       whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 380, damping: 28 }}
       className={cn(
-        "group relative isolate overflow-hidden rounded-lg bg-zinc-900 ring-1 ring-white/10 transition-shadow hover:ring-white/25",
+        "card-glow-border group relative isolate overflow-hidden rounded-lg ring-1 ring-white/10 transition-shadow hover:shadow-[0_18px_50px_rgba(0,0,0,0.45)] hover:ring-white/20",
         size === "wall" && "aspect-square",
         size === "featured" && "aspect-[3/4]",
         size === "owned" && "aspect-square",
@@ -38,27 +38,22 @@ const CharacterCard = ({ character, size = "wall", overlay }) => {
         className="absolute inset-0 z-10"
         aria-label={`View ${character.name}`}
       />
+      {/* Radial glow behind the portrait so the tile has depth instead of a
+          flat slab; a faint warm accent hugs the top edge. */}
       <div
-        className="absolute inset-0"
-        style={{
-          background: thumb
-            ? "linear-gradient(180deg,#1c1c24,#0c0c12)"
-            : undefined,
-        }}
+        aria-hidden="true"
+        className="absolute inset-0 bg-[radial-gradient(120%_95%_at_50%_-10%,#2b2636_0%,#171420_48%,#0b0a10_100%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-[radial-gradient(80%_45%_at_50%_0%,rgba(255,208,160,0.10),transparent_70%)]"
       />
       {thumb && (
-        <motion.img
+        <img
           src={thumb}
           alt={character.name}
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.045]"
           loading="lazy"
-          animate={{ scale: [1, 1.02, 1], y: [0, -1.5, 0] }}
-          transition={{
-            duration: 4 + Math.random() * 2,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "easeInOut",
-            delay: Math.random() * 1.5,
-          }}
         />
       )}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 pt-8 pb-2.5">

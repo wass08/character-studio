@@ -1,9 +1,8 @@
 "use client";
 
-import { pb } from "@/stores/useConfiguratorStore";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { type ThreeElements, useFrame } from "@react-three/fiber";
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import type {
   AnimationAction,
   AnimationClip,
@@ -12,6 +11,7 @@ import type {
   SkinnedMesh,
 } from "three";
 import { GLTFExporter, SkeletonUtils } from "three-stdlib";
+import { pb } from "@/stores/useConfiguratorStore";
 import {
   type ExportOptions,
   type ExportPipeline,
@@ -109,9 +109,28 @@ export default function Model(props: ModelProps) {
   // by the effect below.
   const activePose = gesture || pose;
 
-  const { nodes } = useGLTF(
+  const { scene: armatureScene } = useGLTF(
     `/models/characters/${gender}/Armature.glb`,
-  ) as unknown as ArmatureGLTF;
+  ) as unknown as ArmatureGLTF & { scene: Object3D };
+
+  // NEVER mount the cached GLTF's objects directly: <primitive> REPARENTS the
+  // actual cached bones into this scene, gutting drei's shared cache — any
+  // other surface that clones the same armature afterwards (the home hero
+  // wall after navigating back) gets a boneless clone and renders broken or
+  // invisible characters. Clone per mount instead; SkeletonUtils rebinds the
+  // skinned meshes to the cloned bones.
+  const clone = useMemo(
+    () => SkeletonUtils.clone(armatureScene),
+    [armatureScene],
+  );
+  const nodes = useMemo(
+    () => ({
+      root: clone.getObjectByName("root") as Object3D,
+      "MCH-eyes_parent": clone.getObjectByName("MCH-eyes_parent") as Object3D,
+      Plane002: clone.getObjectByName("Plane002") as SkinnedMesh,
+    }),
+    [clone],
+  );
 
   const { animations } = useGLTF(
     `/models/characters/${gender}/Animations.glb`,

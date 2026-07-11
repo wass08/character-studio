@@ -4,7 +4,6 @@ import {
   Environment,
   KeyboardControls,
   PerspectiveCamera,
-  Sky,
 } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import BVHEcctrl, {
@@ -69,23 +68,36 @@ const STATUS_TO_CLIP = {
   JUMP_LAND: "Rig|Jump_Land",
 };
 
-// Horizon tint — shared by the background, the fog, and (loosely) the Sky
-// near its sun. Fog dissolves the ground quad's far edge into the sky so the
-// floor reads as continuous ground rather than a hard-edged floating slab.
-const HORIZON = "#7c95b0";
+// Bright, airy horizon shared by the background and the fog: the white floor
+// and its grid dissolve into it with distance, which is what sells the
+// "infinite white grid fading away" look (and hides the plane's far edge).
+const HORIZON = "#eef0f4";
+const FLOOR = "#f7f8fb";
 
-// Lights / sky / environment — decorative, not part of the collision world.
+// Lights / grid / environment — decorative, not part of the collision world.
 // The key (shadow-casting) light lives in PlatformerScene instead, where it
-// can follow the character; see SunFollower.
+// can follow the character; see SunFollower. (No drei <Sky> here: it's a
+// GLSL ShaderMaterial, which the WebGPU renderer can't compile.)
 const Decor = () => (
   <>
     <color attach="background" args={[HORIZON]} />
-    <fog attach="fog" args={[HORIZON, 38, 85]} />
+    <fog attach="fog" args={[HORIZON, 24, 80]} />
     <Suspense fallback={null}>
-      <Sky sunPosition={[100, 30, 100]} turbidity={6} />
       <Environment preset="city" environmentIntensity={0.55} />
     </Suspense>
     <ambientLight intensity={0.55} />
+    <hemisphereLight args={["#ffffff", "#c9cfda", 0.5]} />
+    {/* Slate line grid floating a hair above the white floor; fog fades it
+        out toward the horizon so it reads as infinite. */}
+    <gridHelper
+      args={[400, 400, "#39415a", "#39415a"]}
+      position={[0, 0.02, 0]}
+      onUpdate={(grid) => {
+        grid.material.transparent = true;
+        grid.material.opacity = 0.22;
+        grid.material.depthWrite = false;
+      }}
+    />
   </>
 );
 
@@ -114,7 +126,7 @@ const SunFollower = ({ ecctrlRef }) => {
   return (
     <directionalLight
       ref={lightRef}
-      intensity={1.3}
+      intensity={1.35}
       castShadow
       shadow-mapSize-width={2048}
       shadow-mapSize-height={2048}
@@ -126,7 +138,8 @@ const SunFollower = ({ ecctrlRef }) => {
       shadow-camera-bottom={-16}
       shadow-bias={-0.0001}
       shadow-normalBias={0.04}
-      color="#fff2e3"
+      shadow-radius={4}
+      color="#fff6ea"
     />
   );
 };
@@ -145,6 +158,17 @@ const STEPS = Array.from({ length: 4 }, (_, i) => ({
   h: 0.5 + i,
 }));
 
+// Platform palette: neutral ink floor, one indigo family for the pillar
+// ring, warm coral for the stair run, mint for the ramp + platform. Flat,
+// slightly rough surfaces so the shapes read like a stylised graybox rather
+// than muddy random hues.
+const PALETTE = {
+  pillar: "#5560d8",
+  pillarAlt: "#9aa2c4",
+  step: "#e07856",
+  platform: "#35a988",
+};
+
 // Everything the character can stand on or bump into. Wrapped in a single
 // StaticCollider so bvhecctrl builds one BVH from the merged geometry.
 const CollidableWorld = () => (
@@ -153,10 +177,10 @@ const CollidableWorld = () => (
         into the horizon instead of reading as a floating quad. */}
     <mesh receiveShadow rotation-x={-Math.PI / 2}>
       <planeGeometry args={[400, 400]} />
-      <meshStandardMaterial color="#3d4a55" />
+      <meshStandardMaterial color={FLOOR} roughness={0.96} />
     </mesh>
 
-    {PILLARS.map((p) => (
+    {PILLARS.map((p, index) => (
       <mesh
         key={`pillar-${p.x.toFixed(2)}-${p.z.toFixed(2)}`}
         castShadow
@@ -164,7 +188,10 @@ const CollidableWorld = () => (
         position={[p.x, 0.9, p.z]}
       >
         <boxGeometry args={[1.2, 1.8, 1.2]} />
-        <meshStandardMaterial color="#5b6c7a" />
+        <meshStandardMaterial
+          color={index % 2 === 0 ? PALETTE.pillar : PALETTE.pillarAlt}
+          roughness={0.85}
+        />
       </mesh>
     ))}
 
@@ -176,7 +203,7 @@ const CollidableWorld = () => (
         position={[s.x, s.y, -4]}
       >
         <boxGeometry args={[1.4, s.h, 3]} />
-        <meshStandardMaterial color="#6b5b73" />
+        <meshStandardMaterial color={PALETTE.step} roughness={0.85} />
       </mesh>
     ))}
 
@@ -188,11 +215,11 @@ const CollidableWorld = () => (
       rotation-x={-Math.PI / 9}
     >
       <boxGeometry args={[4, 0.4, 6]} />
-      <meshStandardMaterial color="#4a6a4f" roughness={1} />
+      <meshStandardMaterial color={PALETTE.platform} roughness={0.9} />
     </mesh>
     <mesh castShadow receiveShadow position={[6, 1.25, -10.5]}>
       <boxGeometry args={[4, 2.5, 3]} />
-      <meshStandardMaterial color="#4a6a4f" roughness={1} />
+      <meshStandardMaterial color={PALETTE.platform} roughness={0.9} />
     </mesh>
   </StaticCollider>
 );
@@ -209,7 +236,11 @@ const FollowCamera = ({ ecctrlRef }) => {
     const cam = cameraRef.current;
     if (!grp || !cam) return;
     grp.getWorldPosition(pos.current);
-    desired.current.set(pos.current.x, pos.current.y + 3.2, pos.current.z + 6.5);
+    desired.current.set(
+      pos.current.x,
+      pos.current.y + 3.2,
+      pos.current.z + 6.5,
+    );
     cam.position.lerp(desired.current, Math.min(1, dt * 5));
     cam.lookAt(pos.current.x, pos.current.y + 1.1, pos.current.z);
   });
@@ -289,10 +320,11 @@ const PlatformerScene = () => {
   );
 };
 
+// Dark glass so the controls stay readable over the light playground.
 const TOUCH_BTN_CAP = {
-  background: "rgba(255,255,255,0.12)",
-  border: "1px solid rgba(255,255,255,0.25)",
-  color: "rgba(255,255,255,0.9)",
+  background: "rgba(18,22,34,0.5)",
+  border: "1px solid rgba(18,22,34,0.35)",
+  color: "rgba(255,255,255,0.92)",
   backdropFilter: "blur(8px)",
 };
 
@@ -314,7 +346,9 @@ const PlatformerView = () => {
           set, so React StrictMode's deferred `_roots.delete(canvas)` can't
           freeze the canvas on a cold reload (same cure as the studio Scene). */}
       <EngineCanvas
-        shadows
+        // VSM honors shadow.radius on the WebGPU backend → soft penumbra on
+        // the white floor instead of a hard black cutout.
+        shadows="variance"
         frameloop="never"
         camera={{ position: [0, 4, 8], fov: 50 }}
       >
@@ -361,10 +395,10 @@ const PlatformerView = () => {
       <div className="md:hidden">
         <Joystick
           joystickBaseStyle={{
-            background: "rgba(255,255,255,0.08)",
-            border: "1px solid rgba(255,255,255,0.18)",
+            background: "rgba(18,22,34,0.28)",
+            border: "1px solid rgba(18,22,34,0.3)",
           }}
-          joystickKnobStyle={{ background: "rgba(255,255,255,0.85)" }}
+          joystickKnobStyle={{ background: "rgba(255,255,255,0.95)" }}
         />
         <VirtualButton
           id="jump"
