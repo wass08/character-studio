@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import Link from "next/link";
 import AccountIdentity from "@/components/shell/AccountIdentity";
 import CharacterChip from "@/components/shell/CharacterChip";
 import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
@@ -15,7 +15,7 @@ import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
  * loaded; falls back to /studio (My Characters) otherwise. The label is
  * the character's name when present, "My Characters" otherwise.
  */
-const PlayShell = ({ title, children, sidebar }) => {
+const PlayShell = ({ title, children, sidebar, actions }) => {
   const currentCharacterId = useConfiguratorStore((s) => s.currentCharacterId);
   const currentCharacterName = useConfiguratorStore(
     (s) => s.currentCharacterName,
@@ -36,11 +36,12 @@ const PlayShell = ({ title, children, sidebar }) => {
           <span className="max-w-[140px] truncate">{backLabel}</span>
         </Link>
         {title && (
-          <span className="hidden text-xs font-semibold tracking-[0.18em] text-white/65 uppercase md:inline">
+          <span className="hidden text-xs font-semibold tracking-[0.18em] text-white/65 uppercase [text-shadow:0_1px_10px_rgba(0,0,0,0.55)] md:inline">
             {title}
           </span>
         )}
         <div className="ml-auto flex items-center gap-2">
+          {actions}
           <CharacterChip />
           <AccountIdentity />
         </div>

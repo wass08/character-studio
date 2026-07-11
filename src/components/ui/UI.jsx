@@ -1,23 +1,23 @@
 "use client";
 
 import { useState } from "react";
-
+import IdleJuice from "@/components/scene/IdleJuice";
+import { cn } from "@/lib/utils";
+import { UI_MODES, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import AssetsBox from "./AssetsBox/AssetsBox";
-import ExportBox from "./ExportBox/ExportBox";
+import AuthBootstrapper from "./AuthBootstrapper";
+import AuthDialog from "./AuthDialog/AuthDialog";
+import BackdropMenu from "./BackdropMenu/BackdropMenu";
+import HideUIButton from "./Buttons/HideUIButton/HideUIButton";
 import TopActions from "./Buttons/TopActions";
 import ColorPicker from "./ColorPicker/ColorPicker";
-import { UI_MODES, useConfiguratorStore } from "@/stores/useConfiguratorStore";
-import ShapeKeyControls from "./ShapeKeyControls/ShapeKeyControls";
-import PosesBox from "./PosesBox/PosesBox";
-import ModeSelector from "./ModeSelector/ModeSelector";
+import ExportBox from "./ExportBox/ExportBox";
 import Logo from "./Logo/Logo";
-import IdleJuice from "@/components/scene/IdleJuice";
-import HideUIButton from "./Buttons/HideUIButton/HideUIButton";
-import AuthDialog from "./AuthDialog/AuthDialog";
-import AuthBootstrapper from "./AuthBootstrapper";
-import UserMenu from "./UserMenu/UserMenu";
+import ModeSelector from "./ModeSelector/ModeSelector";
 import PhotoGalleryBox from "./PhotoGalleryBox/PhotoGalleryBox";
-import { cn } from "@/lib/utils";
+import PosesBox from "./PosesBox/PosesBox";
+import ShapeKeyControls from "./ShapeKeyControls/ShapeKeyControls";
+import UserMenu from "./UserMenu/UserMenu";
 
 const showColorPicker = (isSkin, currentCategory, hasAsset) =>
   !isSkin && currentCategory?.colorPalette && hasAsset;
@@ -44,6 +44,7 @@ const UI = () => {
       <Logo />
       <ModeSelector />
       <div className="absolute top-5 right-5 z-30 flex items-center gap-2">
+        <BackdropMenu />
         <UserMenu />
         <TopActions />
       </div>

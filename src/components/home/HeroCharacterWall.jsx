@@ -37,8 +37,8 @@ const HeroCharacterWall = () => {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([
-      pb
+    (async () => {
+      const characters = await pb
         .collection("CharacterStudioCharacters")
         .getList(1, HERO_CHARACTER_LIMIT, {
           sort: "@random",
@@ -46,19 +46,31 @@ const HeroCharacterWall = () => {
           skipTotal: true,
           expand: "user",
           requestKey: null,
-        }),
-      pb.collection("CharacterStudioAssets").getFullList({
-        batch: 1000,
-        requestKey: null,
-      }),
-    ])
-      .then(([characters, assets]) => {
-        if (cancelled) return;
-        const map = new Map();
-        for (const asset of assets) map.set(asset.id, asset);
-        setAssetsById(map);
-        setItems(characters.items);
-      })
+        });
+
+      // Only fetch the asset records these 8 characters actually reference
+      // (≤ ~80 ids) — pulling the whole assets collection here was a big
+      // chunk of the homepage's load lag.
+      const assetIds = new Set();
+      for (const character of characters.items) {
+        for (const picked of Object.values(character.customization || {})) {
+          if (picked?.assetId) assetIds.add(picked.assetId);
+        }
+      }
+      const assets =
+        assetIds.size > 0
+          ? await pb.collection("CharacterStudioAssets").getFullList({
+              filter: [...assetIds].map((id) => `id="${id}"`).join("||"),
+              requestKey: null,
+            })
+          : [];
+
+      if (cancelled) return;
+      const map = new Map();
+      for (const asset of assets) map.set(asset.id, asset);
+      setAssetsById(map);
+      setItems(characters.items);
+    })()
       .catch(() => {
         if (!cancelled) setItems([]);
       })

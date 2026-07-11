@@ -2,11 +2,11 @@
 
 import { useEffect } from "react";
 import Scene from "@/components/scene/SceneDynamic";
+import BackdropMenu from "@/components/ui/BackdropMenu/BackdropMenu";
 import PhotoGalleryBox from "@/components/ui/PhotoGalleryBox/PhotoGalleryBox";
 import PhotoGallerySheet from "@/components/ui/PhotoGalleryBox/PhotoGallerySheet";
 import PosesBox from "@/components/ui/PosesBox/PosesBox";
 import { UI_MODES, useConfiguratorStore } from "@/stores/useConfiguratorStore";
-import BackdropPicker from "./BackdropPicker";
 import NoCharacterOverlay from "./NoCharacterOverlay";
 import PhotoFramingBar from "./PhotoFramingBar";
 import PhotoFramingOverlay from "./PhotoFramingOverlay";
@@ -20,10 +20,9 @@ const PhotoBoothView = () => {
   }, [setMode]);
 
   return (
-    <PlayShell title="Photo Booth">
+    <PlayShell title="Photo Booth" actions={<BackdropMenu />}>
       <Scene />
       <PhotoFramingOverlay />
-      <BackdropPicker />
       <PosesBox />
       <PhotoGalleryBox />
       <PhotoGallerySheet />

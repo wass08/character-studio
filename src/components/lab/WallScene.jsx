@@ -2,7 +2,9 @@
 
 import { Html } from "@react-three/drei";
 import { Suspense, useMemo, useState } from "react";
+import * as THREE from "three";
 import { EngineCanvas } from "@/components/scene/EngineCanvas";
+import { EngineErrorBoundary } from "@/components/scene/EngineErrorBoundary";
 import { getUserDisplayName } from "@/lib/userDisplay";
 import { cn } from "@/lib/utils";
 import WallCharacter from "./WallCharacter";
@@ -37,12 +39,45 @@ function creatorName(character) {
   return getUserDisplayName(character.expand?.user, "Creator");
 }
 
+// Radial alpha falloff for the hero floor: the disc melts into the page's
+// CSS gradient instead of showing the hard rectangular plane edges that made
+// the old floor read as a slab floating over the background.
+function useRadialFadeTexture() {
+  return useMemo(() => {
+    if (typeof document === "undefined") return null;
+    const size = 512;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    const gradient = ctx.createRadialGradient(
+      size / 2,
+      size / 2,
+      0,
+      size / 2,
+      size / 2,
+      size / 2,
+    );
+    gradient.addColorStop(0, "rgba(255,255,255,1)");
+    gradient.addColorStop(0.35, "rgba(255,255,255,0.72)");
+    gradient.addColorStop(0.62, "rgba(255,255,255,0.28)");
+    gradient.addColorStop(0.85, "rgba(255,255,255,0.06)");
+    gradient.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.NoColorSpace;
+    return texture;
+  }, []);
+}
+
 export default function WallScene({
   characters,
   assetsById,
   variant = "wall",
 }) {
   const [hovered, setHovered] = useState(null);
+  const radialFade = useRadialFadeTexture();
   const compact = variant === "hero";
   const slots = compact ? HERO_SLOTS : WALL_SLOTS;
   const camera = compact ? HERO_CAMERA : WALL_CAMERA;
@@ -68,7 +103,9 @@ export default function WallScene({
       }}
     >
       {!compact && <color attach="background" args={["#101018"]} />}
-      {compact && <fog attach="fog" args={["#0b0a0d", 6.8, 10.6]} />}
+      {/* Fog tinted to the page gradient's mid tone so distant characters
+          dissolve into the backdrop instead of a foreign near-black. */}
+      {compact && <fog attach="fog" args={["#121015", 7.2, 11.4]} />}
       <hemisphereLight args={["#fff4ec", "#2f3140", compact ? 0.58 : 0.72]} />
       <ambientLight intensity={compact ? 0.26 : 0.42} />
       <directionalLight
@@ -76,8 +113,8 @@ export default function WallScene({
         intensity={compact ? 1.8 : 1.45}
         color="#ffebe3"
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
         shadow-camera-near={1}
         shadow-camera-far={16}
         shadow-camera-left={-6.2}
@@ -86,6 +123,7 @@ export default function WallScene({
         shadow-camera-bottom={-4.2}
         shadow-bias={-0.0001}
         shadow-normalBias={0.06}
+        shadow-radius={6}
       />
       <directionalLight position={[3, 4, -2]} intensity={0.9} color="#cfd4ff" />
       <directionalLight
@@ -94,53 +132,67 @@ export default function WallScene({
         color="#ffffff"
       />
 
-      {compact && (
-        <mesh position={[0.9, 1.24, -2.32]}>
-          <planeGeometry args={[10.6, 3.3]} />
-          <meshBasicMaterial
-            color="#17131a"
-            depthWrite={false}
-            opacity={0.34}
+      {compact ? (
+        // Soft-edged disc that fades to transparent — the page gradient shows
+        // through, so there is no visible floor boundary anywhere. fog=false:
+        // fog would re-tint the far half of the disc and reintroduce a visible
+        // band against the page gradient; the alpha falloff does the fading.
+        <mesh rotation-x={-Math.PI / 2} position-y={-0.025} receiveShadow>
+          <circleGeometry args={[7.8, 48]} />
+          <meshStandardMaterial
+            color="#1a1620"
+            metalness={0}
+            roughness={0.96}
             transparent
+            opacity={0.62}
+            alphaMap={radialFade ?? undefined}
+            depthWrite={false}
+            fog={false}
+          />
+        </mesh>
+      ) : (
+        <mesh rotation-x={-Math.PI / 2} position-y={-0.025} receiveShadow>
+          <planeGeometry args={[9.6, 6.8]} />
+          <meshStandardMaterial
+            color="#1c1d2a"
+            metalness={0}
+            roughness={0.92}
           />
         </mesh>
       )}
-
-      <mesh rotation-x={-Math.PI / 2} position-y={-0.025} receiveShadow>
-        <planeGeometry args={compact ? [11.8, 5.8] : [9.6, 6.8]} />
-        <meshStandardMaterial
-          color={compact ? "#242128" : "#1c1d2a"}
-          metalness={0}
-          opacity={compact ? 0.78 : 1}
-          roughness={0.92}
-          transparent={compact}
-        />
-      </mesh>
 
       {visibleCharacters.map((character, index) => {
         const slot = slots[index % slots.length];
 
         return (
-          <Suspense key={character.id} fallback={null}>
-            <WallCharacter
-              character={character}
-              assetsById={assetsById}
-              index={index}
-              position={[slot.x, 0, slot.z]}
-              rotationY={slot.rotationY}
-              scale={slot.scale}
-              onHover={compact ? undefined : setHovered}
-              label={
-                compact
-                  ? {
-                      name: character.name || "Untitled",
-                      creator: creatorName(character),
-                    }
-                  : null
-              }
-              motionMode={compact ? "hero" : "wall"}
-            />
-          </Suspense>
+          // One broken character (bad GLB, missing armature) must not take
+          // down the whole hero canvas — isolate each slot.
+          <EngineErrorBoundary
+            key={character.id}
+            label={`wall-character:${character.id}`}
+            resetKey={character.id}
+          >
+            <Suspense fallback={null}>
+              <WallCharacter
+                character={character}
+                assetsById={assetsById}
+                index={index}
+                position={[slot.x, 0, slot.z]}
+                rotationY={slot.rotationY}
+                scale={slot.scale}
+                onHover={compact ? undefined : setHovered}
+                label={
+                  compact
+                    ? {
+                        name: character.name || "Untitled",
+                        creator: creatorName(character),
+                      }
+                    : null
+                }
+                motionMode={compact ? "hero" : "wall"}
+              />
+            </Suspense>
+          </EngineErrorBoundary>
         );
       })}
 

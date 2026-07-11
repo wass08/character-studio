@@ -131,8 +131,12 @@ export default function WallCharacter({
     () =>
       animations.map((clip) => {
         const localClip = clip.clone();
+        // Drop the Rig root-motion tracks (the Rig object isn't mounted here)
+        // AND bone scale tracks — same filter as the editor Avatar, where
+        // scale tracks fight the group's height scale and deform the pose.
         localClip.tracks = localClip.tracks.filter(
-          (track) => !track.name.startsWith("Rig."),
+          (track) =>
+            !track.name.startsWith("Rig.") && !track.name.includes(".scale"),
         );
         return localClip;
       }),
@@ -146,8 +150,11 @@ export default function WallCharacter({
   const readyRef = useRef(false);
   const revealReadyRef = useRef(false);
   const assetsReadyRef = useRef(false);
+  const loadedAssetCountRef = useRef(0);
+  const failedAssetKeysRef = useRef(new Set());
   const revealedRef = useRef(false);
   const readyAtRef = useRef(null);
+  const revealStartedAtRef = useRef(0);
   const assetFallbackAtRef = useRef(null);
   const nextGestureAtRef = useRef(0);
   const gestureEndsAtRef = useRef(0);
@@ -251,10 +258,12 @@ export default function WallCharacter({
   useEffect(() => {
     void assetResetKey;
     setLoadedAssetKeys(new Set());
+    failedAssetKeysRef.current = new Set();
     setVisible(false);
     readyRef.current = false;
     revealedRef.current = false;
     readyAtRef.current = null;
+    revealStartedAtRef.current = 0;
     assetFallbackAtRef.current = null;
     anchorPositionRef.current.set(position[0], position[1], position[2]);
   }, [assetResetKey, position[0], position[1], position[2]]);
@@ -265,7 +274,14 @@ export default function WallCharacter({
 
   useEffect(() => {
     assetsReadyRef.current = assetsReady;
-  }, [assetsReady]);
+    // Only meshes that actually loaded count toward the reveal — a failed
+    // load "settles" the wait but must not make an invisible body visible.
+    let realLoaded = 0;
+    loadedAssetKeys.forEach((key) => {
+      if (!failedAssetKeysRef.current.has(key)) realLoaded += 1;
+    });
+    loadedAssetCountRef.current = realLoaded;
+  }, [assetsReady, loadedAssetKeys]);
 
   const markAssetReady = useCallback((key) => {
     setLoadedAssetKeys((current) => {
@@ -275,6 +291,14 @@ export default function WallCharacter({
       return next;
     });
   }, []);
+
+  const markAssetFailed = useCallback(
+    (key) => {
+      failedAssetKeysRef.current.add(key);
+      markAssetReady(key);
+    },
+    [markAssetReady],
+  );
 
   useEffect(() => {
     const original = mixer.update.bind(mixer);
@@ -314,47 +338,49 @@ export default function WallCharacter({
       "Rig|Pistol_Idle_Loop",
       "pistol",
     );
+    // TimeScales sit near 1 — heavy slow-mo (0.5–0.7) reads as a broken /
+    // laggy animation rather than a calm one, especially on the hero.
     const gestures = [
       talk && {
         clip: talk,
         type: "talk",
         weight: isHero ? 0.18 : 0.16,
         duration: (isHero ? 2.1 : 2.5) + ((seed >>> 4) % 18) / 10,
-        timeScale: (isHero ? 0.82 : 0.74) + ((seed >>> 8) % 12) / 100,
+        timeScale: 0.9 + ((seed >>> 8) % 12) / 100,
       },
       walk && {
         clip: walk,
         type: "walk",
         weight: isHero ? 0.66 : 0.44,
         duration: (isHero ? 3.4 : 3.2) + ((seed >>> 7) % 12) / 10,
-        timeScale: (isHero ? 0.84 : 0.62) + ((seed >>> 11) % 10) / 100,
+        timeScale: 0.94 + ((seed >>> 11) % 10) / 100,
       },
       dance && {
         clip: dance,
         type: "dance",
         weight: isHero ? 0.08 : 0.18,
         duration: 2.8 + ((seed >>> 10) % 16) / 10,
-        timeScale: 0.5 + ((seed >>> 13) % 10) / 100,
+        timeScale: 0.82 + ((seed >>> 13) % 10) / 100,
       },
       spell && {
         clip: spell,
         type: "pose",
         weight: 0.12,
         duration: 2.8 + ((seed >>> 6) % 12) / 10,
-        timeScale: 0.62,
+        timeScale: 0.85,
       },
       pistol && {
         clip: pistol,
         type: "pose",
         weight: 0.1,
         duration: 2.6 + ((seed >>> 9) % 12) / 10,
-        timeScale: 0.62,
+        timeScale: 0.85,
       },
     ].filter(Boolean);
 
     return {
       base: idle,
-      baseTimeScale: (isHero ? 0.86 : 0.78) + ((seed >>> 8) % 14) / 100,
+      baseTimeScale: 0.92 + ((seed >>> 8) % 14) / 100,
       gestures,
     };
   }, [isHero, names, seed, wallAnimations]);
@@ -423,13 +449,13 @@ export default function WallCharacter({
   );
 
   const createWalkPath = useCallback(
-    (now, duration) => {
+    (now, timeScale) => {
       const from =
         group.current?.position.clone() || anchorPositionRef.current.clone();
       from.y = position[1];
 
-      const radiusX = isHero ? 1.24 : 0.28;
-      const radiusZ = isHero ? 0.72 : 0.22;
+      const radiusX = isHero ? 1.7 : 0.34;
+      const radiusZ = isHero ? 1.0 : 0.26;
       const seededAngle = ((seed >>> 5) % 628) / 100;
       let angle = seededAngle + now * 0.43 + Math.random() * Math.PI * 0.72;
       let to = new THREE.Vector3(
@@ -447,13 +473,32 @@ export default function WallCharacter({
         );
       }
 
+      // A stroll shorter than ~2 gait cycles reads as a stumble (all
+      // crossfade, no travel). Push the target outward along the walk
+      // direction until the leg is worth taking; the next path is computed
+      // from the slot anchor again, so this can't drift off-stage over time.
+      const minTravel = isHero ? 1.9 : 0.4;
+      const dir = to.clone().sub(from);
+      if (dir.lengthSq() < 1e-6) {
+        dir.set(Math.cos(angle), 0, Math.sin(angle));
+      }
+      if (dir.length() < minTravel) {
+        dir.setLength(minTravel);
+        to = from.clone().add(dir);
+        to.y = position[1];
+      }
+
       const travelDistance = from.distanceTo(to);
-      const targetSpeed = isHero ? 0.54 + ((seed >>> 12) % 10) / 100 : 0.22;
-      const travelDuration = clamp(
-        travelDistance / targetSpeed,
-        isHero ? 2.25 : 2.1,
-        Math.max(duration, isHero ? 3.3 : 2.8),
+      // Travel speed derives from the clip's authored gait (~1.3 m/s at
+      // timeScale 1) scaled by playback rate and character size, so the feet
+      // track the ground instead of moon-sliding. Duration follows distance;
+      // no minimum-duration clamp that would reintroduce the slide.
+      const WALK_CLIP_SPEED = 1.3;
+      const targetSpeed = Math.max(
+        0.2,
+        WALK_CLIP_SPEED * timeScale * targetScale,
       );
+      const travelDuration = clamp(travelDistance / targetSpeed, 0.9, 6.5);
       const start = now + 0.08;
 
       return {
@@ -464,7 +509,7 @@ export default function WallCharacter({
         yaw: Math.atan2(to.x - from.x, to.z - from.z),
       };
     },
-    [isHero, position[0], position[1], position[2], seed],
+    [isHero, position[0], position[1], position[2], seed, targetScale],
   );
 
   useFrame(({ clock }, delta) => {
@@ -484,15 +529,22 @@ export default function WallCharacter({
       baseAction.setEffectiveTimeScale(animationPlan.baseTimeScale);
       baseActionRef.current = baseAction;
       readyAtRef.current = now + (isHero ? 0.34 : 0.18);
-      assetFallbackAtRef.current = now + (isHero ? 2.4 : 1.4);
+      assetFallbackAtRef.current = now + 6;
       nextGestureAtRef.current = isHero
         ? now + 1.1 + index * 0.42 + ((seed >>> 5) % 18) / 10
         : now + 7 + index * 1.8 + ((seed >>> 5) % 70) / 10;
     }
 
+    // Reveal when every asset GLB has loaded (failed loads are marked ready by
+    // the error boundary, so this converges). The timed fallback only covers
+    // pathologically slow downloads — and it still requires at least one
+    // loaded mesh, because the bare armature renders NOTHING: revealing on a
+    // timer alone shows a floating name label with an invisible body.
     const visualAssetsReady =
-      assetsReadyRef.current ||
-      (assetFallbackAtRef.current && now >= assetFallbackAtRef.current);
+      renderEntries.length === 0 ||
+      (loadedAssetCountRef.current > 0 &&
+        (assetsReadyRef.current ||
+          (assetFallbackAtRef.current && now >= assetFallbackAtRef.current)));
 
     if (
       !readyRef.current &&
@@ -503,12 +555,19 @@ export default function WallCharacter({
     ) {
       readyRef.current = true;
       revealedRef.current = true;
+      revealStartedAtRef.current = now;
       setVisible(true);
-      group.current?.scale.setScalar(targetScale);
+      group.current?.scale.setScalar(targetScale * 0.6);
       onReady?.(character.id);
     }
 
     if (!readyRef.current) return;
+
+    // Short scale-in so characters pop into the lineup instead of blinking.
+    const appear = smoothStep(
+      clamp((now - revealStartedAtRef.current) / 0.45, 0, 1),
+    );
+    const appliedScale = targetScale * (0.6 + 0.4 * appear);
 
     const currentGesture = gestureRef.current;
     const walking = currentGesture?.type === "walk";
@@ -555,7 +614,7 @@ export default function WallCharacter({
           frameDelta,
         );
       }
-      group.current.scale.setScalar(targetScale);
+      group.current.scale.setScalar(appliedScale);
 
       if (labelAnchor.current && headBone) {
         headBone.getWorldPosition(headWorldPos.current);
@@ -568,10 +627,13 @@ export default function WallCharacter({
     }
 
     if (currentGesture && now >= gestureEndsAtRef.current) {
+      // Walks get snappier blends — a 0.72s fade on both ends of a ~2s stroll
+      // leaves almost no clean walking in the middle.
+      const outFade = currentGesture.type === "walk" ? 0.45 : 0.72;
       baseAction.reset().play();
       baseAction.setEffectiveTimeScale(animationPlan.baseTimeScale);
-      baseAction.crossFadeFrom(currentGesture.action, 0.72, false);
-      currentGesture.action.fadeOut(0.72);
+      baseAction.crossFadeFrom(currentGesture.action, outFade, false);
+      currentGesture.action.fadeOut(outFade);
       if (currentGesture.path) {
         anchorPositionRef.current.copy(currentGesture.path.to);
       }
@@ -614,6 +676,7 @@ export default function WallCharacter({
       return;
     }
 
+    const inFade = gesture.type === "walk" ? 0.45 : 0.72;
     gestureAction
       .reset()
       .setLoop(THREE.LoopRepeat, Number.POSITIVE_INFINITY)
@@ -621,9 +684,9 @@ export default function WallCharacter({
     gestureAction.time =
       Math.random() * (gestureAction.getClip().duration || 1);
     gestureAction.setEffectiveTimeScale(gesture.timeScale);
-    gestureAction.crossFadeFrom(baseAction, 0.72, false);
+    gestureAction.crossFadeFrom(baseAction, inFade, false);
     const path =
-      gesture.type === "walk" ? createWalkPath(now, gesture.duration) : null;
+      gesture.type === "walk" ? createWalkPath(now, gesture.timeScale) : null;
     gestureRef.current = {
       action: gestureAction,
       type: gesture.type,
@@ -686,7 +749,7 @@ export default function WallCharacter({
               key={category}
               label={`wall-part:${category}`}
               resetKey={`${character.id}:${key}`}
-              onError={() => markAssetReady(key)}
+              onError={() => markAssetFailed(key)}
             >
               <Suspense fallback={null}>
                 <WallAsset
