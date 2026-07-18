@@ -249,7 +249,7 @@ export function HomeOpenSource() {
           asChild
           size="lg"
           variant="ghost"
-          className="mt-6 h-auto rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold tracking-tight text-white hover:bg-white/10 hover:text-white"
+          className="mt-6 h-auto rounded-lg border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold tracking-tight text-white hover:bg-white/10 hover:text-white"
         >
           <a
             href="https://github.com/wass08/character-studio"
@@ -296,7 +296,7 @@ export function HomeFinalCta() {
           <Button
             asChild
             size="lg"
-            className="h-auto rounded-full bg-white px-6 py-3 text-sm font-semibold tracking-tight text-zinc-950 hover:bg-white"
+            className="h-auto rounded-lg bg-white px-6 py-3 text-sm font-semibold tracking-tight text-zinc-950 hover:bg-white"
           >
             <Link href="/editor">
               Create your character
@@ -307,7 +307,7 @@ export function HomeFinalCta() {
             asChild
             size="lg"
             variant="ghost"
-            className="h-auto rounded-full border border-white/10 bg-black/20 px-5 py-3 text-sm font-semibold tracking-tight text-white hover:bg-white/10 hover:text-white"
+            className="h-auto rounded-lg border border-white/10 bg-black/20 px-5 py-3 text-sm font-semibold tracking-tight text-white hover:bg-white/10 hover:text-white"
           >
             <Link href="/community">Browse shared characters</Link>
           </Button>

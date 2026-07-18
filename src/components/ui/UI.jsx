@@ -1,23 +1,22 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import IdleJuice from "@/components/scene/IdleJuice";
+import AccountIdentity from "@/components/shell/AccountIdentity";
+import CharacterChip from "@/components/shell/CharacterChip";
 import { cn } from "@/lib/utils";
 import { UI_MODES, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import AssetsBox from "./AssetsBox/AssetsBox";
-import AuthBootstrapper from "./AuthBootstrapper";
-import AuthDialog from "./AuthDialog/AuthDialog";
 import BackdropMenu from "./BackdropMenu/BackdropMenu";
 import HideUIButton from "./Buttons/HideUIButton/HideUIButton";
 import TopActions from "./Buttons/TopActions";
 import ColorPicker from "./ColorPicker/ColorPicker";
 import ExportBox from "./ExportBox/ExportBox";
-import Logo from "./Logo/Logo";
 import ModeSelector from "./ModeSelector/ModeSelector";
 import PhotoGalleryBox from "./PhotoGalleryBox/PhotoGalleryBox";
 import PosesBox from "./PosesBox/PosesBox";
 import ShapeKeyControls from "./ShapeKeyControls/ShapeKeyControls";
-import UserMenu from "./UserMenu/UserMenu";
 
 const showColorPicker = (isSkin, currentCategory, hasAsset) =>
   !isSkin && currentCategory?.colorPalette && hasAsset;
@@ -41,15 +40,34 @@ const UI = () => {
 
   return (
     <>
-      <Logo />
-      <ModeSelector />
-      <div className="absolute top-5 right-5 z-30 flex items-center gap-2">
-        <BackdropMenu />
-        <UserMenu />
-        <TopActions />
-      </div>
-      <AuthDialog />
-      <AuthBootstrapper />
+      <header className="app-topbar absolute inset-x-0 top-0 z-40 flex min-h-15 items-center gap-3 px-5 py-2.5 md:px-8">
+        <Link
+          href="/"
+          className="shrink-0 select-none"
+          aria-label="Character Studio home"
+        >
+          <img
+            src="/images/logo-white.svg"
+            alt="Character Studio"
+            className="h-7 w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)] md:h-9"
+          />
+        </Link>
+
+        <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 md:top-1/2 md:-translate-y-1/2 md:pt-0">
+          <ModeSelector embedded />
+        </div>
+
+        <div className="ml-auto flex items-center gap-2">
+          <div className="hidden lg:block">
+            <CharacterChip />
+          </div>
+          <BackdropMenu />
+          <div className="hidden sm:block">
+            <AccountIdentity />
+          </div>
+          <TopActions />
+        </div>
+      </header>
 
       <HideUIButton isHidden={isHidden} setIsHidden={setIsHidden} />
 

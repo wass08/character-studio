@@ -123,11 +123,22 @@ export const SkinManager = () => {
   const combinedTexture = useCombinedTexture(committed.urls, rawSkinColor);
 
   useEffect(() => {
-    if (!skinMaterial || !combinedTexture) return;
+    if (!skinMaterial) return;
+
+    // Without makeup, keep the selected colour directly on the material.
+    // This also clears an old makeup map immediately when it is removed.
+    if (committed.urls.length === 0) {
+      skinMaterial.map = null;
+      skinMaterial.color.set(rawSkinColor);
+      skinMaterial.needsUpdate = true;
+      return;
+    }
+
+    if (!combinedTexture) return;
     skinMaterial.map = combinedTexture;
     skinMaterial.color.set("#ffffff");
     skinMaterial.needsUpdate = true;
-  }, [combinedTexture, skinMaterial]);
+  }, [combinedTexture, committed.urls.length, rawSkinColor, skinMaterial]);
 
   return pending ? (
     <EngineErrorBoundary

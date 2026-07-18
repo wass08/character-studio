@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "motion/react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useConfiguratorStore, UI_MODES } from "@/stores/useConfiguratorStore";
-import { useAuthStore } from "@/stores/useAuthStore";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { UI_MODES, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { Tooltip } from "../primitives/Tooltip";
 
 const PILL_SPRING = { type: "spring", stiffness: 380, damping: 32 };
@@ -17,7 +17,7 @@ const MODES = [
   { id: UI_MODES.EXPORT, label: "Export" },
 ];
 
-const ModeSelector = () => {
+const ModeSelector = ({ embedded = false }) => {
   const mode = useConfiguratorStore((state) => state.mode);
   const setMode = useConfiguratorStore((state) => state.setMode);
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
@@ -26,14 +26,10 @@ const ModeSelector = () => {
   return (
     <div
       className={cn(
-        // Mobile-first layout: pill anchored top-right under the
-        // TopActions row. Tailwind v4 doesn't always let `max-md:`
-        // overrides win against base positioning utilities when both
-        // `left` and `right` get set, so the desktop layout overrides
-        // via `md:` instead. See wiki/architecture/app-structure.md
-        // ## Responsive conventions for the rule.
-        "glass-panel absolute top-20 right-5 z-30 flex flex-row items-center gap-1 rounded-2xl p-1.5",
-        "md:top-5 md:right-auto md:left-1/2 md:-translate-x-1/2 md:rounded-full",
+        "z-30 flex flex-row items-center gap-1 rounded-lg p-1",
+        embedded
+          ? "border border-white/10 bg-white/[0.04]"
+          : "glass-panel absolute top-20 right-5 p-1.5 md:top-5 md:right-auto md:left-1/2 md:-translate-x-1/2",
       )}
     >
       <Link
@@ -59,7 +55,7 @@ const ModeSelector = () => {
             type="button"
             variant="ghost"
             onClick={onClick}
-            className={`relative h-auto rounded-full px-3 py-1.5 text-xs font-medium tracking-tight transition-colors hover:bg-transparent md:px-5 md:py-2 ${
+            className={`relative h-auto rounded-lg px-3 py-1.5 text-xs font-medium tracking-tight transition-colors hover:bg-transparent md:px-5 md:py-2 ${
               active
                 ? "text-white"
                 : disabled
@@ -71,7 +67,7 @@ const ModeSelector = () => {
               <motion.div
                 layoutId="active-mode-pill"
                 transition={PILL_SPRING}
-                className="absolute inset-0 rounded-xl bg-white/15 ring-1 ring-white/25 shadow-[0_0_18px_rgba(255,255,255,0.15)] md:rounded-full"
+                className="absolute inset-0 rounded-md bg-white/15 ring-1 ring-white/25 shadow-[0_0_18px_rgba(255,255,255,0.15)]"
               />
             )}
             <span className="relative">{m.label}</span>

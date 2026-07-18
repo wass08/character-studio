@@ -10,24 +10,6 @@ const WallScene = dynamic(() => import("@/components/lab/WallScene"), {
 
 const HERO_CHARACTER_LIMIT = 8;
 const PUBLIC_CHARACTER_FILTER = 'hidden != true && thumbnail != ""';
-const SKELETON_KEYS = Array.from(
-  { length: HERO_CHARACTER_LIMIT },
-  (_, index) => `hero-wall-skeleton-${index}`,
-);
-
-function HeroWallSkeleton() {
-  return (
-    <div className="grid h-full w-full grid-cols-4 items-end gap-3 p-5">
-      {SKELETON_KEYS.map((key, index) => (
-        <div
-          key={key}
-          className="h-[72%] animate-pulse rounded-lg bg-white/[0.05]"
-          style={{ animationDelay: `${index * 70}ms` }}
-        />
-      ))}
-    </div>
-  );
-}
 
 const HeroCharacterWall = () => {
   const [items, setItems] = useState([]);
@@ -83,7 +65,10 @@ const HeroCharacterWall = () => {
     };
   }, []);
 
-  if (loading) return <HeroWallSkeleton />;
+  // The scene sits over an intentional page gradient, so an empty canvas is
+  // the cleanest loading state. The old card grid looked like unrelated feed
+  // content and flashed before the 3D lineup mounted.
+  if (loading) return null;
 
   if (items.length === 0) {
     return (

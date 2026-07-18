@@ -8,11 +8,9 @@ import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 
 type Phase = "booting" | "exiting" | "done";
 
-// Grace window after metadata (`loading`) clears, covering the async GLB/
-// texture decode that the store flag doesn't track.
-const DECODE_GRACE_MS = 1100;
-// Safety cap so a hung load never traps the user behind the diamond.
-const MAX_BOOT_MS = 8000;
+// Once the rig exists and every requested part reports settled, hold for a
+// few frames so React effects can commit the final material/texture updates.
+const SETTLE_SECONDS = 0.3;
 
 /**
  * First-load placeholder: a near-white octahedron lit by the live scene
@@ -33,31 +31,25 @@ const MAX_BOOT_MS = 8000;
  */
 export const BootDiamond = () => {
   const loading = useConfiguratorStore((s: { loading: boolean }) => s.loading);
+  const pendingPartCount = useConfiguratorStore(
+    (s: { assetLoading: Record<string, boolean> }) =>
+      Object.keys(s.assetLoading).length,
+  );
   const scene = useThree((s) => s.scene);
   const [phase, setPhase] = useState<Phase>("booting");
 
   const group = useRef<Group>(null);
   const elapsed = useRef(0);
   const scale = useRef(0);
+  const settledFor = useRef(0);
 
   // Restart on every full (re)build.
   useEffect(() => {
-    if (loading) setPhase("booting");
+    if (loading) {
+      settledFor.current = 0;
+      setPhase("booting");
+    }
   }, [loading]);
-
-  // Hold through the decode grace once metadata clears, then collapse out.
-  useEffect(() => {
-    if (phase !== "booting" || loading) return;
-    const id = setTimeout(() => setPhase("exiting"), DECODE_GRACE_MS);
-    return () => clearTimeout(id);
-  }, [phase, loading]);
-
-  // Hard safety cap from the start of a boot.
-  useEffect(() => {
-    if (phase !== "booting") return;
-    const id = setTimeout(() => setPhase("exiting"), MAX_BOOT_MS);
-    return () => clearTimeout(id);
-  }, [phase]);
 
   // Drive the avatar's visibility off the phase. This is the reveal: the
   // component returns null at "done" but stays MOUNTED (its parent always
@@ -83,6 +75,15 @@ export const BootDiamond = () => {
     // frame so it catches the Rig the moment its armature finishes loading.
     const rig = scene.getObjectByName("Rig");
     if (rig) rig.visible = false;
+
+    if (phase === "booting") {
+      if (!loading && pendingPartCount === 0 && rig) {
+        settledFor.current += delta;
+        if (settledFor.current >= SETTLE_SECONDS) setPhase("exiting");
+      } else {
+        settledFor.current = 0;
+      }
+    }
 
     elapsed.current += delta;
     g.rotation.y += delta * 0.9;

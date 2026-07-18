@@ -9,6 +9,14 @@ export const useCombinedTexture = (imageUrls, baseColorHex) => {
   useEffect(() => {
     const maps = Array.isArray(textureMaps) ? textureMaps : [textureMaps];
 
+    // A plain skin colour should stay on material.color. Baking it into a 1px
+    // sRGB texture changes the colour-management path and makes the same hex
+    // value render visibly darker once this async effect completes.
+    if (maps.length === 0) {
+      setCanvasTexture(null);
+      return;
+    }
+
     const firstImg = maps[0]?.image || maps[0]?.source?.data;
 
     const canvas = document.createElement("canvas");
@@ -40,9 +48,8 @@ export const useCombinedTexture = (imageUrls, baseColorHex) => {
     // Do not dispose in the dependency cleanup. WebGPU can still have a render
     // pass in flight against the previous material map for one frame during a
     // makeup/skin-colour swap; disposing or nulling that map can trip internal
-    // texture-transform reads. The texture is tiny for the no-makeup case, and
-    // character swaps are infrequent enough that avoiding the crash is the
-    // better trade-off here.
+    // texture-transform reads. Makeup and character swaps are infrequent
+    // enough that avoiding the crash is the better trade-off here.
   }, [textureMaps, baseColorHex]);
 
   return canvasTexture;

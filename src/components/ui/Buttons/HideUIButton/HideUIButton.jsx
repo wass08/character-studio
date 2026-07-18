@@ -11,7 +11,7 @@ const HideUIButton = ({ isHidden, setIsHidden }) => {
       asChild
       variant="ghost"
       className={cn(
-        "glass-panel fixed left-4 top-[clamp(35px,13vh,220px)] z-[1000] h-auto rounded-lg px-3.5 py-2 text-xs font-medium tracking-tight text-white",
+        "glass-panel fixed top-28 left-4 z-[1000] h-auto rounded-lg px-3.5 py-2 text-xs font-medium tracking-tight text-white",
         "hidden max-md:inline-flex",
       )}
     >

@@ -86,7 +86,7 @@ const HeroStage = () => {
             <Button
               asChild
               size="lg"
-              className="h-auto gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold tracking-tight text-zinc-950 shadow-[0_0_32px_rgba(255,255,255,0.18)] transition-transform hover:scale-[1.02] hover:bg-white"
+              className="h-auto gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold tracking-tight text-zinc-950 shadow-[0_0_32px_rgba(255,255,255,0.18)] transition-transform hover:scale-[1.02] hover:bg-white"
             >
               <Link href="/editor">
                 Create your character
@@ -97,7 +97,7 @@ const HeroStage = () => {
               asChild
               size="lg"
               variant="ghost"
-              className="h-auto gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold tracking-tight text-white hover:bg-white/10 hover:text-white"
+              className="h-auto gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold tracking-tight text-white hover:bg-white/10 hover:text-white"
             >
               <Link href="/community">
                 Explore community

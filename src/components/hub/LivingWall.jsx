@@ -55,7 +55,7 @@ const LivingWall = () => {
         </div>
         <Link
           href="/community"
-          className="hidden items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium tracking-tight text-white/55 transition-colors hover:text-white sm:inline-flex"
+          className="hidden items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium tracking-tight text-white/55 transition-colors hover:text-white sm:inline-flex"
         >
           View all
           <ArrowRight className="h-3.5 w-3.5" />

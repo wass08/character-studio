@@ -38,7 +38,7 @@ const AccountIdentity = () => {
         onClick={() => setLoginDialogOpen(true)}
         // Dark chip (same treatment as the back link) so the label stays
         // readable over light 3D scenes (Daylight studio, platformer).
-        className="h-9 gap-1.5 rounded-full border border-white/10 bg-black/40 px-3 text-xs font-medium tracking-tight text-white/80 backdrop-blur hover:bg-black/55 hover:text-white"
+        className="h-9 gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-xs font-medium tracking-tight text-white/80 hover:bg-white/[0.08] hover:text-white"
       >
         Sign in
       </Button>
@@ -54,7 +54,7 @@ const AccountIdentity = () => {
           type="button"
           variant="ghost"
           className={cn(
-            "h-9 gap-2 rounded-full border border-white/10 bg-black/40 px-3 text-xs font-medium tracking-tight text-white/85 backdrop-blur transition-colors hover:bg-black/55 hover:text-white",
+            "h-9 gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-xs font-medium tracking-tight text-white/85 transition-colors hover:bg-white/[0.08] hover:text-white",
           )}
         >
           <span className="max-w-[120px] truncate">{display}</span>
