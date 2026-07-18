@@ -1,8 +1,9 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 
 /**
  * Boot-time character hydration.
@@ -14,12 +15,11 @@ import { useAuthStore } from "@/stores/useAuthStore";
  *     survives a refresh.
  */
 const AuthBootstrapper = () => {
+  const pathname = usePathname();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const userId = useAuthStore((s) => s.user?.id);
   const loadCharacter = useConfiguratorStore((s) => s.loadCharacter);
-  const currentCharacterId = useConfiguratorStore(
-    (s) => s.currentCharacterId,
-  );
+  const currentCharacterId = useConfiguratorStore((s) => s.currentCharacterId);
   const setCurrentCharacter = useConfiguratorStore(
     (s) => s.setCurrentCharacter,
   );
@@ -28,12 +28,22 @@ const AuthBootstrapper = () => {
   // React-strict-mode mount/cleanup/mount cycle without cancelling the load.
   const lastLoadedForRef = useRef(null);
   const rehydratedAnonRef = useRef(false);
+  // These routes own hydration themselves from their URL parameter. Global
+  // bootstrapping here would race the route load with a persisted/main
+  // character and make the last network response win.
+  const routeOwnsCharacter =
+    pathname?.startsWith("/c/") || pathname?.startsWith("/editor");
 
   // Rehydrate a persisted character once on first mount (anonymous flow).
   useEffect(() => {
+    if (routeOwnsCharacter) return;
     if (rehydratedAnonRef.current) return;
     rehydratedAnonRef.current = true;
     if (!currentCharacterId) return;
+    if (Object.keys(useConfiguratorStore.getState().customization).length > 0) {
+      return;
+    }
+    let cancelled = false;
     (async () => {
       try {
         const rec = await pb
@@ -41,16 +51,27 @@ const AuthBootstrapper = () => {
           .getOne(currentCharacterId, { requestKey: null });
         // The user may have begun a new character while this was in flight —
         // don't overwrite the fresh look with the persisted one.
-        if (useConfiguratorStore.getState().creatingNewCharacter) return;
+        if (cancelled || useConfiguratorStore.getState().creatingNewCharacter) {
+          return;
+        }
         await loadCharacter(rec);
       } catch {
         // Character vanished or was hidden — clear so we don't keep retrying.
-        setCurrentCharacter({ id: null, name: null });
+        if (!cancelled) setCurrentCharacter({ id: null, name: null });
       }
     })();
-  }, [currentCharacterId, loadCharacter, setCurrentCharacter]);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    currentCharacterId,
+    loadCharacter,
+    routeOwnsCharacter,
+    setCurrentCharacter,
+  ]);
 
   useEffect(() => {
+    if (routeOwnsCharacter) return;
     if (!isLoggedIn || !userId) {
       lastLoadedForRef.current = null;
       return;
@@ -63,6 +84,7 @@ const AuthBootstrapper = () => {
     // Don't auto-load the main character over a deliberately-started new one.
     if (useConfiguratorStore.getState().creatingNewCharacter) return;
     lastLoadedForRef.current = userId;
+    let cancelled = false;
 
     (async () => {
       try {
@@ -89,13 +111,24 @@ const AuthBootstrapper = () => {
         }
         // Re-check after the awaited fetch: the editor may have started a new
         // character in the meantime (child effects fire before this resolves).
-        if (useConfiguratorStore.getState().creatingNewCharacter) return;
+        if (cancelled || useConfiguratorStore.getState().creatingNewCharacter) {
+          return;
+        }
         if (record) await loadCharacter(record);
       } catch {
         // Silent — auto-load is a convenience, not a guarantee.
       }
     })();
-  }, [isLoggedIn, userId, currentCharacterId, loadCharacter]);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isLoggedIn,
+    userId,
+    currentCharacterId,
+    loadCharacter,
+    routeOwnsCharacter,
+  ]);
 
   return null;
 };

@@ -27,10 +27,10 @@ const PlayShell = ({ title, children, sidebar, actions }) => {
 
   return (
     <main className="fixed inset-0 flex h-screen w-full flex-col bg-black text-white">
-      <header className="absolute inset-x-0 top-0 z-30 flex items-center gap-3 px-5 py-3 md:px-8">
+      <header className="app-topbar absolute inset-x-0 top-0 z-30 flex min-h-15 items-center gap-3 px-5 py-3 md:px-8">
         <Link
           href={backHref}
-          className="inline-flex h-9 items-center gap-1 rounded-full border border-white/10 bg-black/40 px-3 text-xs font-medium tracking-tight text-white/80 backdrop-blur transition-colors hover:border-white/25 hover:text-white"
+          className="inline-flex h-9 items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-xs font-medium tracking-tight text-white/80 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
           <span className="max-w-[140px] truncate">{backLabel}</span>

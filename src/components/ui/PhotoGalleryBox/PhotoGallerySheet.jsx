@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
 import { Camera, Images } from "lucide-react";
+import { motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -11,14 +11,19 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import { toast } from "../primitives/Toast";
-import { useGalleryPhotos } from "./useGalleryPhotos";
 import GalleryThumbnail from "./GalleryThumbnail";
+import { useGalleryPhotos } from "./useGalleryPhotos";
 
 const Spinner = () => (
-  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+  <svg
+    className="h-4 w-4 animate-spin"
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden="true"
+  >
     <circle
       cx="12"
       cy="12"
@@ -82,7 +87,7 @@ const PhotoGallerySheet = () => {
           type="button"
           aria-label="Open gallery"
           whileTap={{ scale: 0.94 }}
-          className="glass-panel absolute right-4 bottom-24 z-30 flex h-12 items-center gap-2 rounded-full px-4 text-xs font-medium text-white ring-1 ring-white/25 md:hidden"
+          className="glass-panel absolute right-4 bottom-24 z-30 flex h-12 items-center gap-2 rounded-lg px-4 text-xs font-medium text-white ring-1 ring-white/25 md:hidden"
         >
           <Images className="h-4 w-4" />
           <span>Gallery</span>

@@ -7,6 +7,7 @@ import {
 } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import BVHEcctrl, {
+  characterStatus,
   Joystick,
   StaticCollider,
   useAnimationStore,
@@ -20,6 +21,7 @@ import { EngineCanvas } from "@/components/scene/EngineCanvas";
 import FrameLimiter from "@/components/scene/FrameLimiter";
 import { UI_MODES, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import NoCharacterOverlay from "./NoCharacterOverlay";
+import PlatformerSfx from "./PlatformerSfx";
 import PlayShell from "./PlayShell";
 
 /**
@@ -50,6 +52,7 @@ const CAPSULE_RADIUS = 0.3;
 const CAPSULE_LENGTH = 0.8;
 const FLOAT_HEIGHT = 0.1;
 const MODEL_Y = -(FLOAT_HEIGHT + CAPSULE_LENGTH / 2 + CAPSULE_RADIUS);
+const SOLE_CLEARANCE = 0.012;
 const SPAWN = [0, 1, 0];
 
 // BVHEcctrl orients the model with lookAt (its local -Z faces the move
@@ -171,8 +174,8 @@ const PALETTE = {
 
 // Everything the character can stand on or bump into. Wrapped in a single
 // StaticCollider so bvhecctrl builds one BVH from the merged geometry.
-const CollidableWorld = () => (
-  <StaticCollider>
+const CollidableWorld = ({ worldRef }) => (
+  <StaticCollider ref={worldRef}>
     {/* Oversized so its rim sits past the fog's far plane — the edge fades
         into the horizon instead of reading as a floating quad. */}
     <mesh receiveShadow rotation-x={-Math.PI / 2}>
@@ -223,6 +226,75 @@ const CollidableWorld = () => (
     </mesh>
   </StaticCollider>
 );
+
+// The floating capsule briefly compresses its spring on impact. Keep that
+// physical response, but counter it on the rendered avatar so the shoes never
+// dip through the supporting mesh during the landing frames.
+const GroundedAvatar = ({ ecctrlRef, worldRef, gender }) => {
+  const visualRef = useRef(null);
+  const raycaster = useRef(new THREE.Raycaster());
+  const rayOrigin = useRef(new THREE.Vector3());
+  const localGround = useRef(new THREE.Vector3());
+  const worldNormal = useRef(new THREE.Vector3());
+  const down = useRef(new THREE.Vector3(0, -1, 0));
+
+  useFrame((_, delta) => {
+    const visual = visualRef.current;
+    const controller = ecctrlRef.current?.group;
+    const world = worldRef.current;
+    if (!visual || !controller || !world) return;
+
+    let targetY = MODEL_Y;
+    let hasGroundHit = false;
+    if (characterStatus.isOnGround) {
+      controller.getWorldPosition(rayOrigin.current);
+      rayOrigin.current.y += 0.45;
+      raycaster.current.set(rayOrigin.current, down.current);
+      raycaster.current.far = 2.5;
+      const hit = raycaster.current
+        .intersectObject(world, true)
+        .find((intersection) => {
+          if (!intersection.face) return false;
+          worldNormal.current
+            .copy(intersection.face.normal)
+            .transformDirection(intersection.object.matrixWorld);
+          return worldNormal.current.y > 0.35;
+        });
+
+      if (hit && visual.parent) {
+        hasGroundHit = true;
+        visual.parent.worldToLocal(localGround.current.copy(hit.point));
+        targetY = THREE.MathUtils.clamp(
+          localGround.current.y + SOLE_CLEARANCE,
+          MODEL_Y - 0.08,
+          MODEL_Y + 0.3,
+        );
+      }
+    }
+
+    // While grounded, follow the surface exactly in world space. Easing the
+    // local offset as the capsule spring rebounded made the avatar rise and
+    // settle a second time after every landing. Only ease back to the neutral
+    // airborne offset once contact is actually lost.
+    visual.position.y = hasGroundHit
+      ? targetY
+      : THREE.MathUtils.damp(visual.position.y, targetY, 18, delta);
+  });
+
+  return (
+    <group
+      ref={visualRef}
+      position={[0, MODEL_Y, 0]}
+      rotation={[0, FACING_Y, 0]}
+    >
+      <Suspense fallback={null}>
+        <StoreCharacterProvider>
+          <Avatar key={gender} />
+        </StoreCharacterProvider>
+      </Suspense>
+    </group>
+  );
+};
 
 // Chase camera that tracks the controller group from a fixed world-space
 // offset (so the move axes stay stable) and looks at the character's chest.
@@ -285,6 +357,7 @@ const ResetControl = ({ ecctrlRef }) => {
 const PlatformerScene = () => {
   const gender = useConfiguratorStore((s) => s.gender);
   const ecctrlRef = useRef(null);
+  const worldRef = useRef(null);
 
   return (
     <>
@@ -292,9 +365,10 @@ const PlatformerScene = () => {
       <SunFollower ecctrlRef={ecctrlRef} />
       <FollowCamera ecctrlRef={ecctrlRef} />
       <AnimationBridge />
+      <PlatformerSfx />
       <ResetControl ecctrlRef={ecctrlRef} />
 
-      <CollidableWorld />
+      <CollidableWorld worldRef={worldRef} />
 
       <KeyboardControls map={KEYBOARD_MAP}>
         <BVHEcctrl
@@ -303,17 +377,22 @@ const PlatformerScene = () => {
           colliderCapsuleArgs={[CAPSULE_RADIUS, CAPSULE_LENGTH, 4, 8]}
           floatHeight={FLOAT_HEIGHT}
           gravity={18}
+          fallGravityFactor={2.75}
           jumpVel={6.5}
           maxWalkSpeed={2.6}
           maxRunSpeed={5.5}
+          // High damping also acts on the first grounded jump frame and can
+          // cancel the upward impulse entirely. Keep the controller's proven
+          // spring response and use extra collision samples for clean landings.
+          floatSpringK={600}
+          floatDampingC={28}
+          collisionCheckIteration={5}
         >
-          <group position={[0, MODEL_Y, 0]} rotation={[0, FACING_Y, 0]}>
-            <Suspense fallback={null}>
-              <StoreCharacterProvider>
-                <Avatar key={gender} />
-              </StoreCharacterProvider>
-            </Suspense>
-          </group>
+          <GroundedAvatar
+            ecctrlRef={ecctrlRef}
+            worldRef={worldRef}
+            gender={gender}
+          />
         </BVHEcctrl>
       </KeyboardControls>
     </>
@@ -359,7 +438,7 @@ const PlatformerView = () => {
 
       {/* Desktop key hints */}
       <div className="pointer-events-none absolute inset-x-0 bottom-6 z-20 flex justify-center px-6 max-md:hidden">
-        <div className="glass-panel pointer-events-auto flex flex-wrap items-center gap-3 rounded-full px-4 py-2 text-[11px] tracking-tight text-white/75">
+        <div className="glass-panel pointer-events-auto flex flex-wrap items-center gap-3 rounded-lg px-4 py-2 text-[11px] tracking-tight text-white/75">
           <span>
             <kbd className="rounded bg-white/10 px-1.5 py-0.5 text-white/90">
               WASD

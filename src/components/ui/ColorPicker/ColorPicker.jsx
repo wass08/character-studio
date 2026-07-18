@@ -1,19 +1,19 @@
 "use client";
 import { motion } from "motion/react";
 import { CustomPicker } from "react-color";
-import { Button } from "@/components/ui/button";
 import {
+  EditableInput,
   Hue,
   Saturation,
-  EditableInput,
 } from "react-color/lib/components/common";
-import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
 
 const MotionButton = motion.button;
 
@@ -82,7 +82,7 @@ const CustomColorPicker = (props) => {
       </div>
 
       {presetColors.length > 0 && (
-        <div className="thin-scrollbar mb-2 flex max-h-[clamp(36px,7vh,64px)] max-w-full flex-wrap gap-1.5 overflow-y-auto">
+        <div className="no-scrollbar mb-2 flex max-h-[clamp(38px,7vh,68px)] max-w-full flex-wrap gap-1.5 overflow-y-auto p-1">
           {presetColors.map((color) => {
             const isActive =
               activeColor && activeColor === color.toLowerCase?.();
@@ -111,23 +111,32 @@ const CustomColorPicker = (props) => {
         </div>
       )}
 
-      <div className="flex items-center rounded-md bg-white/[0.06] px-2.5 py-1 ring-1 ring-white/10">
-        <span className="mr-1.5 text-[10px] font-semibold tracking-widest text-white/50">
+      <div className="flex min-h-8 items-center rounded-lg bg-white/[0.06] px-2.5 ring-1 ring-white/10">
+        <span className="w-9 shrink-0 text-[10px] leading-none font-semibold tracking-widest text-white/50">
           HEX
         </span>
         <EditableInput
           value={props.hex}
           onChange={(data) => props.onChange(data.hex || data)}
           style={{
+            wrap: {
+              display: "flex",
+              flex: "1 1 auto",
+              minWidth: 0,
+              alignItems: "center",
+            },
             input: {
               width: "100%",
+              height: "18px",
+              display: "block",
               border: "none",
               background: "transparent",
               outline: "none",
               fontWeight: 400,
               fontSize: "12px",
+              lineHeight: "18px",
               color: "#ffffff",
-              padding: "2px 0",
+              padding: 0,
               fontFamily: "inherit",
             },
             label: { display: "none" },

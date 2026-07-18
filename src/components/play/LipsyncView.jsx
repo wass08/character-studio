@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import Scene from "@/components/scene/SceneDynamic";
 import BackdropMenu from "@/components/ui/BackdropMenu/BackdropMenu";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/primitives/Spinner";
 import { toast } from "@/components/ui/primitives/Toast";
 import { getLipsync } from "@/lib/lipsync";
 import { cn } from "@/lib/utils";
@@ -50,6 +51,8 @@ const LipsyncView = () => {
   const gender = useConfiguratorStore((s) => s.gender);
 
   const [presets, setPresets] = useState([]);
+  const [presetsLoading, setPresetsLoading] = useState(true);
+  const [presetsError, setPresetsError] = useState(false);
   const [genderFilter, setGenderFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [playing, setPlaying] = useState(false);
@@ -72,31 +75,42 @@ const LipsyncView = () => {
     setLipsyncPlaying(playing);
   }, [playing, setPose, setLipsyncPlaying]);
 
-  // Load voice presets and prefill the gender filter from the active
-  // character so the player opens on the most relevant voices. Falls back
-  // to "all" when the character's gender has no matching presets.
+  // Voice data is route-level, not gender-specific: fetch it once and derive
+  // the active filter locally. This avoids a redundant network request when a
+  // character changes while keeping the empty state honest.
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
+      setPresetsLoading(true);
+      setPresetsError(false);
       try {
         const list = await pb
           .collection("CharacterStudioVoicePresets")
           .getFullList({ sort: "position,created" });
         if (cancelled) return;
         setPresets(list);
-        const desired = GENDER_TO_FILTER[gender] || "all";
-        const hasMatch =
-          desired === "all" || list.some((p) => p.gender === desired);
-        setGenderFilter(hasMatch ? desired : "all");
       } catch (e) {
-        if (!cancelled) console.warn("voice presets load failed", e);
+        if (!cancelled) {
+          console.warn("voice presets load failed", e);
+          setPresetsError(true);
+        }
+      } finally {
+        if (!cancelled) setPresetsLoading(false);
       }
     };
     load();
     return () => {
       cancelled = true;
     };
-  }, [gender]);
+  }, []);
+
+  useEffect(() => {
+    if (presetsLoading) return;
+    const desired = GENDER_TO_FILTER[gender] || "all";
+    const hasMatch =
+      desired === "all" || presets.some((p) => p.gender === desired);
+    setGenderFilter(hasMatch ? desired : "all");
+  }, [gender, presets, presetsLoading]);
 
   // Clean up audio + reset mouth on unmount.
   useEffect(() => {
@@ -200,14 +214,14 @@ const LipsyncView = () => {
           </div>
 
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-0.5 rounded-full border border-white/10 bg-white/[0.04] p-0.5">
+            <div className="flex items-center gap-0.5 rounded-lg border border-white/10 bg-white/[0.04] p-0.5">
               {VOICE_FILTERS.map((opt) => (
                 <button
                   type="button"
                   key={opt.id}
                   onClick={() => setGenderFilter(opt.id)}
                   className={cn(
-                    "rounded-full px-3 py-1 text-[11px] font-medium tracking-tight transition-colors",
+                    "rounded-md px-3 py-1 text-[11px] font-medium tracking-tight transition-colors",
                     genderFilter === opt.id
                       ? "bg-white/15 text-white ring-1 ring-white/25"
                       : "text-white/50 hover:text-white/80",
@@ -230,7 +244,16 @@ const LipsyncView = () => {
           </div>
 
           <div className="no-scrollbar flex max-h-40 flex-wrap content-start gap-1.5 overflow-y-auto">
-            {visiblePresets.length === 0 ? (
+            {presetsLoading ? (
+              <div className="flex items-center gap-2 px-1 py-1 text-[11px] text-white/55">
+                <Spinner className="h-3.5 w-3.5" />
+                <span>Loading voices…</span>
+              </div>
+            ) : presetsError ? (
+              <div className="px-1 py-1 text-[11px] text-white/45">
+                Voices couldn&apos;t be loaded. Please try again.
+              </div>
+            ) : visiblePresets.length === 0 ? (
               <div className="px-1 py-1 text-[11px] text-white/45">
                 {presets.length === 0
                   ? "No voice presets yet. Admins can add some at /admin/voices."
@@ -247,7 +270,7 @@ const LipsyncView = () => {
                     variant="outline"
                     onClick={() => playUrl(url, p.label)}
                     className={cn(
-                      "h-9 gap-1.5 rounded-full border px-3 text-xs font-medium tracking-tight transition-colors",
+                      "h-9 gap-1.5 rounded-lg border px-3 text-xs font-medium tracking-tight transition-colors",
                       active
                         ? "border-white/40 bg-white/15 text-white"
                         : "border-white/10 bg-white/[0.04] text-white/75 hover:border-white/25 hover:bg-white/[0.04] hover:text-white",

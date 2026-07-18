@@ -128,7 +128,7 @@ const CharacterPageView = ({ id }) => {
           </p>
           <Link
             href="/"
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-sm font-medium ring-1 ring-white/20 hover:bg-white/15"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-white/10 px-5 py-2 text-sm font-medium ring-1 ring-white/20 hover:bg-white/15"
           >
             Back home
           </Link>
@@ -173,7 +173,7 @@ const CharacterPageView = ({ id }) => {
                   {isOwner ? (
                     <Link
                       href={`/editor/${record.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-semibold tracking-tight text-zinc-950 transition-colors hover:bg-white/90"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-white px-4 py-2 text-xs font-semibold tracking-tight text-zinc-950 transition-colors hover:bg-white/90"
                     >
                       <Pencil className="h-3.5 w-3.5" /> Edit
                     </Link>
@@ -182,7 +182,7 @@ const CharacterPageView = ({ id }) => {
                       type="button"
                       variant="default"
                       onClick={onFork}
-                      className="h-auto gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-semibold tracking-tight text-zinc-950 transition-colors hover:bg-white/90"
+                      className="h-auto gap-1.5 rounded-lg bg-white px-4 py-2 text-xs font-semibold tracking-tight text-zinc-950 transition-colors hover:bg-white/90"
                     >
                       <GitFork className="h-3.5 w-3.5" /> Fork
                     </Button>
@@ -191,7 +191,7 @@ const CharacterPageView = ({ id }) => {
                     type="button"
                     variant="outline"
                     onClick={onShare}
-                    className="h-auto gap-1.5 rounded-full border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-medium tracking-tight text-white/85 hover:border-white/30 hover:bg-white/[0.04] hover:text-white"
+                    className="h-auto gap-1.5 rounded-lg border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-medium tracking-tight text-white/85 hover:border-white/30 hover:bg-white/[0.04] hover:text-white"
                   >
                     <Share2 className="h-3.5 w-3.5" /> Share
                   </Button>

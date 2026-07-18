@@ -22,6 +22,7 @@ const CharacterChip = () => {
   const [thumb, setThumb] = useState(null);
 
   useEffect(() => {
+    void charactersChangedAt;
     let cancelled = false;
     if (!currentCharacterId) {
       setThumb(null);
@@ -47,7 +48,7 @@ const CharacterChip = () => {
     <Link
       href="/studio"
       aria-label="Open My Characters"
-      className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-0 pr-3 pl-1 text-xs font-medium tracking-tight text-white/85 transition-colors hover:border-white/25 hover:bg-white/[0.07] hover:text-white"
+      className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-0 pr-3 pl-1 text-xs font-medium tracking-tight text-white/85 transition-colors hover:border-white/25 hover:bg-white/[0.07] hover:text-white"
     >
       <span className="inline-flex h-7 w-7 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/15">
         {thumb ? (

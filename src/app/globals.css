@@ -187,6 +187,19 @@
   -webkit-backdrop-filter: blur(16px) saturate(1.1);
 }
 
+/* One high-contrast chrome treatment across scrolling hubs, the editor, and
+   fullscreen play surfaces. The solid tint keeps navigation readable over
+   both the light platformer and dark studio backdrops. */
+@utility app-topbar {
+  background: rgba(9, 9, 13, 0.82);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 12px 34px rgba(0, 0, 0, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
 /* Animated conic border for character cards: a 1px ring lit by a rotating
    highlight, revealed on hover. Browsers without @property (no registered
    custom property animation) simply keep a static highlight — still a nice

@@ -17,7 +17,12 @@ import { pb } from "@/stores/useConfiguratorStore";
 const CharacterCard = ({ character, size = "wall", overlay }) => {
   const thumb = character.thumbnail
     ? pb.files.getURL(character, character.thumbnail, {
-        thumb: size === "featured" ? "512x512" : "256x256",
+        thumb:
+          size === "featured"
+            ? "512x512"
+            : size === "owned"
+              ? "320x320"
+              : "256x256",
       })
     : null;
   const author = getUserDisplayName(character.expand?.user, "");

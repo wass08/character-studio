@@ -111,12 +111,18 @@ export default function WallCharacter({
   onHover,
   onReady,
   label = null,
+  carouselCameraAngleRef = null,
   motionMode = "wall",
 }) {
   const group = useRef();
   const labelAnchor = useRef();
+  const labelElement = useRef();
   const headWorldPos = useRef(new THREE.Vector3());
   const headLocalPos = useRef(new THREE.Vector3());
+  const characterWorldPos = useRef(new THREE.Vector3());
+  const characterWorldQuat = useRef(new THREE.Quaternion());
+  const facingDirection = useRef(new THREE.Vector3());
+  const cameraDirection = useRef(new THREE.Vector3());
   const anchorPositionRef = useRef(
     new THREE.Vector3(position[0], position[1], position[2]),
   );
@@ -164,7 +170,8 @@ export default function WallCharacter({
     () => hashString(`${character.id || character.name || index}`),
     [character.id, character.name, index],
   );
-  const isHero = motionMode === "hero";
+  const isHero = motionMode === "hero" || motionMode === "carousel";
+  const isCarousel = motionMode === "carousel";
   const height =
     typeof character.height === "number" ? clamp(character.height, 0.5, 2) : 1;
   const targetScale = scale * remap(height, 0.5, 2, 0.7, 1.1);
@@ -225,11 +232,17 @@ export default function WallCharacter({
   );
 
   useEffect(() => {
+    if (makeupUrls.length === 0) {
+      skinMaterial.map = null;
+      skinMaterial.color.set(skinColor);
+      skinMaterial.needsUpdate = true;
+      return;
+    }
     if (!makeupTexture) return;
     skinMaterial.map = makeupTexture;
     skinMaterial.color.set("#ffffff");
     skinMaterial.needsUpdate = true;
-  }, [skinMaterial, makeupTexture]);
+  }, [makeupTexture, makeupUrls.length, skinColor, skinMaterial]);
 
   useEffect(() => () => skinMaterial.dispose(), [skinMaterial]);
 
@@ -269,8 +282,9 @@ export default function WallCharacter({
   }, [assetResetKey, position[0], position[1], position[2]]);
 
   useEffect(() => {
-    revealReadyRef.current = !!skeleton && !!makeupTexture;
-  }, [makeupTexture, skeleton]);
+    revealReadyRef.current =
+      !!skeleton && (makeupUrls.length === 0 || !!makeupTexture);
+  }, [makeupTexture, makeupUrls.length, skeleton]);
 
   useEffect(() => {
     assetsReadyRef.current = assetsReady;
@@ -376,14 +390,14 @@ export default function WallCharacter({
         duration: 2.6 + ((seed >>> 9) % 12) / 10,
         timeScale: 0.85,
       },
-    ].filter(Boolean);
+    ].filter((gesture) => gesture && (!isCarousel || gesture.type !== "walk"));
 
     return {
       base: idle,
       baseTimeScale: 0.92 + ((seed >>> 8) % 14) / 100,
       gestures,
     };
-  }, [isHero, names, seed, wallAnimations]);
+  }, [isCarousel, isHero, names, seed, wallAnimations]);
   useEffect(() => {
     baseActionRef.current = null;
     gestureRef.current = null;
@@ -512,7 +526,7 @@ export default function WallCharacter({
     [isHero, position[0], position[1], position[2], seed, targetScale],
   );
 
-  useFrame(({ clock }, delta) => {
+  useFrame(({ camera, clock }, delta) => {
     const now = clock.elapsedTime;
     const frameDelta = Math.min(delta, 0.05);
     const baseAction = actions[animationPlan.base];
@@ -624,6 +638,37 @@ export default function WallCharacter({
         headLocalPos.current.y += isHero ? 0.36 : 0.26;
         labelAnchor.current.position.lerp(headLocalPos.current, 0.42);
       }
+
+      if (labelElement.current && isCarousel) {
+        group.current.getWorldPosition(characterWorldPos.current);
+        group.current.getWorldQuaternion(characterWorldQuat.current);
+        facingDirection.current
+          .set(0, 0, 1)
+          .applyQuaternion(characterWorldQuat.current)
+          .normalize();
+        cameraDirection.current
+          .copy(camera.position)
+          .sub(characterWorldPos.current)
+          .normalize();
+        const facing = facingDirection.current.dot(cameraDirection.current);
+        const angleDifference = carouselCameraAngleRef
+          ? Math.abs(
+              THREE.MathUtils.euclideanModulo(
+                carouselCameraAngleRef.current - rotationY + Math.PI,
+                Math.PI * 2,
+              ) - Math.PI,
+            )
+          : Math.acos(clamp(facing, -1, 1));
+        // Use the same real camera angle as the spotlight. The current name is
+        // fully visible near its slot and fades only during the handoff arc.
+        const labelVisibility = smoothStep(
+          clamp((0.34 - angleDifference) / 0.14, 0, 1),
+        );
+        labelElement.current.style.opacity = String(labelVisibility);
+        labelElement.current.style.transform = `translateY(${(
+          (1 - labelVisibility) * 7
+        ).toFixed(1)}px) scale(${(0.94 + labelVisibility * 0.06).toFixed(3)})`;
+      }
     }
 
     if (currentGesture && now >= gestureEndsAtRef.current) {
@@ -731,7 +776,10 @@ export default function WallCharacter({
       {visible && label && (
         <group ref={labelAnchor} position={[0, 2.05, 0]}>
           <Html center distanceFactor={5.4} zIndexRange={[0, 0]}>
-            <div className="min-w-20 whitespace-nowrap rounded-md border border-white/10 bg-black/50 px-2 py-1 text-center shadow-[0_10px_22px_rgba(0,0,0,0.26)] backdrop-blur-md">
+            <div
+              ref={labelElement}
+              className="min-w-20 whitespace-nowrap rounded-md border border-white/10 bg-black/60 px-2 py-1 text-center opacity-0 shadow-[0_10px_22px_rgba(0,0,0,0.26)] backdrop-blur-md will-change-[opacity,transform]"
+            >
               <div className="max-w-24 truncate text-[10px] font-semibold tracking-tight text-white">
                 {label.name}
               </div>

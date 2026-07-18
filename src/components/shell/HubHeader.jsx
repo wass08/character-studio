@@ -17,8 +17,8 @@ const NAV = [
 /**
  * Persistent top chrome for hub-style pages and experiences.
  * Variant controls density:
- *   - "hub" (default): translucent overlay over scrolling content
- *   - "fixed": opaque pinned bar that sits over a fullscreen canvas
+ *   - "hub" (default): sticky bar over scrolling content
+ *   - "fixed": pinned bar over a fullscreen canvas
  */
 // The chip is a "current character" indicator, so it only makes sense on
 // routes that actually have a character in scope: the editor and any
@@ -37,10 +37,8 @@ const HubHeader = ({ variant = "hub", className }) => {
   return (
     <header
       className={cn(
-        "z-40 flex items-center gap-4 px-5 py-3 md:px-8",
-        fixed
-          ? "absolute inset-x-0 top-0 bg-gradient-to-b from-black/60 to-transparent"
-          : "sticky top-0 backdrop-blur-md bg-black/30 border-b border-white/5",
+        "app-topbar z-40 flex min-h-15 items-center gap-4 px-5 py-3 md:px-8",
+        fixed ? "absolute inset-x-0 top-0" : "sticky top-0",
         className,
       )}
     >
@@ -72,7 +70,7 @@ const HubHeader = ({ variant = "hub", className }) => {
                 <motion.span
                   layoutId="hub-nav-active"
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                  className="absolute inset-0 rounded-full bg-white/10 ring-1 ring-white/15"
+                  className="absolute inset-0 rounded-lg bg-white/10 ring-1 ring-white/15"
                 />
               )}
               <span className="relative">{item.label}</span>
@@ -86,7 +84,7 @@ const HubHeader = ({ variant = "hub", className }) => {
         <Button
           asChild
           size="sm"
-          className="hidden h-8 rounded-full bg-white px-3 text-xs font-semibold tracking-tight text-zinc-950 hover:bg-white sm:inline-flex"
+          className="hidden h-8 rounded-lg bg-white px-3 text-xs font-semibold tracking-tight text-zinc-950 hover:bg-white sm:inline-flex"
         >
           <Link href="/editor">
             <Plus className="h-3.5 w-3.5" />

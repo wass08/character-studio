@@ -101,7 +101,7 @@ export default function CommunityPage() {
             <span className="text-xs text-white/42">
               {visibleItems.length} of {items.length} shown
             </span>
-            <div className="flex rounded-full border border-white/10 bg-white/[0.035] p-1">
+            <div className="flex rounded-lg border border-white/10 bg-white/[0.035] p-1">
               {SORTS.map((item) => {
                 const Icon = item.icon;
                 const active = sort === item.id;
@@ -111,7 +111,7 @@ export default function CommunityPage() {
                     type="button"
                     onClick={() => setSort(item.id)}
                     className={cn(
-                      "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium tracking-tight transition-colors",
+                      "inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium tracking-tight transition-colors",
                       active
                         ? "bg-white text-zinc-950"
                         : "text-white/55 hover:text-white",
@@ -147,7 +147,7 @@ export default function CommunityPage() {
             </p>
             <Button
               asChild
-              className="mt-6 h-auto rounded-full bg-white px-5 py-3 text-sm font-semibold tracking-tight text-zinc-950 hover:bg-white"
+              className="mt-6 h-auto rounded-lg bg-white px-5 py-3 text-sm font-semibold tracking-tight text-zinc-950 hover:bg-white"
             >
               <Link href="/editor">
                 Create your character

@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -15,6 +16,8 @@ import { toast } from "../primitives/Toast";
 const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const AuthDialog = () => {
+  const pathname = usePathname();
+  const router = useRouter();
   const open = useAuthStore((s) => s.loginDialogOpen);
   const setOpen = useAuthStore((s) => s.setLoginDialogOpen);
   const otpId = useAuthStore((s) => s.otpId);
@@ -50,6 +53,7 @@ const AuthDialog = () => {
       toast.success("Signed in");
       setCode("");
       setEmail("");
+      if (pathname === "/") router.replace("/studio");
     } catch (err) {
       toast.error(err?.message || "Invalid code");
     }

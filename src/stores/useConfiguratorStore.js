@@ -39,6 +39,7 @@ const excludedColorCategories = ["Eyes"];
 // customization) is written exactly once; loadCharacter then applies the real
 // customization after awaiting it.
 let categoriesFetchPromise = null;
+let categoriesFetchSeq = 0;
 
 // Monotonic token so only the most-recent loadCharacter writes the store. Two
 // can race on a profile page — the route's viewed character and
@@ -166,8 +167,12 @@ export const useConfiguratorStore = create(
       setGender: (gender) => {
         if (get().gender === gender) return;
 
+        // A character route may still be resolving its saved look. A direct
+        // user gender choice takes ownership from that request.
+        loadCharacterSeq += 1;
         // Any in-flight catalog fetch is for the old gender — drop it so the
         // next fetchCategories rebuilds with the new gender's assets.
+        categoriesFetchSeq += 1;
         categoriesFetchPromise = null;
         set({
           gender: gender,
@@ -329,6 +334,10 @@ export const useConfiguratorStore = create(
       // currently-selected gender. Clears the loaded-character id so the next
       // Save creates a new record instead of overwriting the previous one.
       beginNewCharacter: async () => {
+        // Bare /editor owns the new draft. Invalidate any slower profile/main
+        // hydration that began before navigation so it cannot resurrect a
+        // previously edited character over this clean draft.
+        loadCharacterSeq += 1;
         set({
           creatingNewCharacter: true,
           currentCharacterId: null,
@@ -376,6 +385,7 @@ export const useConfiguratorStore = create(
         // Switch gender first (this clears state + triggers refetch via AssetsBox).
         if (record.gender && get().gender !== record.gender) {
           // Drop any old-gender catalog fetch (see setGender).
+          categoriesFetchSeq += 1;
           categoriesFetchPromise = null;
           set({
             gender: record.gender,
@@ -392,6 +402,10 @@ export const useConfiguratorStore = create(
         if (get().categories.length === 0) {
           await get().fetchCategories();
         }
+        if (seq !== loadCharacterSeq) return;
+        // A user-driven gender switch invalidated this character load while
+        // its catalog was in flight. Do not apply a partial/empty look.
+        if (record.gender && get().gender !== record.gender) return;
         const categories = get().categories;
         const saved = record.customization || {};
         const customization = {};
@@ -566,7 +580,10 @@ export const useConfiguratorStore = create(
       },
       updateSkin: (color) => {
         const skinMaterial = get().skin;
-        if (skinMaterial) {
+        // With makeup, SkinManager rebakes the selected colour underneath the
+        // overlay. Tinting that existing composite here would briefly apply
+        // the colour twice before the new map arrives.
+        if (skinMaterial && !skinMaterial.map) {
           skinMaterial.color.set(color);
         }
       },
@@ -577,7 +594,8 @@ export const useConfiguratorStore = create(
         // customization). See `categoriesFetchPromise`.
         if (categoriesFetchPromise) return categoriesFetchPromise;
 
-        categoriesFetchPromise = (async () => {
+        const fetchSeq = ++categoriesFetchSeq;
+        const fetchPromise = (async () => {
           try {
             const currentGender = get().gender;
 
@@ -611,6 +629,16 @@ export const useConfiguratorStore = create(
               currentGender,
             );
 
+            // A gender switch or a newer catalog request happened while the
+            // network calls were running. The old response must never write
+            // old-gender categories/defaults into the new session.
+            if (
+              fetchSeq !== categoriesFetchSeq ||
+              get().gender !== currentGender
+            ) {
+              return;
+            }
+
             set({
               sections,
               categories,
@@ -620,9 +648,13 @@ export const useConfiguratorStore = create(
             });
             get().applyLockedAssets();
           } finally {
-            categoriesFetchPromise = null;
+            if (categoriesFetchPromise === fetchPromise) {
+              categoriesFetchPromise = null;
+            }
           }
         })();
+
+        categoriesFetchPromise = fetchPromise;
 
         return categoriesFetchPromise;
       },
