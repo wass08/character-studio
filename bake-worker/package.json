@@ -1,0 +1,14 @@
+{
+  "name": "character-studio-bake-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1045.0",
+    "p-limit": "^3.1.0",
+    "pocketbase": "^0.26.5"
+  }
+}
