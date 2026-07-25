@@ -150,4 +150,181 @@ const setRules = (collection, rules) => {
   }
 }
 
+// --- Bake pipeline: CharacterStudioBakes + CharacterStudioBakeJobs ----------
+//
+// Bakes are immutable, content-addressed artifacts derived from a character
+// recipe (bakeId = hash(recipe + asset versions + pipelineVersion)). The
+// character's `latestBake` relation is the only mutable pointer. Jobs are a
+// PB-backed queue consumed by bake-worker/; duplicate jobs are harmless
+// because bakes are content-addressed (same inputs → same bakeId → no-op).
+{
+  const charactersCol = await pb.collections.getOne("CharacterStudioCharacters");
+  const assetsCol = await pb.collections.getOne("CharacterStudioAssets");
+
+  let bakes;
+  try {
+    bakes = await pb.collections.getOne("CharacterStudioBakes");
+  } catch {
+    bakes = null;
+  }
+  if (!bakes) {
+    bakes = await pb.collections.create({
+      name: "CharacterStudioBakes",
+      type: "base",
+      // Public read: the model resolver and clients look up variants here.
+      listRule: "",
+      viewRule: "",
+      createRule: null, // worker writes via superuser
+      updateRule: null,
+      deleteRule: null,
+      indexes: [
+        "CREATE UNIQUE INDEX idx_csbakes_bakeid ON CharacterStudioBakes (bakeId)",
+      ],
+      fields: [
+        {
+          name: "character",
+          type: "relation",
+          required: false,
+          collectionId: charactersCol.id,
+          maxSelect: 1,
+          // Never cascade: externally delivered bakes must outlive the record.
+          cascadeDelete: false,
+        },
+        { name: "bakeId", type: "text", required: true },
+        { name: "pipelineVersion", type: "text", required: true },
+        // Frozen inputs: { gender, height, customization, morphValues }
+        { name: "recipe", type: "json", required: true },
+        // Map variantHash → { params, key, size } for every generated variant.
+        { name: "variants", type: "json", required: false },
+        {
+          name: "status",
+          type: "select",
+          required: true,
+          maxSelect: 1,
+          values: ["pending", "ready", "error"],
+        },
+        { name: "error", type: "text", required: false },
+        // Set once a /b/ URL or embed export handed this bake to the outside
+        // world; such bakes are exempt from any GC forever.
+        { name: "externallyDelivered", type: "bool", required: false },
+      ],
+    });
+    console.log("Created CharacterStudioBakes.");
+  } else {
+    console.log("CharacterStudioBakes already exists.");
+  }
+
+  let jobs;
+  try {
+    jobs = await pb.collections.getOne("CharacterStudioBakeJobs");
+  } catch {
+    jobs = null;
+  }
+  if (!jobs) {
+    await pb.collections.create({
+      name: "CharacterStudioBakeJobs",
+      type: "base",
+      // Owners may enqueue bakes for their own characters and watch their
+      // status; admins may enqueue asset invalidations. Only the enqueued
+      // shape (status=queued) is accepted — the worker owns all transitions.
+      listRule: 'character.user = @request.auth.id || @request.auth.role = "admin"',
+      viewRule: 'character.user = @request.auth.id || @request.auth.role = "admin"',
+      createRule:
+        '@request.auth.id != "" && @request.body.status = "queued" && ' +
+        '(character.user = @request.auth.id || @request.auth.role = "admin")',
+      updateRule: null, // worker-only via superuser
+      deleteRule: null,
+      fields: [
+        {
+          name: "type",
+          type: "select",
+          required: true,
+          maxSelect: 1,
+          values: ["bake", "invalidate"],
+        },
+        {
+          name: "character",
+          type: "relation",
+          required: false,
+          collectionId: charactersCol.id,
+          maxSelect: 1,
+          cascadeDelete: true,
+        },
+        {
+          name: "asset",
+          type: "relation",
+          required: false,
+          collectionId: assetsCol.id,
+          maxSelect: 1,
+          cascadeDelete: true,
+        },
+        // When set, the job generates a variant for this frozen bake's recipe
+        // (pinned /b/ URLs); when empty, the worker bakes the character's
+        // current recipe and advances latestBake.
+        {
+          name: "bake",
+          type: "relation",
+          required: false,
+          collectionId: bakes.id,
+          maxSelect: 1,
+          cascadeDelete: true,
+        },
+        { name: "variantKey", type: "text", required: false },
+        { name: "dedupKey", type: "text", required: false },
+        {
+          name: "status",
+          type: "select",
+          required: true,
+          maxSelect: 1,
+          values: ["queued", "running", "done", "error"],
+        },
+        { name: "attempts", type: "number", required: false },
+        { name: "error", type: "text", required: false },
+      ],
+    });
+    console.log("Created CharacterStudioBakeJobs.");
+  } else {
+    console.log("CharacterStudioBakeJobs already exists.");
+  }
+
+  // Character fields that hang off the bake system. `usedAssets` denormalizes
+  // the recipe's asset ids into a queryable relation (the customization JSON
+  // has dynamic category-name keys, so it can't be filtered on) — it powers
+  // asset-edit invalidation and referenced-asset delete guards.
+  {
+    const c = await pb.collections.getOne("CharacterStudioCharacters");
+    let changed = false;
+    changed =
+      ensureField(c, {
+        name: "usedAssets",
+        type: "relation",
+        required: false,
+        collectionId: assetsCol.id,
+        maxSelect: 999,
+        cascadeDelete: false,
+      }) || changed;
+    changed =
+      ensureField(c, {
+        name: "latestBake",
+        type: "relation",
+        required: false,
+        collectionId: bakes.id,
+        maxSelect: 1,
+        cascadeDelete: false,
+      }) || changed;
+    changed =
+      ensureField(c, {
+        name: "bakeStale",
+        type: "bool",
+        required: false,
+      }) || changed;
+    if (changed) {
+      await pb.collections.update(c.id, c);
+      console.log("Updated CharacterStudioCharacters bake fields.");
+    } else {
+      console.log("CharacterStudioCharacters bake fields already up to date.");
+    }
+  }
+}
+
 console.log("Done.");

@@ -1,6 +1,7 @@
 import PocketBase from "pocketbase";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { enqueueCharacterBake } from "@/lib/bakeJobs";
 
 const pocketBaseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL;
 
@@ -466,6 +467,8 @@ export const useConfiguratorStore = create(
             ? await captureFaceThumbnail().catch(() => null)
             : null;
 
+          const serialized = get().serializeCustomization();
+
           const formData = new FormData();
           formData.append("user", userId);
           formData.append(
@@ -475,11 +478,23 @@ export const useConfiguratorStore = create(
           formData.append("gender", get().gender);
           formData.append("height", String(get().height));
           formData.append("pose", get().pose);
-          formData.append(
-            "customization",
-            JSON.stringify(get().serializeCustomization()),
-          );
+          formData.append("customization", JSON.stringify(serialized));
           formData.append("morphValues", JSON.stringify(get().morphValues));
+          // Recipe asset ids denormalized into a queryable relation — powers
+          // asset-edit invalidation and delete guards (the customization JSON
+          // has dynamic keys, so PocketBase can't filter on it).
+          const usedAssetIds = Object.values(serialized)
+            .map((slot) => slot.assetId)
+            .filter(Boolean);
+          if (usedAssetIds.length === 0) {
+            formData.append("usedAssets", "");
+          } else {
+            usedAssetIds.forEach((assetId) =>
+              formData.append("usedAssets", assetId),
+            );
+          }
+          // Recipe changed → the current bake no longer matches it.
+          formData.append("bakeStale", "true");
           if (thumbBlob) {
             formData.append("thumbnail", thumbBlob, `thumb_${Date.now()}.png`);
           }
@@ -496,6 +511,10 @@ export const useConfiguratorStore = create(
                 .collection("CharacterStudioCharacters")
                 .update(id, formData)
             : await pb.collection("CharacterStudioCharacters").create(formData);
+
+          // Eager default-variant bake so first-party surfaces never hit the
+          // cold path. Best-effort: a failed enqueue never fails the save.
+          enqueueCharacterBake(pb, record.id);
 
           set({
             currentCharacterId: record.id,
