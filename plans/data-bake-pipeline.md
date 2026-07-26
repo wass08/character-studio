@@ -50,20 +50,20 @@ Every saved character gets a server-produced immutable baked GLB, addressable by
 
 ### Phase 1 — Schema + shared pipeline extraction
 
-- [ ] `scripts/setup-pocketbase.js`: add `CharacterStudioBakes` (character rel, bakeId/content hash, pipelineVersion, recipe snapshot, status, variant list JSON, externallyDelivered bool), `CharacterStudioBakeJobs` (character rel, variant key, status, uniq dedup key, attempts, error), add `usedAssets` multi-relation + `latestBakeId` + `bakeStale` to `CharacterStudioCharacters`.
-- [ ] Store: `saveCharacter` writes `usedAssets`; admin asset save marks referencing characters stale.
-- [ ] Extract gltf-transform stage from `exportWorker.ts` into `src/lib/bake/` (pure, runs in web worker AND Node). Web worker re-exports from it; behavior unchanged (verify existing export still works).
+- [x] `scripts/setup-pocketbase.js`: add `CharacterStudioBakes` (character rel, bakeId/content hash, pipelineVersion, recipe snapshot, status, variant list JSON, externallyDelivered bool), `CharacterStudioBakeJobs` (character rel, variant key, status, uniq dedup key, attempts, error), add `usedAssets` multi-relation + `latestBakeId` + `bakeStale` to `CharacterStudioCharacters`.
+- [x] Store: `saveCharacter` writes `usedAssets`; admin asset save marks referencing characters stale.
+- [x] Extract gltf-transform stage from `exportWorker.ts` into `src/lib/bake/` (pure, runs in web worker AND Node). Web worker re-exports from it; behavior unchanged (verify existing export still works).
 
 ### Phase 2 — Bake worker service
 
-- [ ] `bake-worker/`: Node + Dockerfile + env (`PB_URL`, `PB_ADMIN_TOKEN`, `R2_*`); polls `CharacterStudioBakeJobs`, concurrency cap 2, healthcheck HTTP.
-- [ ] Headless assembly (document surgery): read Armature.glb + asset GLBs (from R2/PB URLs) as gltf-transform Documents, copy asset primitives into the base doc remapping `JOINTS_0` by bone name, recipe colors → `baseColorFactor` on `*Color*` materials, `sharp`-composited skin (solid color + makeup overlays, per `useCombinedTexture.js`) → `baseColorTexture` on `*skin*` materials, morphValues → mesh weights, Rig TRS from `Avatar.tsx` (`remap(height, 0.5, 2.0, 0.7, 1.1)`), then shared `runBakePipeline` (served profiles keep face bones) → R2 `bakes/{bakeId}/{variantKey}.glb`.
-- [ ] Golden test: bake a fixture recipe; via gltf-transform inspection assert the output's skin joint names are a superset of Animations.glb track-target names, morphs match the variant's `morphs` param, size within budget.
+- [x] `bake-worker/`: Node + Dockerfile + env (`PB_URL`, `PB_ADMIN_TOKEN`, `R2_*`); polls `CharacterStudioBakeJobs`, concurrency cap 2, healthcheck HTTP.
+- [x] Headless assembly (document surgery): read Armature.glb + asset GLBs (from R2/PB URLs) as gltf-transform Documents, copy asset primitives into the base doc remapping `JOINTS_0` by bone name, recipe colors → `baseColorFactor` on `*Color*` materials, `sharp`-composited skin (solid color + makeup overlays, per `useCombinedTexture.js`) → `baseColorTexture` on `*skin*` materials, morphValues → mesh weights, Rig TRS from `Avatar.tsx` (`remap(height, 0.5, 2.0, 0.7, 1.1)`), then shared `runBakePipeline` (served profiles keep face bones) → R2 `bakes/{bakeId}/{variantKey}.glb`.
+- [x] Golden test: bake a fixture recipe; via gltf-transform inspection assert the output's skin joint names are a superset of Animations.glb track-target names, morphs match the variant's `morphs` param, size within budget.
 
 ### Phase 3 — Serving + invalidation wiring
 
-- [ ] Next routes `/api/models/c/[id]` + `/api/models/b/[bakeId]` (or `models.` host): param canonicalization, 400 on unknowns, 302 to R2, cold-path hold-open, SWR stale trigger, per-IP rate limit.
-- [ ] Save-time eager default bake enqueue; dedup enforcement.
+- [x] Next routes `/api/models/c/[id]` + `/api/models/b/[bakeId]` (or `models.` host): param canonicalization, 400 on unknowns, 302 to R2, cold-path hold-open, SWR stale trigger, per-IP rate limit.
+- [x] Save-time eager default bake enqueue; dedup enforcement.
 - [ ] Animations.glb → content-hashed R2 upload + loader indirection; resample/quantize pass on man file.
 
 ### Phase 4 — Consume bakes first-party
