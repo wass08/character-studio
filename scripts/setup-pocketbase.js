@@ -150,6 +150,32 @@ const setRules = (collection, rules) => {
   }
 }
 
+// PocketBase ≥0.23 only adds created/updated automatically for UI-created
+// collections; API-created ones must declare the autodate fields explicitly
+// or filters/sorts on `created` fail with a generic 400.
+const ensureTimestamps = async (name) => {
+  const c = await pb.collections.getOne(name);
+  let changed = false;
+  changed =
+    ensureField(c, {
+      name: "created",
+      type: "autodate",
+      onCreate: true,
+      onUpdate: false,
+    }) || changed;
+  changed =
+    ensureField(c, {
+      name: "updated",
+      type: "autodate",
+      onCreate: true,
+      onUpdate: true,
+    }) || changed;
+  if (changed) {
+    await pb.collections.update(c.id, c);
+    console.log(`Added timestamps to ${name}.`);
+  }
+};
+
 // --- Bake pipeline: CharacterStudioBakes + CharacterStudioBakeJobs ----------
 //
 // Bakes are immutable, content-addressed artifacts derived from a character
@@ -286,6 +312,9 @@ const setRules = (collection, rules) => {
   } else {
     console.log("CharacterStudioBakeJobs already exists.");
   }
+
+  await ensureTimestamps("CharacterStudioBakes");
+  await ensureTimestamps("CharacterStudioBakeJobs");
 
   // Character fields that hang off the bake system. `usedAssets` denormalizes
   // the recipe's asset ids into a queryable relation (the customization JSON
