@@ -10,13 +10,14 @@ export function createR2(config) {
     },
   });
 
-  async function putObject(key, body, contentType) {
+  async function putObject(key, body, contentType, cacheControl) {
     return client.send(
       new PutObjectCommand({
         Bucket: config.r2Bucket,
         Key: key,
         Body: body,
         ContentType: contentType,
+        CacheControl: cacheControl,
       }),
     );
   }
@@ -27,5 +28,5 @@ export function createR2(config) {
     return `${baseUrl}/${normalizedKey}`;
   }
 
-  return { client, putObject, publicUrl };
+  return { client, putObject, publicUrl, config };
 }

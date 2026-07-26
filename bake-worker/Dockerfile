@@ -2,10 +2,14 @@ FROM node:22-slim
 
 WORKDIR /app
 
-COPY package.json ./
-RUN npm install --omit=dev
+COPY bake-worker/package*.json ./
+COPY bake-worker/scripts ./scripts
+COPY bake-worker/src ./src
+COPY src/lib/bake /app/shared/bake
+RUN npm ci --omit=dev
 
-COPY src ./src
+COPY public/models/characters /app/models
+ENV MODELS_DIR=/app/models
 
 EXPOSE 8787
 

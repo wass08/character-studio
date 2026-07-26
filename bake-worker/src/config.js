@@ -1,3 +1,6 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 const REQUIRED_ENV_VARS = [
   "POCKETBASE_URL",
   "POCKETBASE_EMAIL",
@@ -8,6 +11,8 @@ const REQUIRED_ENV_VARS = [
   "R2_SECRET_ACCESS_KEY",
   "R2_PUBLIC_URL",
 ];
+
+const WORKER_DIRECTORY = fileURLToPath(new URL("..", import.meta.url));
 
 function readPositiveInteger(name, defaultValue) {
   const rawValue = process.env[name];
@@ -43,6 +48,10 @@ export function loadConfig() {
     r2AccessKeyId: process.env.R2_ACCESS_KEY_ID,
     r2SecretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
     r2PublicUrl: process.env.R2_PUBLIC_URL,
+    modelsDir: path.resolve(
+      WORKER_DIRECTORY,
+      process.env.MODELS_DIR?.trim() || "../public/models/characters",
+    ),
     port: readPositiveInteger("PORT", 8787),
     concurrency: readPositiveInteger("CONCURRENCY", 2),
     pollIntervalMs: readPositiveInteger("POLL_INTERVAL_MS", 2000),

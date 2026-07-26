@@ -3,12 +3,23 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "sync:shared": "node scripts/sync-shared.mjs",
+    "prepare": "npm run sync:shared",
+    "prestart": "npm run sync:shared",
+    "start": "node --experimental-strip-types src/index.js",
+    "dev": "node --experimental-strip-types --watch src/index.js",
+    "pretest": "npm run sync:shared",
+    "test": "node --experimental-strip-types --test test/"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1045.0",
+    "@gltf-transform/core": "^4.3.0",
+    "@gltf-transform/extensions": "^4.3.0",
+    "@gltf-transform/functions": "^4.3.0",
+    "draco3dgltf": "^1.5.7",
+    "meshoptimizer": "^1.1.1",
     "p-limit": "^3.1.0",
-    "pocketbase": "^0.26.5"
+    "pocketbase": "^0.26.5",
+    "sharp": "^0.34.5"
   }
 }
