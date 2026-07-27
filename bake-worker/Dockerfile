@@ -1,15 +1,18 @@
 FROM node:22-slim
 
-WORKDIR /app
+# /worker, NOT /app: Elestio's generated pipeline compose volume-mounts the
+# repo's root ./src over /app/src (a generic hot-reload assumption), which
+# would shadow the worker's code. Living outside /app makes the image immune.
+WORKDIR /worker
 
 COPY bake-worker/package*.json ./
 COPY bake-worker/scripts ./scripts
 COPY bake-worker/src ./src
-COPY src/lib/bake /app/shared/bake
+COPY src/lib/bake ./shared/bake
 RUN npm ci --omit=dev
 
-COPY public/models/characters /app/models
-ENV MODELS_DIR=/app/models
+COPY public/models/characters /worker/models
+ENV MODELS_DIR=/worker/models
 
 EXPOSE 8787
 
