@@ -13,5 +13,5 @@ Finished plans move to `plans/archive/` once `status: implemented` and wiki sync
 
 | Order | Plan | Priority | Status | Notes |
 | --- | --- | --- | --- | --- |
-| 1 | [data-bake-pipeline](data-bake-pipeline.md) | p1 | in-progress | Server-side immutable bakes, parametric variants, SWR invalidation |
+| 1 | [data-bake-pipeline](data-bake-pipeline.md) | p1 | implemented | Server-side immutable bakes, parametric variants, SWR invalidation |
 | 2 | [app-embed-creator](app-embed-creator.md) | p2 | draft | Guest-first embeddable creator; depends on bake pipeline |
