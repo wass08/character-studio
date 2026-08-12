@@ -489,9 +489,9 @@ export const useConfiguratorStore = create(
           if (usedAssetIds.length === 0) {
             formData.append("usedAssets", "");
           } else {
-            usedAssetIds.forEach((assetId) =>
-              formData.append("usedAssets", assetId),
-            );
+            usedAssetIds.forEach((assetId) => {
+              formData.append("usedAssets", assetId);
+            });
           }
           // Recipe changed → the current bake no longer matches it.
           formData.append("bakeStale", "true");

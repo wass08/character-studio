@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "animations:publish": "node scripts/publish-animations.mjs",
     "lint": "biome check",
     "format": "biome format --write"
   },

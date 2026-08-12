@@ -1,0 +1,16 @@
+{
+  "man": {
+    "sourceBytes": 8621748,
+    "bytes": 7018152,
+    "sha256": "796b3bf177b222679680d3ae7db34e4e22b32bd9d7e25e811112d04ba611155a",
+    "key": "animations/man/796b3bf177b222679680d3ae7db34e4e22b32bd9d7e25e811112d04ba611155a.glb",
+    "localUrl": "/models/characters/man/Animations.glb"
+  },
+  "woman": {
+    "sourceBytes": 2723168,
+    "bytes": 1820400,
+    "sha256": "f3cd6af7298253a80afe7a8e7cf99d2cb67ecba4c4a104985ba541e976b776f7",
+    "key": "animations/woman/f3cd6af7298253a80afe7a8e7cf99d2cb67ecba4c4a104985ba541e976b776f7.glb",
+    "localUrl": "/models/characters/woman/Animations.glb"
+  }
+}

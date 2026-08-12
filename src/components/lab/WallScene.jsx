@@ -298,6 +298,26 @@ function creatorName(character) {
   return getUserDisplayName(character.expand?.user, "Creator");
 }
 
+function WallCharacterSlot(props) {
+  const { character } = props;
+  const [bakeFailed, setBakeFailed] = useState(false);
+  const bakeId = character.latestBake || "";
+
+  const usingBake = Boolean(bakeId) && !bakeFailed;
+  return (
+    <EngineErrorBoundary
+      key={usingBake ? `bake:${bakeId}` : `live:${character.id}`}
+      label={`${usingBake ? "baked" : "live"}-wall-character:${character.id}`}
+      resetKey={`${character.id}:${usingBake ? bakeId : "live"}`}
+      onError={usingBake ? () => setBakeFailed(true) : undefined}
+    >
+      <Suspense fallback={null}>
+        <WallCharacter {...props} forceLive={!usingBake} />
+      </Suspense>
+    </EngineErrorBoundary>
+  );
+}
+
 // Radial alpha falloff for the hero floor: the disc melts into the page's
 // CSS gradient instead of showing the hard rectangular plane edges that made
 // the old floor read as a slab floating over the background.
@@ -436,33 +456,26 @@ export default function WallScene({
         return (
           // One broken character (bad GLB, missing armature) must not take
           // down the whole hero canvas — isolate each slot.
-          <EngineErrorBoundary
-            key={character.id}
-            label={`wall-character:${character.id}`}
-            resetKey={character.id}
-          >
-            <Suspense fallback={null}>
-              <WallCharacter
-                character={character}
-                assetsById={assetsById}
-                index={index}
-                position={[slot.x, 0, slot.z]}
-                rotationY={slot.rotationY}
-                scale={slot.scale}
-                onHover={compact ? undefined : setHovered}
-                label={
-                  compact
-                    ? {
-                        name: character.name || "Untitled",
-                        creator: creatorName(character),
-                      }
-                    : null
-                }
-                carouselCameraAngleRef={compact ? heroCameraAngleRef : null}
-                motionMode={compact ? "carousel" : "wall"}
-              />
-            </Suspense>
-          </EngineErrorBoundary>
+          <WallCharacterSlot
+            key={`${character.id}:${character.latestBake || "live"}`}
+            character={character}
+            assetsById={assetsById}
+            index={index}
+            position={[slot.x, 0, slot.z]}
+            rotationY={slot.rotationY}
+            scale={slot.scale}
+            onHover={compact ? undefined : setHovered}
+            label={
+              compact
+                ? {
+                    name: character.name || "Untitled",
+                    creator: creatorName(character),
+                  }
+                : null
+            }
+            carouselCameraAngleRef={compact ? heroCameraAngleRef : null}
+            motionMode={compact ? "carousel" : "wall"}
+          />
         );
       })}
 

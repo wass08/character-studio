@@ -11,6 +11,7 @@ import type {
   SkinnedMesh,
 } from "three";
 import { GLTFExporter, SkeletonUtils } from "three-stdlib";
+import { sharedAnimationsUrl } from "@/lib/modelAssets";
 import { pb } from "@/stores/useConfiguratorStore";
 import {
   type ExportOptions,
@@ -133,7 +134,7 @@ export default function Model(props: ModelProps) {
   );
 
   const { animations } = useGLTF(
-    `/models/characters/${gender}/Animations.glb`,
+    sharedAnimationsUrl(gender),
   ) as unknown as AnimationsGLTF;
 
   const { actions, mixer } = useAnimations(animations, group);
@@ -197,8 +198,9 @@ export default function Model(props: ModelProps) {
   // Drop the stale reference when the animation set changes (gender
   // swap loads a fresh Animations.glb with new action instances).
   useEffect(() => {
+    void animations;
     prevActionRef.current = null;
-  }, [actions]);
+  }, [animations]);
 
   useEffect(() => {
     const next = actions[activePose];
@@ -356,5 +358,5 @@ export default function Model(props: ModelProps) {
 
 useGLTF.preload("/models/characters/woman/Armature.glb");
 useGLTF.preload("/models/characters/man/Armature.glb");
-useGLTF.preload("/models/characters/man/Animations.glb");
-useGLTF.preload("/models/characters/woman/Animations.glb");
+useGLTF.preload(sharedAnimationsUrl("man"));
+useGLTF.preload(sharedAnimationsUrl("woman"));
