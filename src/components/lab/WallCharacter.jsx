@@ -15,6 +15,7 @@ import { Vector3 } from "three";
 import { SkeletonUtils } from "three-stdlib";
 import { EngineErrorBoundary } from "@/components/scene/EngineErrorBoundary";
 import { useCombinedTexture } from "@/hooks/useCombinedTexture";
+import { bakedCharacterUrl, sharedAnimationsUrl } from "@/lib/modelAssets";
 import { DEFAULT_SKIN_COLOR, pb } from "@/stores/useConfiguratorStore";
 import WallAsset from "./WallAsset";
 
@@ -113,6 +114,7 @@ export default function WallCharacter({
   label = null,
   carouselCameraAngleRef = null,
   motionMode = "wall",
+  forceLive = false,
 }) {
   const group = useRef();
   const labelAnchor = useRef();
@@ -131,8 +133,12 @@ export default function WallCharacter({
   // entry stores an `assetId` (PB relation), not an embedded asset record;
   // the lookup happens against the `assetsById` map prepared in WallView.
   const gender = character.gender || "woman";
-  const { scene } = useGLTF(`/models/characters/${gender}/Armature.glb`);
-  const { animations } = useGLTF(`/models/characters/${gender}/Animations.glb`);
+  const usingBake = Boolean(character.latestBake) && !forceLive;
+  const modelUrl = usingBake
+    ? bakedCharacterUrl(character.id)
+    : `/models/characters/${gender}/Armature.glb`;
+  const { scene } = useGLTF(modelUrl);
+  const { animations } = useGLTF(sharedAnimationsUrl(gender));
   const wallAnimations = useMemo(
     () =>
       animations.map((clip) => {
@@ -149,7 +155,24 @@ export default function WallCharacter({
     [animations],
   );
   const { actions, names, mixer } = useAnimations(wallAnimations, group);
-  const clone = useMemo(() => SkeletonUtils.clone(scene), [scene]);
+  const clone = useMemo(() => {
+    const cloned = SkeletonUtils.clone(scene);
+    if (usingBake) {
+      // A bake's Rig node carries the editor convention (180° turn about Y
+      // plus the 0.098 m offset that Avatar.tsx sets in JSX). The wall's live
+      // path mounts the bone roots directly — no Rig transform — and its yaw
+      // math assumes that orientation, so baked slots would face the wrong
+      // way. Drop the turn/offset and keep only the baked height scale; the
+      // "Rig." animation tracks are already filtered out above, so nothing
+      // re-applies it.
+      const rig = cloned.getObjectByName("Rig");
+      if (rig) {
+        rig.position.set(0, 0, 0);
+        rig.quaternion.identity();
+      }
+    }
+    return cloned;
+  }, [scene, usingBake]);
   const baseActionRef = useRef(null);
   const gestureRef = useRef(null);
   const firstWalkRef = useRef(false);
@@ -174,7 +197,9 @@ export default function WallCharacter({
   const isCarousel = motionMode === "carousel";
   const height =
     typeof character.height === "number" ? clamp(character.height, 0.5, 2) : 1;
-  const targetScale = scale * remap(height, 0.5, 2, 0.7, 1.1);
+  // Height is already applied to the baked GLB's Rig. Live assembly still
+  // needs the client-side height mapping.
+  const targetScale = scale * (usingBake ? 1 : remap(height, 0.5, 2, 0.7, 1.1));
   const morphValues = useMemo(
     () => character.morphValues || {},
     [character.morphValues],
@@ -184,15 +209,16 @@ export default function WallCharacter({
     character.customization?.skin?.color ||
     DEFAULT_SKIN_COLOR;
   const makeupUrls = useMemo(() => {
-    if (isHero) return [];
+    if (isHero || usingBake) return [];
     const urls = [];
     Object.values(character.customization || {}).forEach((picked) => {
       const url = assetUrl(resolvePickedAsset(picked, assetsById));
       if (url && isImageUrl(url)) urls.push(url);
     });
     return urls.sort();
-  }, [assetsById, character.customization, isHero]);
+  }, [assetsById, character.customization, isHero, usingBake]);
   const renderEntries = useMemo(() => {
+    if (usingBake) return [];
     const entries = [];
     Object.entries(character.customization || {}).forEach(
       ([category, picked]) => {
@@ -211,7 +237,7 @@ export default function WallCharacter({
       },
     );
     return entries;
-  }, [assetsById, character.customization]);
+  }, [assetsById, character.customization, usingBake]);
   const expectedAssetKey = useMemo(
     () => renderEntries.map((entry) => entry.key).join("|"),
     [renderEntries],
@@ -771,8 +797,14 @@ export default function WallCharacter({
           />
         </mesh>
       )}
-      {boneRoots.root && <primitive object={boneRoots.root} />}
-      {boneRoots.eyes && <primitive object={boneRoots.eyes} />}
+      {usingBake ? (
+        <primitive object={clone} />
+      ) : (
+        <>
+          {boneRoots.root && <primitive object={boneRoots.root} />}
+          {boneRoots.eyes && <primitive object={boneRoots.eyes} />}
+        </>
+      )}
       {visible && label && (
         <group ref={labelAnchor} position={[0, 2.05, 0]}>
           <Html center distanceFactor={5.4} zIndexRange={[0, 0]}>
@@ -816,6 +848,6 @@ export default function WallCharacter({
 }
 
 useGLTF.preload("/models/characters/man/Armature.glb");
-useGLTF.preload("/models/characters/man/Animations.glb");
 useGLTF.preload("/models/characters/woman/Armature.glb");
-useGLTF.preload("/models/characters/woman/Animations.glb");
+useGLTF.preload(sharedAnimationsUrl("man"));
+useGLTF.preload(sharedAnimationsUrl("woman"));

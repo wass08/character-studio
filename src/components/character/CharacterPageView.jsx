@@ -141,7 +141,7 @@ const CharacterPageView = ({ id }) => {
     <main className="fixed inset-0 flex h-screen w-full flex-col bg-black text-white">
       <HubHeader variant="fixed" />
       <div className="relative flex-1">
-        <Scene />
+        <Scene bakedCharacterId={record?.latestBake ? record.id : undefined} />
 
         {/* Info panel */}
         <motion.aside

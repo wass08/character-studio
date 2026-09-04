@@ -4,6 +4,7 @@ import { useThree } from "@react-three/fiber";
 import { Leva } from "leva";
 import {
   type ReactNode,
+  Suspense,
   useCallback,
   useEffect,
   useRef,
@@ -17,6 +18,7 @@ import {
 } from "@/stores/useConfiguratorStore";
 import Avatar from "./Avatar";
 import Backdrop from "./Backdrop";
+import BakedAvatar from "./BakedAvatar";
 import { BootDiamond } from "./BootDiamond";
 import {
   BACKDROP_PRESETS,
@@ -26,6 +28,7 @@ import {
 import { CameraManager } from "./CameraManager";
 import { StoreCharacterProvider } from "./CharacterContext";
 import { EngineCanvas } from "./EngineCanvas";
+import { EngineErrorBoundary } from "./EngineErrorBoundary";
 import FrameLimiter from "./FrameLimiter";
 import { GPUDeviceWatcher } from "./GPUDeviceWatcher";
 
@@ -97,7 +100,31 @@ const composeWithLogo = (
     logo.src = "/images/wawasensei-white.png";
   });
 
-const SceneContent = ({ children }: { children?: ReactNode }) => {
+const ReadOnlyAvatar = ({ characterId }: { characterId?: string }) => {
+  const [bakeFailed, setBakeFailed] = useState(false);
+
+  if (!characterId || bakeFailed) return <Avatar />;
+
+  return (
+    <EngineErrorBoundary
+      label={`baked-avatar:${characterId}`}
+      resetKey={characterId}
+      onError={() => setBakeFailed(true)}
+    >
+      <Suspense fallback={null}>
+        <BakedAvatar characterId={characterId} />
+      </Suspense>
+    </EngineErrorBoundary>
+  );
+};
+
+const SceneContent = ({
+  bakedCharacterId,
+  children,
+}: {
+  bakedCharacterId?: string;
+  children?: ReactNode;
+}) => {
   const gender = useConfiguratorStore((state: StoreSlice) => state.gender);
   const backdropId = useConfiguratorStore(
     (state: StoreSlice) => state.backdrop,
@@ -387,7 +414,10 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
         color={backdrop.rimLight.color}
       />
 
-      <Avatar key={gender} />
+      <ReadOnlyAvatar
+        key={`${gender}:${bakedCharacterId || "live"}`}
+        characterId={bakedCharacterId}
+      />
       {/* First-load placeholder: a lit 3D octahedron that hides the avatar
           (imperatively) until its meshes decode. Self-contained leaf — never
           re-renders SceneContent, so the engine scene isn't disturbed. */}
@@ -399,7 +429,13 @@ const SceneContent = ({ children }: { children?: ReactNode }) => {
 
 const MAX_RECOVERIES = 3; // cap so a permanently-broken GPU can't loop forever
 
-const Scene = ({ children }: { children?: ReactNode }) => {
+const Scene = ({
+  bakedCharacterId,
+  children,
+}: {
+  bakedCharacterId?: string;
+  children?: ReactNode;
+}) => {
   // Bumping this key fully unmounts + remounts the Canvas on a FRESH <canvas>
   // DOM node → a fresh WebGPURenderer on a clean GPU device. Recovery path for a
   // real device-loss, triggered by GPUDeviceWatcher. (The StrictMode cold-reload
@@ -434,7 +470,9 @@ const Scene = ({ children }: { children?: ReactNode }) => {
           {/* Drives rendering off `_roots` so R3F's StrictMode teardown can't
               freeze the canvas (the actual cure). */}
           <FrameLimiter fps={60} />
-          <SceneContent>{children}</SceneContent>
+          <SceneContent bakedCharacterId={bakedCharacterId}>
+            {children}
+          </SceneContent>
           <GPUDeviceWatcher onLost={recover} />
         </StoreCharacterProvider>
       </EngineCanvas>

@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { enqueueAssetInvalidation } from "@/lib/bakeJobs";
 import { uploadToR2 } from "@/lib/r2Upload";
 import { cn } from "@/lib/utils";
 import { buildDefaultCustomization, pb } from "@/stores/useConfiguratorStore";
@@ -269,6 +270,13 @@ const AssetForm = ({ asset = null }) => {
       const record = asset
         ? await pb.collection("CharacterStudioAssets").update(asset.id, payload)
         : await pb.collection("CharacterStudioAssets").create(payload);
+
+      // Editing an existing asset makes every bake that references it stale.
+      // The worker marks affected characters (lazy SWR re-bake on next view);
+      // a brand-new asset is referenced by nobody, so create needs nothing.
+      if (asset) {
+        enqueueAssetInvalidation(pb, record.id);
+      }
 
       if (canBeDefault && selectedGroup && defaultField) {
         const wasDefault = selectedGroup[defaultField] === record.id;
