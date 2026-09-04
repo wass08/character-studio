@@ -1,4 +1,4 @@
-import { NodeIO } from "@gltf-transform/core";
+import { NodeIO, VertexLayout } from "@gltf-transform/core";
 import {
   ALL_EXTENSIONS,
   EXTMeshoptCompression,
@@ -43,21 +43,33 @@ export async function createNodeIO() {
         draco3d.createEncoderModule(),
         draco3d.createDecoderModule(),
       ]);
-      return new NodeIO()
-        .registerExtensions(ALL_EXTENSIONS)
-        .registerDependencies({
-          "draco3d.encoder": dracoEncoder,
-          "draco3d.decoder": dracoDecoder,
-          "meshopt.encoder": MeshoptEncoder,
-          "meshopt.decoder": MeshoptDecoder,
-        });
+      return (
+        new NodeIO()
+          .registerExtensions(ALL_EXTENSIONS)
+          .registerDependencies({
+            "draco3d.encoder": dracoEncoder,
+            "draco3d.decoder": dracoDecoder,
+            "meshopt.encoder": MeshoptEncoder,
+            "meshopt.decoder": MeshoptDecoder,
+          })
+          // One buffer view per vertex attribute. With the default interleaved
+          // layout, uncompressed (compression=none) variants pack the
+          // non-normalized Uint8 JOINTS_0 next to normalized Uint8 WEIGHTS_0/
+          // COLOR_0 in one buffer; three.js' WebGPU backend widens that shared
+          // buffer to Uint32 for the joints and then requests an invalid
+          // "unorm32x4" vertex format for the weights, killing every render
+          // pipeline on the page. Meshopt/Draco outputs are unaffected.
+          .setVertexLayout(VertexLayout.SEPARATE)
+      );
     })();
   }
   return ioPromise;
 }
 
 function normalizeNodeName(name) {
-  return String(name).replace(/[^a-z0-9]/gi, "").toLowerCase();
+  return String(name)
+    .replace(/[^a-z0-9]/gi, "")
+    .toLowerCase();
 }
 
 function findRequiredNode(document, expectedName) {
@@ -146,13 +158,52 @@ function createRigHierarchy(document, height) {
     oldScene.dispose();
   }
   for (const oldRoot of previousSceneRoots) {
-    if (oldRoot !== rootBone && oldRoot !== eyesRoot && oldRoot !== baseMeshNode) {
+    if (
+      oldRoot !== rootBone &&
+      oldRoot !== eyesRoot &&
+      oldRoot !== baseMeshNode
+    ) {
       oldRoot.dispose();
     }
   }
 
   addRigToSkin(document, canonicalSkin, rig);
   return { rig, canonicalSkin };
+}
+
+/**
+ * The armature's "Plane002" placeholder quad only exists to carry the
+ * canonical skin; the live app never renders it. It sits ~28 m from the
+ * origin in the source file, which (a) would dominate the scene-wide
+ * quantization volume used by the shared pipeline and (b) shows up as a
+ * stray quad in consumers that mount the whole baked scene. Shrink it to a
+ * 1 mm quad at the origin: invisible, still valid non-degenerate geometry
+ * (Draco refuses fully collapsed primitives), and the node keeps the mesh +
+ * skin that consolidateCanonicalSkin relies on.
+ */
+const PLACEHOLDER_HALF_SIZE = 0.0005;
+
+function collapsePlaceholderPlane(document) {
+  const mesh = findRequiredNode(document, "Plane002").getMesh();
+  if (!mesh) {
+    return;
+  }
+  for (const primitive of mesh.listPrimitives()) {
+    const position = primitive.getAttribute("POSITION");
+    if (!position) {
+      continue;
+    }
+    const count = position.getCount();
+    const next = new Float32Array(count * 3);
+    for (let index = 0; index < count; index += 1) {
+      // Spread the vertices over a tiny square on the floor plane.
+      next[index * 3] =
+        index % 2 === 0 ? -PLACEHOLDER_HALF_SIZE : PLACEHOLDER_HALF_SIZE;
+      next[index * 3 + 2] =
+        index < 2 ? -PLACEHOLDER_HALF_SIZE : PLACEHOLDER_HALF_SIZE;
+    }
+    position.setArray(next);
+  }
 }
 
 function parseHexColor(hex) {
@@ -215,9 +266,7 @@ export function remapJointAccessors(
   assetLabel,
 ) {
   const canonicalIndexByName = new Map(
-    canonicalSkin
-      .listJoints()
-      .map((joint, index) => [joint.getName(), index]),
+    canonicalSkin.listJoints().map((joint, index) => [joint.getName(), index]),
   );
   const indexMap = assetSkin.listJoints().map((joint) => {
     const jointName = joint.getName();
@@ -272,7 +321,8 @@ function copyAssetMeshes({
     .listNodes()
     .filter(
       (node) =>
-        node.getMesh() && !normalizeNodeName(node.getName()).includes("plane002"),
+        node.getMesh() &&
+        !normalizeNodeName(node.getName()).includes("plane002"),
     );
 
   for (const sourceNode of sourceNodes) {
@@ -340,9 +390,7 @@ function createSkinMaterial(document, skinColor, compositedSkinPng) {
       .createTexture("Skin Composite")
       .setImage(compositedSkinPng)
       .setMimeType("image/png");
-    material
-      .setBaseColorTexture(texture)
-      .setBaseColorFactor([1, 1, 1, 1]);
+    material.setBaseColorTexture(texture).setBaseColorFactor([1, 1, 1, 1]);
   } else {
     material.setBaseColorFactor(hexSrgbToLinearFactor(skinColor));
   }
@@ -426,6 +474,7 @@ export async function assemble({
   document.disposeExtension(KHRDracoMeshCompression.EXTENSION_NAME);
 
   const { rig, canonicalSkin } = createRigHierarchy(document, height);
+  collapsePlaceholderPlane(document);
   const skinMaterial = createSkinMaterial(
     document,
     skinColor,

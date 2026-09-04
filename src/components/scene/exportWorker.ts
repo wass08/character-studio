@@ -9,7 +9,7 @@
 //   worker → main: { id, ok: true, result: Uint8Array }
 //                  { id, ok: false, error: string }
 
-import { NodeIO } from "@gltf-transform/core";
+import { NodeIO, VertexLayout } from "@gltf-transform/core";
 import {
   EXTMeshoptCompression,
   KHRDracoMeshCompression,
@@ -152,7 +152,12 @@ async function getIO(compression: Compression): Promise<NodeIO> {
     ioPromise = getMeshoptEncoder().then((encoder) =>
       new NodeIO()
         .registerExtensions([EXTMeshoptCompression, KHRDracoMeshCompression])
-        .registerDependencies({ "meshopt.encoder": encoder }),
+        .registerDependencies({ "meshopt.encoder": encoder })
+        // One buffer view per attribute, like the bake worker: interleaving
+        // non-normalized Uint8 JOINTS_0 with normalized Uint8 WEIGHTS_0 makes
+        // three.js' WebGPU backend request an invalid "unorm32x4" vertex
+        // format for uncompressed files and kills the whole render pipeline.
+        .setVertexLayout(VertexLayout.SEPARATE),
     );
   }
   const io = await ioPromise;

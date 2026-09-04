@@ -320,7 +320,22 @@ export async function runBakePipeline(
     // (instance() is intentionally skipped — gltf-transform itself logs
     //  "Instancing is not currently supported for animated models." so it
     //  was just wasted work in our case.)
-    await doc.transform(flatten(), join(), resample(), quantize());
+    //
+    // quantizationVolume "scene" is load-bearing for skinned meshes: with the
+    // default per-mesh volume, quantize() compensates each mesh's position
+    // range by rewriting the inverse bind matrices of a per-node CLONE of the
+    // skin, so meshes sharing one skeleton end up with different IBMs. Any
+    // later step that re-unifies the skins (the bake worker's
+    // consolidateCanonicalSkin) then applies one mesh's offset to every
+    // other mesh and scatters the character. One scene-wide volume gives
+    // every mesh the same IBM transform, so the clones dedup back to a
+    // single skin. Precision cost is negligible for a ~2 m character.
+    await doc.transform(
+      flatten(),
+      join(),
+      resample(),
+      quantize({ quantizationVolume: "scene" }),
+    );
   }
 
   if (compression === "draco" || compression === "meshopt") {
@@ -333,8 +348,15 @@ export async function runBakePipeline(
     if (compression === "draco") {
       await doc.transform(draco());
     } else {
+      // meshopt() runs its own quantize() pass over every attribute (level
+      // "medium"), so it must use the same scene-wide volume as above or it
+      // re-introduces the per-mesh skin clones.
       await doc.transform(
-        meshopt({ encoder: deps.meshoptEncoder, level: "medium" }),
+        meshopt({
+          encoder: deps.meshoptEncoder,
+          level: "medium",
+          quantizationVolume: "scene",
+        }),
       );
     }
   }

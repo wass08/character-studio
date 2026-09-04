@@ -15,6 +15,25 @@ with `--experimental-strip-types` and imports the synchronized TypeScript
 directly. The sync (rather than an authored duplicate) also ensures the
 pipeline and assembly use the same installed glTF-Transform instance.
 
+Two output details are load-bearing for consumers:
+
+- Quantization uses a **scene-wide** volume (`quantizationVolume: "scene"`,
+  in both the explicit `quantize()` and the one `meshopt()` runs internally).
+  Per-mesh volumes make glTF-Transform rewrite the inverse bind matrices of a
+  per-node clone of the skin; when the worker re-unifies every mesh onto the
+  canonical skin afterwards, one mesh's offset gets applied to all of them
+  and the character is scattered out of view. The armature's placeholder
+  plane (`Plane002`, ~28 m from the origin) is collapsed onto the origin first
+  so it does not inflate that volume.
+- Vertex attributes are written one buffer view each (`VertexLayout.SEPARATE`).
+  Interleaving non-normalized `JOINTS_0` with normalized `WEIGHTS_0` in one
+  buffer makes three.js' WebGPU backend request an invalid `unorm32x4` vertex
+  format for uncompressed variants and kills every render pipeline on the page.
+
+Bump `PIPELINE_VERSION` in `src/recipes.js` whenever output changes for
+identical inputs; `npm run bake:all` at the repository root re-bakes every
+character (and backfills `usedAssets`) through the deployed worker.
+
 Assembly uses glTF-Transform's `copyToDocument()` for each asset mesh node.
 This copies each node's mesh, materials, textures, and skin dependencies into
 the armature document while preserving glTF-native data; the worker then

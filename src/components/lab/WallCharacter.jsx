@@ -155,7 +155,24 @@ export default function WallCharacter({
     [animations],
   );
   const { actions, names, mixer } = useAnimations(wallAnimations, group);
-  const clone = useMemo(() => SkeletonUtils.clone(scene), [scene]);
+  const clone = useMemo(() => {
+    const cloned = SkeletonUtils.clone(scene);
+    if (usingBake) {
+      // A bake's Rig node carries the editor convention (180° turn about Y
+      // plus the 0.098 m offset that Avatar.tsx sets in JSX). The wall's live
+      // path mounts the bone roots directly — no Rig transform — and its yaw
+      // math assumes that orientation, so baked slots would face the wrong
+      // way. Drop the turn/offset and keep only the baked height scale; the
+      // "Rig." animation tracks are already filtered out above, so nothing
+      // re-applies it.
+      const rig = cloned.getObjectByName("Rig");
+      if (rig) {
+        rig.position.set(0, 0, 0);
+        rig.quaternion.identity();
+      }
+    }
+    return cloned;
+  }, [scene, usingBake]);
   const baseActionRef = useRef(null);
   const gestureRef = useRef(null);
   const firstWalkRef = useRef(false);

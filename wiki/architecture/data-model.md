@@ -24,6 +24,11 @@ enum values return `400`.
 
 ## Bake queue and invalidation
 
+`PIPELINE_VERSION` (bake-worker `src/recipes.js`) is part of the bake ID; bump
+it whenever the worker's output changes for identical inputs so stale bakes are
+superseded. `npm run bake:all` backfills `usedAssets`, marks every character
+stale, enqueues the default variant, and waits for the worker.
+
 `CharacterStudioBakeJobs` is the durable PocketBase queue. The single
 `bake-worker` service polls it with an in-process concurrency limit, assembles
 GLBs with glTF-Transform, uploads variants to R2, and advances `latestBake`

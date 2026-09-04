@@ -184,7 +184,9 @@ const ensureTimestamps = async (name) => {
 // PB-backed queue consumed by bake-worker/; duplicate jobs are harmless
 // because bakes are content-addressed (same inputs → same bakeId → no-op).
 {
-  const charactersCol = await pb.collections.getOne("CharacterStudioCharacters");
+  const charactersCol = await pb.collections.getOne(
+    "CharacterStudioCharacters",
+  );
   const assetsCol = await pb.collections.getOne("CharacterStudioAssets");
 
   let bakes;
@@ -253,8 +255,10 @@ const ensureTimestamps = async (name) => {
       // Owners may enqueue bakes for their own characters and watch their
       // status; admins may enqueue asset invalidations. Only the enqueued
       // shape (status=queued) is accepted — the worker owns all transitions.
-      listRule: 'character.user = @request.auth.id || @request.auth.role = "admin"',
-      viewRule: 'character.user = @request.auth.id || @request.auth.role = "admin"',
+      listRule:
+        'character.user = @request.auth.id || @request.auth.role = "admin"',
+      viewRule:
+        'character.user = @request.auth.id || @request.auth.role = "admin"',
       createRule:
         '@request.auth.id != "" && @request.body.status = "queued" && ' +
         '(character.user = @request.auth.id || @request.auth.role = "admin")',

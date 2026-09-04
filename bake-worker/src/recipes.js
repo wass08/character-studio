@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 
-export const PIPELINE_VERSION = "1.0.0";
+// Bump whenever bake output changes for identical inputs; existing bakes keep
+// their old bakeId and consumers re-bake lazily (or via scripts/rebake-characters.mjs).
+//   1.1.0 — scene-wide quantization volume (fixes scattered skinned meshes),
+//           separate vertex layout, collapsed placeholder plane.
+export const PIPELINE_VERSION = "1.1.0";
 
 export function buildRecipe(character) {
   return {

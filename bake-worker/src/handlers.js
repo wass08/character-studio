@@ -176,11 +176,7 @@ async function generateVariant({
     }
     return pb
       .collection(BAKES_COLLECTION)
-      .update(
-        bake.id,
-        { status: "ready", error: "" },
-        { requestKey: null },
-      );
+      .update(bake.id, { status: "ready", error: "" }, { requestKey: null });
   }
 
   const assemblyInputs = await loadAssemblyInputs(r2, recipe, resolvedAssets);
@@ -193,12 +189,7 @@ async function generateVariant({
   const io = await createNodeIO();
   const output = await io.writeBinary(document);
   const key = variantObjectKey(bake.bakeId, variantKey);
-  await r2.putObject(
-    key,
-    output,
-    "model/gltf-binary",
-    IMMUTABLE_CACHE_CONTROL,
-  );
+  await r2.putObject(key, output, "model/gltf-binary", IMMUTABLE_CACHE_CONTROL);
   return mergeReadyVariant(pb, bake, variantKey, key, output.byteLength);
 }
 
@@ -279,14 +270,12 @@ async function handleInvalidate(pb, job) {
     throw new Error("invalidate job is missing asset");
   }
 
-  const characters = await pb
-    .collection(CHARACTERS_COLLECTION)
-    .getFullList({
-      batch: 200,
-      filter: pb.filter("usedAssets.id ?= {:asset}", {
-        asset: job.asset,
-      }),
-    });
+  const characters = await pb.collection(CHARACTERS_COLLECTION).getFullList({
+    batch: 200,
+    filter: pb.filter("usedAssets.id ?= {:asset}", {
+      asset: job.asset,
+    }),
+  });
 
   for (const character of characters) {
     await pb
