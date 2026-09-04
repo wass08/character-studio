@@ -36,6 +36,7 @@ Settled in the 2026-07-24/25 architecture interview. Product model is Ready-Play
 - **Server-side bakes (data-bake-pipeline) make anonymity a non-issue**: capability needs no account; auth only decides ownership.
 - **v1 is deliberately registry-free**: open embedding (`/embed` iframe-able anywhere), no API keys, no partner endpoints. Nothing privileged lives in the iframe so open embedding is safe with per-IP rate limits. The guest record shape matches what partner-created guests will use, so the v2 partner API (`POST /api/embed/guests`, `POST /api/embed/token`, `EmbedApps` registry with allowedOrigins) is purely additive.
 - **The postMessage contract is the only unbreakable API** — three events, versioned `cs.v1.*`, frozen before any partner ships against it.
+- **The per-bake manifest already exists** (2026-09-04): `GET /api/models/b/{bakeId}.json` (`character-studio.manifest.v1`, built by `src/lib/server/manifest.js` from `src/lib/bake/rigContract.js` + `src/lib/generated/animation-clips.json`). `cs.v1.character.exported.manifestUrl` must point at it, and the integration doc (`docs/integration/character-studio-glb.md`, served as `/llms.txt`, installable via `npx skills add wass08/character-studio`) is what host developers and their agents read.
 - White-labeling is a future paid tier; v1 stays CS-branded (growth loop).
 
 ## Goal

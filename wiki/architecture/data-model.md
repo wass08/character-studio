@@ -22,6 +22,20 @@ pins a generation, uses an immutable redirect, and marks the bake
 `externallyDelivered` so future cleanup must retain it. Unknown parameters or
 enum values return `400`.
 
+## Integration manifest
+
+`GET /api/models/b/{bakeId}.json` (and `/api/models/c/{characterId}.json` for
+the latest bake) returns `character-studio.manifest.v1`: absolute URLs, the
+variant parameter table and ready variants, the rig contract (conventions and
+socket bones in glTF and three.js spelling, from `src/lib/bake/rigContract.js`),
+the animation clip catalog (`src/lib/generated/animation-clips.json`,
+regenerated with `npm run animations:catalog`), morph sets, material naming,
+and the frozen recipe. Model redirects carry a `Link: …; rel="describedby"`
+header to it, and all model routes send `Access-Control-Allow-Origin: *`.
+The human/agent guide lives in `docs/integration/character-studio-glb.md` and
+is published as `/llms.txt` (`npm run docs:sync`, run on `prebuild`) and as
+the `skills/character-studio-glb` skill.
+
 ## Bake queue and invalidation
 
 `PIPELINE_VERSION` (bake-worker `src/recipes.js`) is part of the bake ID; bump

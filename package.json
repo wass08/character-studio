@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "animations:publish": "node scripts/publish-animations.mjs",
+    "animations:catalog": "node scripts/generate-animation-catalog.mjs",
     "bake:all": "node scripts/rebake-characters.mjs",
+    "docs:sync": "node scripts/sync-integration-docs.mjs",
+    "prebuild": "npm run docs:sync",
     "lint": "biome check",
     "format": "biome format --write"
   },

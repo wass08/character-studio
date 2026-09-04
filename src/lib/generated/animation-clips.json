@@ -1,0 +1,918 @@
+{
+  "clipNamePrefix": "Rig|",
+  "stripTracks": [
+    ".scale"
+  ],
+  "categories": [
+    "locomotion",
+    "jump",
+    "combat",
+    "reaction",
+    "social"
+  ],
+  "genders": {
+    "man": {
+      "url": "/api/models/animations/man.glb",
+      "clipCount": 45,
+      "clips": [
+        {
+          "name": "Rig|A_TPose",
+          "label": "A_TPose",
+          "category": "internal",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.2,
+          "hidden": true
+        },
+        {
+          "name": "Rig|A_TPose.001",
+          "label": "A_TPose.001",
+          "category": "internal",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.2,
+          "hidden": true
+        },
+        {
+          "name": "Rig|Crouch_Fwd_Loop",
+          "label": "Crouch_Fwd_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.033,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Crouch_Idle_Loop",
+          "label": "Crouch_Idle_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.967,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Dance_Loop",
+          "label": "Dance_Loop",
+          "category": "social",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.033,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Death01",
+          "label": "Death01",
+          "category": "reaction",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 2.433,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Driving_Loop",
+          "label": "Driving_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.7,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Fixing_Kneeling",
+          "label": "Fixing_Kneeling",
+          "category": "social",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 5.233,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Hit_Chest",
+          "label": "Hit_Chest",
+          "category": "reaction",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.367,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Hit_Head",
+          "label": "Hit_Head",
+          "category": "reaction",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.467,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Idle_Loop",
+          "label": "Idle_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.533,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Idle_Talking_Loop",
+          "label": "Idle_Talking_Loop",
+          "category": "social",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.967,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Idle_Torch_Loop",
+          "label": "Idle_Torch_Loop",
+          "category": "social",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.3,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Interact",
+          "label": "Interact",
+          "category": "social",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 2.033,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Jog_Fwd_Loop",
+          "label": "Jog_Fwd_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 0.967,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Jump_Land",
+          "label": "Jump_Land",
+          "category": "jump",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.3,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Jump_Loop",
+          "label": "Jump_Loop",
+          "category": "jump",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.533,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Jump_Start",
+          "label": "Jump_Start",
+          "category": "jump",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.367,
+          "hidden": false
+        },
+        {
+          "name": "Rig|PickUp_Table",
+          "label": "PickUp_Table",
+          "category": "social",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.867,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Pistol_Aim_Down",
+          "label": "Pistol_Aim_Down",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.2,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Pistol_Aim_Neutral",
+          "label": "Pistol_Aim_Neutral",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.2,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Pistol_Aim_Up",
+          "label": "Pistol_Aim_Up",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.2,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Pistol_Idle_Loop",
+          "label": "Pistol_Idle_Loop",
+          "category": "combat",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.7,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Pistol_Reload",
+          "label": "Pistol_Reload",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.7,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Pistol_Shoot",
+          "label": "Pistol_Shoot",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.667,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Punch_Cross",
+          "label": "Punch_Cross",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.033,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Punch_Enter",
+          "label": "Punch_Enter",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.9,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Punch_Jab",
+          "label": "Punch_Jab",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.9,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Push_Loop",
+          "label": "Push_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.7,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Roll",
+          "label": "Roll",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.5,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Roll_RM",
+          "label": "Roll_RM",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": true,
+          "duration": 1.5,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sitting_Enter",
+          "label": "Sitting_Enter",
+          "category": "social",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.333,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sitting_Exit",
+          "label": "Sitting_Exit",
+          "category": "social",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.067,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sitting_Idle_Loop",
+          "label": "Sitting_Idle_Loop",
+          "category": "social",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.7,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sitting_Talking_Loop",
+          "label": "Sitting_Talking_Loop",
+          "category": "social",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.967,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Spell_Simple_Enter",
+          "label": "Spell_Simple_Enter",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.567,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Spell_Simple_Exit",
+          "label": "Spell_Simple_Exit",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.467,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Spell_Simple_Idle_Loop",
+          "label": "Spell_Simple_Idle_Loop",
+          "category": "combat",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.133,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Spell_Simple_Shoot",
+          "label": "Spell_Simple_Shoot",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.533,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sprint_Loop",
+          "label": "Sprint_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 0.7,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Swim_Fwd_Loop",
+          "label": "Swim_Fwd_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.367,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Swim_Idle_Loop",
+          "label": "Swim_Idle_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 3.367,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sword_Attack",
+          "label": "Sword_Attack",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.567,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sword_Attack_RM",
+          "label": "Sword_Attack_RM",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": true,
+          "duration": 1.567,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sword_Idle",
+          "label": "Sword_Idle",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.7,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Walk_Formal_Loop",
+          "label": "Walk_Formal_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.367,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Walk_Loop",
+          "label": "Walk_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.367,
+          "hidden": false
+        }
+      ]
+    },
+    "woman": {
+      "url": "/api/models/animations/woman.glb",
+      "clipCount": 45,
+      "clips": [
+        {
+          "name": "Rig|A_TPose",
+          "label": "A_TPose",
+          "category": "internal",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.2,
+          "hidden": true
+        },
+        {
+          "name": "Rig|A_TPose.001",
+          "label": "A_TPose.001",
+          "category": "internal",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.2,
+          "hidden": true
+        },
+        {
+          "name": "Rig|A_TPose.005",
+          "label": "A_TPose.005",
+          "category": "internal",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.2,
+          "hidden": true
+        },
+        {
+          "name": "Rig|A_TPose.006",
+          "label": "A_TPose.006",
+          "category": "internal",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.2,
+          "hidden": true
+        },
+        {
+          "name": "Rig|A_TPose.007",
+          "label": "A_TPose.007",
+          "category": "internal",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.2,
+          "hidden": true
+        },
+        {
+          "name": "Rig|Crouch_Fwd_Loop",
+          "label": "Crouch_Fwd_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.033,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Crouch_Idle_Loop",
+          "label": "Crouch_Idle_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.967,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Dance_Loop",
+          "label": "Dance_Loop",
+          "category": "social",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.033,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Death01",
+          "label": "Death01",
+          "category": "reaction",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 2.433,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Driving_Loop",
+          "label": "Driving_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.7,
+          "hidden": false
+        },
+        {
+          "name": "faceit_shape_action",
+          "label": "faceit_shape_action",
+          "category": "internal",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 17.367,
+          "hidden": true
+        },
+        {
+          "name": "Rig|Fixing_Kneeling",
+          "label": "Fixing_Kneeling",
+          "category": "social",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 5.233,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Hit_Chest",
+          "label": "Hit_Chest",
+          "category": "reaction",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.367,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Hit_Head",
+          "label": "Hit_Head",
+          "category": "reaction",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.467,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Idle_Loop",
+          "label": "Idle_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.533,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Idle_Talking_Loop",
+          "label": "Idle_Talking_Loop",
+          "category": "social",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.967,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Idle_Torch_Loop",
+          "label": "Idle_Torch_Loop",
+          "category": "social",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.3,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Interact",
+          "label": "Interact",
+          "category": "social",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 2.033,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Jog_Fwd_Loop",
+          "label": "Jog_Fwd_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 0.967,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Jump_Land",
+          "label": "Jump_Land",
+          "category": "jump",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.3,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Jump_Loop",
+          "label": "Jump_Loop",
+          "category": "jump",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.533,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Jump_Start",
+          "label": "Jump_Start",
+          "category": "jump",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.367,
+          "hidden": false
+        },
+        {
+          "name": "overwrite_shape_action",
+          "label": "overwrite_shape_action",
+          "category": "internal",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 17.367,
+          "hidden": true
+        },
+        {
+          "name": "Rig|PickUp_Table",
+          "label": "PickUp_Table",
+          "category": "social",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.867,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Pistol_Aim_Down",
+          "label": "Pistol_Aim_Down",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.2,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Pistol_Aim_Neutral",
+          "label": "Pistol_Aim_Neutral",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.2,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Pistol_Aim_Up",
+          "label": "Pistol_Aim_Up",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.2,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Pistol_Idle_Loop",
+          "label": "Pistol_Idle_Loop",
+          "category": "combat",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.7,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Pistol_Reload",
+          "label": "Pistol_Reload",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.7,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Pistol_Shoot",
+          "label": "Pistol_Shoot",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.667,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Punch_Cross",
+          "label": "Punch_Cross",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.033,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Punch_Enter",
+          "label": "Punch_Enter",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.9,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Punch_Jab",
+          "label": "Punch_Jab",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.9,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Push_Loop",
+          "label": "Push_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.7,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Roll",
+          "label": "Roll",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.5,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Roll_RM",
+          "label": "Roll_RM",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": true,
+          "duration": 1.5,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sitting_Enter",
+          "label": "Sitting_Enter",
+          "category": "social",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.333,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sitting_Exit",
+          "label": "Sitting_Exit",
+          "category": "social",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.067,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sitting_Idle_Loop",
+          "label": "Sitting_Idle_Loop",
+          "category": "social",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.7,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sitting_Talking_Loop",
+          "label": "Sitting_Talking_Loop",
+          "category": "social",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.967,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Spell_Simple_Enter",
+          "label": "Spell_Simple_Enter",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.567,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Spell_Simple_Exit",
+          "label": "Spell_Simple_Exit",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.467,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Spell_Simple_Idle_Loop",
+          "label": "Spell_Simple_Idle_Loop",
+          "category": "combat",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 2.133,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Spell_Simple_Shoot",
+          "label": "Spell_Simple_Shoot",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 0.533,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sprint_Loop",
+          "label": "Sprint_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 0.7,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Swim_Fwd_Loop",
+          "label": "Swim_Fwd_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.367,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Swim_Idle_Loop",
+          "label": "Swim_Idle_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 3.367,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sword_Attack",
+          "label": "Sword_Attack",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.567,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sword_Attack_RM",
+          "label": "Sword_Attack_RM",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": true,
+          "duration": 1.567,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Sword_Idle",
+          "label": "Sword_Idle",
+          "category": "combat",
+          "loop": false,
+          "rootMotion": false,
+          "duration": 1.7,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Walk_Formal_Loop",
+          "label": "Walk_Formal_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.367,
+          "hidden": false
+        },
+        {
+          "name": "Rig|Walk_Loop",
+          "label": "Walk_Loop",
+          "category": "locomotion",
+          "loop": true,
+          "rootMotion": false,
+          "duration": 1.367,
+          "hidden": false
+        }
+      ]
+    }
+  }
+}

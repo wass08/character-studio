@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { canonicalizeBakeParams, variantKeyFor } from "@/lib/bake/params";
 import { enqueueVariantBake } from "@/lib/bakeJobs";
 import {
+  buildManifest,
+  PUBLIC_CORS_HEADERS,
+  requestOrigin,
+} from "@/lib/server/manifest";
+import {
   checkRateLimit,
   getSuperuserPb,
   variantUrl,
@@ -9,30 +14,38 @@ import {
 } from "@/lib/server/modelResolver";
 
 // GET /api/models/b/{bakeId}.glb?quality=…&morphs=…&compression=…&pose=…
+// GET /api/models/b/{bakeId}.json
 //
 // The pinned, immutable form for external consumers: bakeId is the content
 // hash, the recipe is frozen on the bake record, and the same URL returns the
-// same bytes forever. Serving this URL marks the bake externallyDelivered,
-// which exempts it from garbage collection permanently — never break a URL
-// someone shipped in their project.
+// same bytes forever. The .json form is the integration manifest (URLs, rig
+// contract, animation catalog, morphs) for that bake. Serving either marks
+// the bake externallyDelivered, which exempts it from garbage collection
+// permanently — never break a URL someone shipped in their project.
+
+const json = (body, status, headers = {}) =>
+  NextResponse.json(body, {
+    status,
+    headers: { ...PUBLIC_CORS_HEADERS, ...headers },
+  });
 
 export async function GET(req, { params }) {
   const limit = checkRateLimit(req);
   if (!limit.ok) {
-    return NextResponse.json(
-      { error: "Rate limited" },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
-    );
+    return json({ error: "Rate limited" }, 429, {
+      "Retry-After": String(limit.retryAfter),
+    });
   }
 
   const { bakeId: rawBakeId } = await params;
-  const bakeId = rawBakeId.replace(/\.glb$/i, "");
+  const wantsManifest = /\.json$/i.test(rawBakeId);
+  const bakeId = rawBakeId.replace(/\.(glb|json)$/i, "");
 
   const parsed = canonicalizeBakeParams(
     Object.fromEntries(new URL(req.url).searchParams),
   );
   if (!parsed.ok) {
-    return NextResponse.json({ error: parsed.error }, { status: 400 });
+    return json({ error: parsed.error }, 400);
   }
   const variantKey = variantKeyFor(parsed.params);
 
@@ -41,6 +54,7 @@ export async function GET(req, { params }) {
     pb
       .collection("CharacterStudioBakes")
       .getFirstListItem(pb.filter("bakeId = {:bakeId}", { bakeId }), {
+        expand: "character",
         requestKey: null,
       });
 
@@ -48,21 +62,43 @@ export async function GET(req, { params }) {
   try {
     bake = await fetchBake();
   } catch {
-    return NextResponse.json({ error: "Bake not found" }, { status: 404 });
+    return json({ error: "Bake not found" }, 404);
   }
 
-  const deliver = async (url, deliveredBake) => {
+  const markDelivered = async (deliveredBake) => {
     if (!deliveredBake.externallyDelivered) {
       await pb
         .collection("CharacterStudioBakes")
         .update(deliveredBake.id, { externallyDelivered: true })
         .catch(() => {});
     }
+  };
+
+  const origin = requestOrigin(req);
+  const manifestUrl = `${origin}/api/models/b/${encodeURIComponent(bakeId)}.json`;
+
+  if (wantsManifest) {
+    await markDelivered(bake);
+    return json(
+      buildManifest({ bake, character: bake.expand?.character, origin }),
+      200,
+      // Variant availability changes as cold variants land, so this is
+      // cacheable but not immutable.
+      { "Cache-Control": "public, max-age=300, stale-while-revalidate=86400" },
+    );
+  }
+
+  const deliver = async (url, deliveredBake) => {
+    await markDelivered(deliveredBake);
     return NextResponse.redirect(url, {
       status: 302,
-      // bakeId → object key is deterministic and the target is immutable, so
-      // this redirect itself may be cached forever.
-      headers: { "Cache-Control": "public, max-age=31536000, immutable" },
+      headers: {
+        ...PUBLIC_CORS_HEADERS,
+        // bakeId → object key is deterministic and the target is immutable,
+        // so this redirect itself may be cached forever.
+        "Cache-Control": "public, max-age=31536000, immutable",
+        Link: `<${manifestUrl}>; rel="describedby"; type="application/json"`,
+      },
     });
   };
 
@@ -75,8 +111,7 @@ export async function GET(req, { params }) {
   const waited = await waitForVariant(fetchBake, variantKey);
   if (waited.url) return deliver(waited.url, waited.bake);
 
-  return NextResponse.json(
-    { error: "Variant not ready yet, retry shortly" },
-    { status: 503, headers: { "Retry-After": "10" } },
-  );
+  return json({ error: "Variant not ready yet, retry shortly" }, 503, {
+    "Retry-After": "10",
+  });
 }
