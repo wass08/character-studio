@@ -45,6 +45,16 @@ function safeEqualHex(a, b) {
   return timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
 }
 
+// Route handlers buffer multipart bodies in memory; refuse oversized uploads
+// before parsing (thumbnail ≤ 3 MB + a few KB of JSON is the legitimate max).
+const MAX_BODY_BYTES = 4 * 1024 * 1024;
+export function assertBodySize(req) {
+  const length = Number(req.headers.get("content-length") || 0);
+  if (length > MAX_BODY_BYTES) {
+    throw new EmbedError(413, "Request body is too large", "payload_too_large");
+  }
+}
+
 /** The guest token from the request header, validated for shape. */
 export function guestTokenFrom(req) {
   const token = req.headers.get(GUEST_TOKEN_HEADER)?.trim();

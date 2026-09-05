@@ -1,4 +1,5 @@
 import {
+  assertBodySize,
   createGuestCharacter,
   EMBED_RATE_LIMITS,
   embedError,
@@ -19,6 +20,7 @@ export async function POST(req) {
   const limit = checkRateLimit(req, EMBED_RATE_LIMITS.create);
   if (!limit.ok) return rateLimited(limit);
   try {
+    assertBodySize(req);
     const token = guestTokenFrom(req);
     const { fields, thumbnail } = parseCharacterForm(await req.formData());
     const record = await createGuestCharacter({ token, fields, thumbnail });

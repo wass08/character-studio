@@ -1,4 +1,5 @@
 import {
+  assertBodySize,
   EMBED_RATE_LIMITS,
   embedError,
   embedJson,
@@ -33,6 +34,7 @@ export async function PATCH(req, { params }) {
   const limit = checkRateLimit(req, EMBED_RATE_LIMITS.write);
   if (!limit.ok) return rateLimited(limit);
   try {
+    assertBodySize(req);
     const token = guestTokenFrom(req);
     const { id } = await params;
     const { fields, thumbnail } = parseCharacterForm(await req.formData(), {
