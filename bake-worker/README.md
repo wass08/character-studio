@@ -86,11 +86,16 @@ Configure the same root-context Docker build in Elestio and set every required
 environment variable. Expose port `8787` for the container healthcheck only;
 the worker needs no public ingress.
 
-**Do not add a `Dockerfile` at the repository root.** The Next.js app is
-deployed by an Elestio Node.js pipeline from the same repository, and that
-runtime silently prefers a root `Dockerfile` over its install/build/run
+**Do not add a `Dockerfile` at the repository root of `main`.** The Next.js
+app is deployed by an Elestio Node.js pipeline from the same repository, and
+that runtime silently prefers a root `Dockerfile` over its install/build/run
 commands: on 2026-09-04 a root worker Dockerfile turned the production app
-into a crash-looping bake worker. The worker pipeline must instead point at
-`bake-worker/Dockerfile` with the repository root as build context (a custom
-compose in the Elestio pipeline settings, `build: { context: ., dockerfile:
-bake-worker/Dockerfile }`).
+into a crash-looping bake worker.
+
+The worker pipeline therefore deploys from the **`deploy/bake-worker`**
+branch: `main` plus a root copy of `bake-worker/Dockerfile`, refreshed by
+`.github/workflows/bake-worker-deploy-branch.yml` on every push to `main`
+that touches `bake-worker/`, `src/lib/bake/`, or the character models. Never
+commit to that branch by hand; edit `bake-worker/Dockerfile` on `main`. To
+force a worker redeploy without a code change, run the workflow manually
+from the Actions tab (workflow_dispatch).
