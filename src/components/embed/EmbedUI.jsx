@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import ColorPicker from "@/components/ui/ColorPicker/ColorPicker";
 import { toast } from "@/components/ui/primitives/Toast";
 import ShapeKeyControls from "@/components/ui/ShapeKeyControls/ShapeKeyControls";
+import { randomCharacterName } from "@/lib/characterNames";
 import {
   EMBED_ERROR_CODES,
   EMBED_EVENTS,
@@ -120,7 +121,7 @@ export default function EmbedUI({ session }) {
     if (phase !== "editing" || loading || saving) return;
     try {
       setPhase("saving");
-      const name = (currentCharacterName || "").trim() || "My character";
+      const name = (currentCharacterName || "").trim() || randomCharacterName();
       const record = await saveCharacter({ name });
       setPhase("baking");
       const manifest = await waitForManifest(record.id);
@@ -175,6 +176,8 @@ export default function EmbedUI({ session }) {
   };
 
   const busy = phase === "saving" || phase === "baking";
+  const editable =
+    mode === UI_MODES.CUSTOMIZE && phase === "editing" && !loading && !saving;
   const doneLabel =
     phase === "saving" ? "Saving…" : phase === "baking" ? "Preparing…" : "Done";
 
@@ -221,7 +224,7 @@ export default function EmbedUI({ session }) {
 
       {mode === UI_MODES.CUSTOMIZE && phase !== "done" && <IdleJuice />}
 
-      {mode === UI_MODES.CUSTOMIZE && phase !== "done" && (
+      {editable && (
         <div>
           {(showColorPicker(isSkinCategory, currentCategory, hasAsset) ||
             uniqueMorphs.length > 0) && (

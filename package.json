@@ -11,6 +11,7 @@
     "bake:all": "node scripts/rebake-characters.mjs",
     "guests:gc": "node scripts/gc-guest-characters.mjs",
     "embed:smoke": "node scripts/smoke-embed.mjs",
+    "assets:migrate": "node scripts/migrate-assets-to-r2.mjs",
     "docs:sync": "node scripts/sync-integration-docs.mjs",
     "prebuild": "npm run docs:sync",
     "lint": "biome check",

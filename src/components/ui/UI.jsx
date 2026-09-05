@@ -37,6 +37,11 @@ const UI = () => {
   const hasAsset = customization[currentCategory?.name]?.asset;
 
   const mode = useConfiguratorStore((state) => state.mode);
+  // No edit controls while the character is (re)building or being saved:
+  // panels would act on a look that is about to be replaced.
+  const loading = useConfiguratorStore((state) => state.loading);
+  const saving = useConfiguratorStore((state) => state.saving);
+  const editable = mode === UI_MODES.CUSTOMIZE && !loading && !saving;
 
   return (
     <>
@@ -73,7 +78,7 @@ const UI = () => {
 
       {mode === UI_MODES.CUSTOMIZE && <IdleJuice />}
 
-      {mode === UI_MODES.CUSTOMIZE && (
+      {editable && (
         <div className={isHidden ? "max-md:hidden" : ""}>
           {(showColorPicker(isSkinCategory, currentCategory, hasAsset) ||
             uniqueMorphs.length > 0) && (

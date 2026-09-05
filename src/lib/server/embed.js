@@ -8,6 +8,7 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import PocketBase from "pocketbase";
 import { enqueueCharacterBake } from "@/lib/bakeJobs";
+import { randomCharacterName } from "@/lib/characterNames";
 import {
   EMBED_GENDERS,
   GUEST_TOKEN_HEADER,
@@ -197,9 +198,9 @@ export function parseCharacterForm(formData, { partial = false } = {}) {
   const name = formData.get("name");
   if (name != null && name !== "") {
     if (typeof name !== "string") throw new EmbedError(400, "name is invalid");
-    fields.name = name.trim().slice(0, NAME_MAX) || "Untitled";
+    fields.name = name.trim().slice(0, NAME_MAX) || randomCharacterName();
   } else if (!partial) {
-    fields.name = "Untitled";
+    fields.name = randomCharacterName();
   }
 
   const gender = formData.get("gender");

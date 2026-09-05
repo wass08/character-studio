@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Scene from "@/components/scene/SceneDynamic";
+import { randomCharacterName } from "@/lib/characterNames";
 import {
   createGuestToken,
   EMBED_CONTRACT_VERSION,
@@ -47,6 +48,9 @@ export default function EmbedView() {
 
   const setEmbedSession = useConfiguratorStore((s) => s.setEmbedSession);
   const beginNewCharacter = useConfiguratorStore((s) => s.beginNewCharacter);
+  const setCurrentCharacter = useConfiguratorStore(
+    (s) => s.setCurrentCharacter,
+  );
   const setGender = useConfiguratorStore((s) => s.setGender);
   const setMode = useConfiguratorStore((s) => s.setMode);
   const loading = useConfiguratorStore((s) => s.loading);
@@ -61,8 +65,11 @@ export default function EmbedView() {
     setMode(UI_MODES.CUSTOMIZE);
     if (EMBED_GENDERS.includes(genderParam)) setGender(genderParam);
     // Always start from a clean draft: the embed never resumes a persisted
-    // first-party character.
-    beginNewCharacter();
+    // first-party character. Seed a playful name so the visitor can just
+    // press Done.
+    beginNewCharacter().then(() =>
+      setCurrentCharacter({ id: null, name: randomCharacterName() }),
+    );
     return () => setEmbedSession(null);
   }, [
     hostOrigin,
@@ -71,6 +78,7 @@ export default function EmbedView() {
     setMode,
     setGender,
     beginNewCharacter,
+    setCurrentCharacter,
   ]);
 
   // cs.v1.ready fires once the first catalog load finished and the creator
