@@ -73,8 +73,19 @@ if (!apply) process.exit(0);
 
 let deleted = 0;
 let failed = 0;
+let skipped = 0;
 for (const character of characters) {
   try {
+    // Re-read right before deleting: a visitor may have claimed the
+    // character between the listing above and now.
+    const current = await pb
+      .collection("CharacterStudioCharacters")
+      .getOne(character.id, { requestKey: null });
+    if (!current.guest || current.user) {
+      skipped += 1;
+      console.log(`  - ${character.id}: claimed meanwhile, kept`);
+      continue;
+    }
     await pb.collection("CharacterStudioCharacters").delete(character.id);
     deleted += 1;
   } catch (error) {
@@ -83,5 +94,7 @@ for (const character of characters) {
   }
 }
 
-console.log(`Deleted ${deleted} character(s); failed ${failed}.`);
+console.log(
+  `Deleted ${deleted} character(s); skipped ${skipped}; failed ${failed}.`,
+);
 process.exit(failed > 0 ? 1 : 0);

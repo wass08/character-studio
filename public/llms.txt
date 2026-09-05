@@ -228,6 +228,7 @@ The viseme set is the one `wawa-lipsync` (npm) emits, so audio-driven lip sync w
 | Field | Meaning |
 | --- | --- |
 | `schema`, `pipelineVersion`, `bakeId`, `characterId`, `name`, `gender`, `height` | identity of the bake |
+| `stale` | `true` while the character was edited after this bake and a replacement is being produced; the mutable URL serves this bake meanwhile |
 | `urls.manifest`, `urls.model`, `urls.modelMutable`, `urls.animations`, `urls.docs`, `urls.repo` | absolute URLs; `model` is pinned, `modelMutable` follows the character |
 | `model.params` | the enum table from section 2 with defaults |
 | `model.defaultVariant`, `model.readyVariants[]` | which variants already exist, with `url`, `cdnUrl`, `bytes` |

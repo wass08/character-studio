@@ -30,10 +30,21 @@ const showColorPicker = (isSkin, currentCategory, hasAsset) =>
 async function waitForManifest(characterId) {
   const deadline = Date.now() + BAKE_WAIT_MS;
   for (;;) {
+    // The route holds a cold request open for ~20 s; anything longer is a
+    // stalled connection, not a slow bake.
     const response = await fetch(`/api/models/c/${characterId}.json`, {
       cache: "no-store",
+      signal: AbortSignal.timeout(30_000),
     });
-    if (response.ok) return response.json();
+    if (response.ok) {
+      const manifest = await response.json();
+      // After "Keep editing" + Done the route serves the previous bake while
+      // the replacement is produced (stale-while-revalidate). Wait for the
+      // fresh one so the exported URL matches what the visitor sees.
+      if (!manifest.stale || Date.now() > deadline) return manifest;
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      continue;
+    }
     if (response.status === 429) {
       const error = new Error("Too many requests, try again in a minute");
       error.code = EMBED_ERROR_CODES.rateLimited;
@@ -88,7 +99,12 @@ export default function EmbedUI({ session }) {
 
   const reportError = useCallback(
     (error) => {
-      const code = error?.code || EMBED_ERROR_CODES.saveFailed;
+      // Hosts only know the three documented codes; everything else (server
+      // validation, session problems, aborted fetches) is a failed save.
+      const known = Object.values(EMBED_ERROR_CODES);
+      const code = known.includes(error?.code)
+        ? error.code
+        : EMBED_ERROR_CODES.saveFailed;
       const message = error?.message || "Something went wrong";
       postToHost(session.hostOrigin, {
         type: EMBED_EVENTS.error,

@@ -65,6 +65,9 @@ export function buildManifest({ bake, character, origin }) {
     name: character?.name || null,
     gender,
     height: typeof recipe.height === "number" ? recipe.height : null,
+    // True while the character was edited after this bake and a replacement
+    // is being produced; the mutable model URL serves this bake meanwhile.
+    stale: !!character?.bakeStale,
     urls: {
       manifest: `${origin}/api/models/b/${encodeURIComponent(bake.bakeId)}.json`,
       model: pinned,

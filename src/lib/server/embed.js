@@ -49,7 +49,13 @@ function safeEqualHex(a, b) {
 // before parsing (thumbnail ≤ 3 MB + a few KB of JSON is the legitimate max).
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
 export function assertBodySize(req) {
-  const length = Number(req.headers.get("content-length") || 0);
+  const header = req.headers.get("content-length");
+  const length = Number(header);
+  if (header == null || !Number.isFinite(length)) {
+    // Browsers and every HTTP client send it for multipart bodies; a chunked
+    // upload could otherwise stream past the limit.
+    throw new EmbedError(411, "Content-Length is required", "length_required");
+  }
   if (length > MAX_BODY_BYTES) {
     throw new EmbedError(413, "Request body is too large", "payload_too_large");
   }
@@ -419,7 +425,7 @@ export async function claimCharacter({ code, user }) {
       "expired_code",
     );
   }
-  const updated = await pb.collection(CHARACTERS).update(
+  await pb.collection(CHARACTERS).update(
     record.id,
     {
       user: user.id,
@@ -430,7 +436,21 @@ export async function claimCharacter({ code, user }) {
     },
     { requestKey: null },
   );
-  return updated;
+  // PocketBase has no compare-and-swap. Two redemptions of the same code
+  // racing each other both pass the lookup above; re-reading after the write
+  // makes sure only the caller that actually ended up as owner reports
+  // success (the other sees a different user and gets a conflict).
+  const settled = await pb
+    .collection(CHARACTERS)
+    .getOne(record.id, { requestKey: null });
+  if (settled.user !== user.id) {
+    throw new EmbedError(
+      409,
+      "This character was just claimed by someone else",
+      "already_claimed",
+    );
+  }
+  return settled;
 }
 
 // --- HTTP helpers for the /api/embed routes ----------------------------------

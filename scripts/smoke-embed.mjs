@@ -126,17 +126,51 @@ try {
     listed.totalItems === 0,
   );
 
-  // 2. Bake + manifest (cold path through the worker).
+  // 2. Bake + manifest (cold path through the worker). Poll the way the
+  // embed does: 503 + Retry-After while the queue is busy, `stale` while a
+  // re-bake is in flight.
+  const waitForManifest = async () => {
+    const deadline = Date.now() + 120_000;
+    for (;;) {
+      const response = await fetch(
+        `${BASE_URL}/api/models/c/${characterId}.json`,
+        { cache: "no-store", signal: AbortSignal.timeout(30_000) },
+      );
+      if (response.ok) {
+        const manifest = await response.json();
+        if (!manifest.stale || Date.now() > deadline) return manifest;
+      } else if (response.status !== 503 || Date.now() > deadline) {
+        return { status: response.status };
+      }
+      await new Promise((r) => setTimeout(r, 3000));
+    }
+  };
   const started = Date.now();
-  const manifestResponse = await fetch(
-    `${BASE_URL}/api/models/c/${characterId}.json`,
-    { cache: "no-store" },
-  );
-  const manifest = await manifestResponse.json().catch(() => ({}));
+  const manifest = await waitForManifest();
   check(
     "manifest served after the bake",
-    manifestResponse.status === 200 && !!manifest.bakeId,
-    `${manifestResponse.status} in ${Math.round((Date.now() - started) / 1000)}s`,
+    !!manifest.bakeId && manifest.stale === false,
+    `${manifest.status || 200} in ${Math.round((Date.now() - started) / 1000)}s`,
+  );
+  const patchedAgain = await fetch(
+    `${BASE_URL}/api/embed/characters/${characterId}`,
+    {
+      method: "PATCH",
+      headers,
+      body: (() => {
+        const b = new FormData();
+        b.append("height", "1.4");
+        return b;
+      })(),
+    },
+  );
+  const afterEdit = await waitForManifest();
+  check(
+    "re-save marks the bake stale until the replacement lands",
+    patchedAgain.status === 200 &&
+      afterEdit.stale === false &&
+      afterEdit.bakeId !== manifest.bakeId,
+    `bake ${manifest.bakeId} -> ${afterEdit.bakeId}`,
   );
   if (manifest.urls?.model) {
     const glb = await fetch(manifest.urls.model, { redirect: "manual" });
@@ -216,7 +250,10 @@ try {
       .collection("CharacterStudioCharacters")
       .delete(characterId, { requestKey: null })
       .then(() => console.log(`cleaned up ${characterId}`))
-      .catch((e) => console.warn(`cleanup failed: ${e?.message || e}`));
+      .catch((e) => {
+        failures += 1;
+        console.warn(`cleanup failed: ${e?.message || e}`);
+      });
   }
 }
 
