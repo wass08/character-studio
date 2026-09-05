@@ -1,0 +1,47 @@
+# Keeps `deploy/bake-worker` equal to `main` plus a repository-root copy of
+# bake-worker/Dockerfile. The Elestio pipeline `cs-bake-worker` (Docker
+# runtime) builds the repo root of that branch; the Next.js app pipeline
+# builds `main`, which must never contain a root Dockerfile (Elestio's Node
+# runtime would build it instead of the app — see bake-worker/README.md).
+name: Sync bake-worker deploy branch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "bake-worker/**"
+      - "src/lib/bake/**"
+      - "public/models/characters/**"
+      - ".github/workflows/bake-worker-deploy-branch.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bake-worker-deploy-branch
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge main into deploy/bake-worker and materialise the root Dockerfile
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin deploy/bake-worker >/dev/null; then
+            git checkout -B deploy/bake-worker origin/deploy/bake-worker
+            git merge --no-edit main
+          else
+            git checkout -b deploy/bake-worker main
+          fi
+          cp bake-worker/Dockerfile Dockerfile
+          git add Dockerfile
+          git diff --cached --quiet || git commit -m "deploy: materialise root Dockerfile for the bake-worker pipeline"
+          git push origin deploy/bake-worker
