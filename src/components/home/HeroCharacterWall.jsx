@@ -9,7 +9,8 @@ const WallScene = dynamic(() => import("@/components/lab/WallScene"), {
 });
 
 const HERO_CHARACTER_LIMIT = 8;
-const PUBLIC_CHARACTER_FILTER = 'hidden != true && thumbnail != ""';
+const PUBLIC_CHARACTER_FILTER =
+  'hidden != true && guest != true && thumbnail != ""';
 
 const HeroCharacterWall = () => {
   const [items, setItems] = useState([]);

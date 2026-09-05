@@ -42,6 +42,10 @@ character.getObjectByName(manifest.rig.sockets.handRight.three).add(sword);
 - Materials: `Skin` plus `Color_*` standard PBR; recolour `Color_*` for team tints.
 - All routes send `Access-Control-Allow-Origin: *`.
 
+## Embedding the creator
+
+To let visitors make their own character on the host site, iframe `https://characterstudio.wawasensei.dev/embed?origin=<encoded host origin>` and listen for `cs.v1.ready`, `cs.v1.character.exported` (carries `characterId`, `bakeId`, `glbUrl`, `characterUrl`, `animationsUrl`, `manifestUrl`) and `cs.v1.error`; always check `event.origin`. Full guide: `docs/integration/embed.md` in the repo. Demo: https://characterstudio.wawasensei.dev/embed-demo.html.
+
 ## Do not
 
 - Do not scale by `manifest.height` again; it is baked in.

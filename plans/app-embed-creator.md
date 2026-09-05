@@ -1,12 +1,12 @@
 ---
 plan_id: app-embed-creator
 title: Embeddable guest-first character creator
-status: draft
+status: implemented
 kind: living-plan
 priority: p2
-last_reviewed: 2026-07-25
+last_reviewed: 2026-09-06
 goal: "Any site can iframe /embed; an anonymous visitor creates a character, the host page receives immutable GLB URLs via postMessage, and the visitor can claim the character into a Character Studio account via a first-party tab."
-readiness: ready
+readiness: reference
 success_criteria:
   - "/embed boots with a self-issued guest token, full creator works with zero auth; saving produces a guest-owned character record + server bake."
   - "Host page receives versioned postMessage events: cs.v1.ready, cs.v1.character.exported {characterId, bakeId, glbUrl (/b/ immutable), characterUrl (/c/ mutable), animationsUrl, manifestUrl}, cs.v1.error — and nothing else."
@@ -15,15 +15,19 @@ success_criteria:
   - "No login UI exists inside the iframe (storage partitioning makes it worthless); widget stays 'Powered by Character Studio' branded."
 depends_on: ["data-bake-pipeline"]
 related_plans: ["data-bake-pipeline"]
-related_wiki: []
+related_wiki:
+  - wiki/architecture/app-structure.md
+  - wiki/architecture/data-model.md
 wiki_sync:
   required: true
-  done: false
-  pages: []
-  notes: "Publish the postMessage contract + embed integration doc when frozen."
+  done: true
+  pages:
+    - wiki/architecture/app-structure.md
+    - wiki/architecture/data-model.md
+  notes: "Host contract published as docs/integration/embed.md."
 archive:
-  eligible: false
-  reason: "Just opened; blocked on bake pipeline phases 1–3."
+  eligible: true
+  reason: "Embed surface, claim funnel, GC script and host docs shipped 2026-09-06; guest GC needs a scheduled run."
 ---
 
 # Embeddable guest-first character creator
@@ -47,20 +51,20 @@ Ship `/embed` as an acquisition channel: hosts integrate a character creator in 
 
 ### Phase 1 — Embed surface
 
-- [ ] `/embed` route: creator UI in embed chrome (no site nav, CS badge), self-issued guest token, guest-owned character records (PB: `guestToken` field, no `user` relation; collection rules allowing guest create/update scoped by token).
-- [ ] postMessage bus: emit `cs.v1.ready` / `cs.v1.character.exported` / `cs.v1.error`; "Done" triggers eager default bake and emits URLs from the bake manifest.
-- [ ] Per-IP rate limits on guest character create + bake trigger.
+- [x] `/embed` route: creator UI in embed chrome (no site nav, CS badge), self-issued guest token (sessionStorage), guest-owned character records. Implemented as server routes `/api/embed/characters` (+ `/{id}`) that validate the payload and store only a token hash in a hidden `guestTokenHash` field — no PocketBase rule change; guests never write to PB directly.
+- [x] postMessage bus: emit `cs.v1.ready` / `cs.v1.character.exported` / `cs.v1.error`; "Done" saves, waits on `/api/models/c/{id}.json` (cold-path hold-open) and emits URLs from the manifest (`src/lib/embed/contract.js`, `src/components/embed/`).
+- [x] Per-IP rate limits: 10 creates/min, 60 other embed calls/min (`checkRateLimit` scopes).
 
 ### Phase 2 — Claim funnel
 
-- [ ] Claim codes: single-use, ~15 min TTL, bound to character; "Save to Character Studio" button opens `characterstudio.com/claim?code=…` in a new tab; OTP login → reassign record `guestToken` → `user`.
-- [ ] `/studio` shows claimed characters; community visibility only after claim.
-- [ ] Guest GC job: unclaimed records > 30 days deleted; bakes flagged externally-delivered are exempt forever.
+- [x] Claim codes: single-use, 15 min TTL, hashed on the character (`claimCodeHash`, `claimExpires`); "Save to Character Studio" opens `/claim?code=…` in a new tab; OTP login → `POST /api/embed/claim` reassigns to `user`, clears guest fields.
+- [x] `/studio` shows claimed characters (normal `user` filter); public listings exclude `guest = true`.
+- [x] Guest GC: `npm run guests:gc -- --apply` (dry run by default) deletes unclaimed guests older than 30 days; bakes are never touched. Still needs a scheduled run (cron/Elestio job).
 
 ### Phase 3 — Integration doc + hardening
 
-- [ ] One-page embed doc (iframe snippet, event contract, param table) — public.
-- [ ] Golden integration test: fixture host page, create → export → claim round-trip.
+- [x] `docs/integration/embed.md` + live demo `public/embed-demo.html`.
+- [x] `npm run embed:smoke` (create → ownership → bake manifest → claim code → claim via impersonated user → cleanup) against any deployment; the demo page doubles as the fixture host for headless browser checks.
 
 ## Open questions
 
@@ -69,4 +73,5 @@ Ship `/embed` as an acquisition channel: hosts integrate a character creator in 
 
 ## Wiki sync
 
-_Filled in before flipping `status: implemented`._
+- `wiki/architecture/app-structure.md` owns the /embed and /claim surfaces.
+- `wiki/architecture/data-model.md` owns the guest fields, claim codes and retention.

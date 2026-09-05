@@ -17,6 +17,23 @@ fall back to live recipe assembly if the bake is absent or fails to load.
 `src/lib/modelAssets.js` owns model URL construction. Do not build baked or
 shared-animation URLs ad hoc in rendering components.
 
+## Embeddable creator
+
+`/embed` renders the editor in host-page chrome (`src/components/embed/`):
+no site navigation, a "Powered by" badge, the customize panels, and a Done
+button. It boots a guest session (random token in sessionStorage), starts a
+fresh draft, optionally seeded by `?gender=`, and talks to the host page
+only through `window.parent.postMessage` using the three `cs.v1.*` events
+defined in `src/lib/embed/contract.js`. The target origin is the host's
+`?origin=` parameter. Saves go through `/api/embed/characters` with the guest
+token instead of PocketBase (see the store's `embed` session). After export
+the panel offers "Save to Character Studio", which mints a claim code and
+opens `/claim?code=…` in a first-party tab; `ClaimView` signs the visitor in
+with the global OTP dialog and redeems the code.
+
+`AuthBootstrapper` treats `/embed` and `/claim` as routes that own their
+character, and `GlobalChrome` gives `/embed` the fullscreen body class.
+
 ## Shared animations
 
 All renderers load gender-specific clips through

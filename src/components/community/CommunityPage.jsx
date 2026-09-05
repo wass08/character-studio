@@ -31,7 +31,7 @@ export default function CommunityPage() {
     pb.collection("CharacterStudioCharacters")
       .getList(1, 100, {
         sort: "-created",
-        filter: 'hidden != true && thumbnail != ""',
+        filter: 'hidden != true && guest != true && thumbnail != ""',
         skipTotal: true,
         expand: "user",
         requestKey: null,

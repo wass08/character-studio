@@ -37,7 +37,10 @@ export const PUBLIC_CORS_HEADERS = Object.freeze({
 export function buildManifest({ bake, character, origin }) {
   const recipe = bake.recipe || {};
   const gender = recipe.gender || character?.gender || "woman";
-  const characterId = bake.character || character?.id || null;
+  // Bakes are content-addressed, so several characters with identical
+  // recipes share one bake record whose `character` is whoever baked first.
+  // The character passed in (the one being served) takes precedence.
+  const characterId = character?.id || bake.character || null;
   const pinned = `${origin}/api/models/b/${encodeURIComponent(bake.bakeId)}.glb`;
   const mutable = characterId
     ? `${origin}/api/models/c/${encodeURIComponent(characterId)}.glb`

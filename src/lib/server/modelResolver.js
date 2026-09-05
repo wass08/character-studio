@@ -73,32 +73,41 @@ export async function waitForVariant(
   }
 }
 
-// Naive per-IP sliding-window rate limit. In-memory is fine for the current
+// Naive per-IP fixed-window rate limit. In-memory is fine for the current
 // single-instance deployment; swap for something shared before scaling out.
-const RATE_LIMIT = 120; // requests
+// `scope` keeps independent counters per route family (model serving vs
+// embed writes) so a busy wall page can't starve guest saves and vice versa.
+const RATE_LIMIT = 120; // requests per window, default scope
 const RATE_WINDOW_MS = 60_000;
 const rateBuckets = new Map();
-export function checkRateLimit(req) {
-  const ip =
+export function requestIp(req) {
+  return (
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     req.headers.get("x-real-ip") ||
-    "unknown";
+    "unknown"
+  );
+}
+export function checkRateLimit(
+  req,
+  { limit = RATE_LIMIT, windowMs = RATE_WINDOW_MS, scope = "models" } = {},
+) {
+  const key = `${scope}:${requestIp(req)}`;
   const now = Date.now();
-  const bucket = rateBuckets.get(ip);
-  if (!bucket || now - bucket.windowStart > RATE_WINDOW_MS) {
-    rateBuckets.set(ip, { windowStart: now, count: 1 });
+  const bucket = rateBuckets.get(key);
+  if (!bucket || now - bucket.windowStart > windowMs) {
+    rateBuckets.set(key, { windowStart: now, count: 1 });
     if (rateBuckets.size > 10_000) {
       for (const [k, v] of rateBuckets) {
-        if (now - v.windowStart > RATE_WINDOW_MS) rateBuckets.delete(k);
+        if (now - v.windowStart > windowMs) rateBuckets.delete(k);
       }
     }
     return { ok: true };
   }
   bucket.count += 1;
-  if (bucket.count > RATE_LIMIT) {
+  if (bucket.count > limit) {
     return {
       ok: false,
-      retryAfter: Math.ceil((bucket.windowStart + RATE_WINDOW_MS - now) / 1000),
+      retryAfter: Math.ceil((bucket.windowStart + windowMs - now) / 1000),
     };
   }
   return { ok: true };

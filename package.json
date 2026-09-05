@@ -9,6 +9,8 @@
     "animations:publish": "node scripts/publish-animations.mjs",
     "animations:catalog": "node scripts/generate-animation-catalog.mjs",
     "bake:all": "node scripts/rebake-characters.mjs",
+    "guests:gc": "node scripts/gc-guest-characters.mjs",
+    "embed:smoke": "node scripts/smoke-embed.mjs",
     "docs:sync": "node scripts/sync-integration-docs.mjs",
     "prebuild": "npm run docs:sync",
     "lint": "biome check",

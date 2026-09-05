@@ -22,6 +22,10 @@ Model URLs respond with a `302` to a CDN object; follow redirects (every loader 
 
 Ship games with **pinned `/b/` URLs**: they can never change under you. Use `/c/` only when you want a character to update as its owner edits it.
 
+### Letting visitors create characters on your site
+
+If you want users to design their own character inside your page instead of using pre-made ones, embed the creator. The iframe hands you the same URLs through `postMessage`. Guide: [docs/integration/embed.md](embed.md), live demo: https://characterstudio.wawasensei.dev/embed-demo.html.
+
 ## 2. Variants (query parameters)
 
 Append any subset to a model URL. Values are strict enums; unknown parameters or values return `400`.
