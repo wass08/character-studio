@@ -36,6 +36,19 @@ The human/agent guide lives in `docs/integration/character-studio-glb.md` and
 is published as `/llms.txt` (`npm run docs:sync`, run on `prebuild`) and as
 the `skills/character-studio-glb` skill.
 
+## Guest characters and claims
+
+Characters made through `/embed` have no `user` (the relation is optional)
+and carry `guest = true` plus a hidden `guestTokenHash`. Only the server
+routes under `/api/embed` can create or update them, after hashing the
+caller's token and comparing it to the stored hash. Public listings (home
+wall, community, featured, lab wall) filter `guest != true`; model routes and
+`/c/[id]` still serve them so hosts can load the bake. A claim stores a
+hidden `claimCodeHash` with `claimExpires` (15 minutes); redeeming it through
+`/api/embed/claim` sets `user`, clears `guest` and both hashes. Unclaimed
+guests older than 30 days are deleted by `npm run guests:gc -- --apply`;
+their bakes stay.
+
 ## Bake queue and invalidation
 
 `PIPELINE_VERSION` (bake-worker `src/recipes.js`) is part of the bake ID; bump

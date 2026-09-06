@@ -22,6 +22,10 @@ Model URLs respond with a `302` to a CDN object; follow redirects (every loader 
 
 Ship games with **pinned `/b/` URLs**: they can never change under you. Use `/c/` only when you want a character to update as its owner edits it.
 
+### Letting visitors create characters on your site
+
+If you want users to design their own character inside your page instead of using pre-made ones, embed the creator. The iframe hands you the same URLs through `postMessage`. Guide: [docs/integration/embed.md](embed.md), live demo: https://characterstudio.wawasensei.dev/embed-demo.html.
+
 ## 2. Variants (query parameters)
 
 Append any subset to a model URL. Values are strict enums; unknown parameters or values return `400`.
@@ -222,6 +226,7 @@ The viseme set is the one `wawa-lipsync` (npm) emits, so audio-driven lip sync w
 | Field | Meaning |
 | --- | --- |
 | `schema`, `pipelineVersion`, `bakeId`, `characterId`, `name`, `gender`, `height` | identity of the bake |
+| `stale` | `true` while the character was edited after this bake and a replacement is being produced; the mutable URL serves this bake meanwhile |
 | `urls.manifest`, `urls.model`, `urls.modelMutable`, `urls.animations`, `urls.docs`, `urls.repo` | absolute URLs; `model` is pinned, `modelMutable` follows the character |
 | `model.params` | the enum table from section 2 with defaults |
 | `model.defaultVariant`, `model.readyVariants[]` | which variants already exist, with `url`, `cdnUrl`, `bytes` |
