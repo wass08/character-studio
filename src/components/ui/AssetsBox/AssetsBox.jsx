@@ -153,7 +153,9 @@ const AssetsBox = () => {
       resetAllMorphs();
       setHeight(1);
     }
-  }, [gender]);
+    // Store actions are stable references; listing them satisfies the hook
+    // lint without changing when the effect runs.
+  }, [gender, fetchCategories, resetAllMorphs, setHeight]);
 
   const characterSection = useMemo(
     () => sections.find((s) => s.name === "Character"),
