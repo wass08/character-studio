@@ -637,7 +637,8 @@ export const useConfiguratorStore = create(
         // With makeup, SkinManager rebakes the selected colour underneath the
         // overlay. Tinting that existing composite here would briefly apply
         // the colour twice before the new map arrives.
-        if (skinMaterial && !skinMaterial.map) {
+        const map = skinMaterial?.map;
+        if (skinMaterial && (!map || map.userData?.isFallback)) {
           skinMaterial.color.set(color);
         }
       },

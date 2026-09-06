@@ -9,7 +9,11 @@ import {
 } from "react";
 import { useCombinedTexture } from "@/hooks/useCombinedTexture";
 import { pb } from "@/stores/useConfiguratorStore";
-import { type AssetRecord, useCharacter } from "./CharacterContext";
+import {
+  type AssetRecord,
+  SKIN_FALLBACK_TEXTURE,
+  useCharacter,
+} from "./CharacterContext";
 import { EngineErrorBoundary } from "./EngineErrorBoundary";
 
 const isImageUrl = (url: string) => /\.(png|jpg|jpeg|webp)$/i.test(url);
@@ -127,10 +131,13 @@ export const SkinManager = () => {
 
     // Without makeup, keep the selected colour directly on the material.
     // This also clears an old makeup map immediately when it is removed.
+    // Never set the map to null (see SKIN_FALLBACK_TEXTURE).
     if (committed.urls.length === 0) {
-      skinMaterial.map = null;
+      if (skinMaterial.map !== SKIN_FALLBACK_TEXTURE) {
+        skinMaterial.map = SKIN_FALLBACK_TEXTURE;
+        skinMaterial.needsUpdate = true;
+      }
       skinMaterial.color.set(rawSkinColor);
-      skinMaterial.needsUpdate = true;
       return;
     }
 

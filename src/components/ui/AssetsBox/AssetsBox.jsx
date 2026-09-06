@@ -1,20 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
 import { motion } from "motion/react";
+import { useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { useConfiguratorStore, pb } from "@/stores/useConfiguratorStore";
+import { cn } from "@/lib/utils";
+import { pb, useConfiguratorStore } from "@/stores/useConfiguratorStore";
 import CharacterNameField from "../CharacterNameField/CharacterNameField";
+import ColorPicker from "../ColorPicker/ColorPicker";
 import GenderSelectionBox from "../GenderSelectionBox/GenderSelectionBox";
 import { HeightSlider } from "../HeightSlider/HeightSlider";
+import { Tooltip } from "../primitives/Tooltip";
 import {
   CHARACTER_GLOBAL_MORPHS,
   MorphSlider,
 } from "../ShapeKeyControls/ShapeKeyControls";
-import ColorPicker from "../ColorPicker/ColorPicker";
-import { Tooltip } from "../primitives/Tooltip";
 import Spinner from "../Spinner/Spinner";
-import { cn } from "@/lib/utils";
 
 const PILL_SPRING = { type: "spring", stiffness: 380, damping: 32 };
 const ASSET_SPRING = { type: "spring", stiffness: 360, damping: 28 };
@@ -204,7 +204,9 @@ const AssetsBox = () => {
   // The engine flips this while it preloads the requested part and keeps the
   // current one on screen. Only the selected (requested) thumbnail can be
   // pending, so the spinner rides whichever thumbnail the user just applied.
-  const isCurrentCategoryLoading = Boolean(assetLoading?.[currentCategory?.name]);
+  const isCurrentCategoryLoading = Boolean(
+    assetLoading?.[currentCategory?.name],
+  );
 
   // No choice to make: required category with a single option.
   const hasNoChoice =
@@ -258,10 +260,8 @@ const AssetsBox = () => {
               type="button"
               variant="ghost"
               onClick={randomize}
-              className={cn(
-                TAB_BUTTON_CLASS,
-                "text-white/55 hover:text-white",
-              )}
+              aria-label="Randomize"
+              className={cn(TAB_BUTTON_CLASS, "text-white/55 hover:text-white")}
             >
               <RandomizeIcon />
             </Button>
@@ -270,164 +270,167 @@ const AssetsBox = () => {
 
         {!isSkinCategory && visibleCategories.length > 0 && (
           <div className={CATEGORIES_RAIL_CLASS}>
-              {visibleCategories.map((category) => {
-                const active = currentCategory?.id === category.id;
-                return (
-                  <Tooltip key={category.id} label={category.name} side="top">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => setCurrentCategory(category)}
-                      className={TAB_BUTTON_CLASS}
-                    >
-                      {active && (
-                        <motion.div
-                          layoutId="active-category-pill"
-                          transition={PILL_SPRING}
-                          className={ACTIVE_PILL_CLASS}
-                        />
-                      )}
-                      <div className="relative">
-                        <MaskIcon
-                          url={pb.files.getURL(category, category.icon)}
-                          active={active}
-                          fallbackLabel={category.name}
-                        />
-                      </div>
-                    </Button>
-                  </Tooltip>
-                );
-              })}
-            </div>
+            {visibleCategories.map((category) => {
+              const active = currentCategory?.id === category.id;
+              return (
+                <Tooltip key={category.id} label={category.name} side="top">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setCurrentCategory(category)}
+                    className={TAB_BUTTON_CLASS}
+                  >
+                    {active && (
+                      <motion.div
+                        layoutId="active-category-pill"
+                        transition={PILL_SPRING}
+                        className={ACTIVE_PILL_CLASS}
+                      />
+                    )}
+                    <div className="relative">
+                      <MaskIcon
+                        url={pb.files.getURL(category, category.icon)}
+                        active={active}
+                        fallbackLabel={category.name}
+                      />
+                    </div>
+                  </Button>
+                </Tooltip>
+              );
+            })}
+          </div>
         )}
       </div>
 
       {/* Assets panel */}
       {showAssetsPanel && (
-      <div className={ASSETS_PANEL_CLASS}>
-        {loading ? (
-          <div className="m-auto text-sm text-white/60">Loading assets…</div>
-        ) : (
-          <div
-            className={cn(
-              "flex h-full w-max flex-row items-center gap-3",
-              "md:h-auto md:w-full md:flex-col md:items-stretch md:gap-0",
-              isCharacterSectionActive &&
-                isSkinCategory &&
-                "max-md:w-full max-md:flex-col max-md:items-stretch max-md:gap-3",
-            )}
-          >
-            {isCharacterSectionActive && (
-              <div
-                className={cn(
-                  "flex h-full flex-row flex-nowrap items-center gap-3",
-                  "md:h-auto md:w-full md:flex-col md:items-stretch md:gap-3.5",
+        <div className={ASSETS_PANEL_CLASS}>
+          {loading ? (
+            <div className="m-auto text-sm text-white/60">Loading assets…</div>
+          ) : (
+            <div
+              className={cn(
+                "flex h-full w-max flex-row items-center gap-3",
+                "md:h-auto md:w-full md:flex-col md:items-stretch md:gap-0",
+                isCharacterSectionActive &&
                   isSkinCategory &&
-                    "max-md:w-full max-md:flex-col max-md:items-stretch",
-                )}
-              >
-                <CharacterNameField />
-                <GenderSelectionBox />
-                <HeightSlider />
+                  "max-md:w-full max-md:flex-col max-md:items-stretch max-md:gap-3",
+              )}
+            >
+              {isCharacterSectionActive && (
+                <div
+                  className={cn(
+                    "flex h-full flex-row flex-nowrap items-center gap-3",
+                    "md:h-auto md:w-full md:flex-col md:items-stretch md:gap-3.5",
+                    isSkinCategory &&
+                      "max-md:w-full max-md:flex-col max-md:items-stretch",
+                  )}
+                >
+                  <CharacterNameField />
+                  <GenderSelectionBox />
+                  <HeightSlider />
 
-                {isSkinCategory && (
-                  <div
-                    className={cn(
-                      "shrink-0",
-                      "max-md:w-full max-md:border-t max-md:border-white/[0.08] max-md:pt-3",
-                      "md:mt-1 md:w-full md:border-t md:border-white/[0.08] md:pt-3.5",
-                    )}
-                  >
-                    <SectionHeader>Skin Color</SectionHeader>
-                    <ColorPicker inline />
-                  </div>
-                )}
+                  {isSkinCategory && (
+                    <div
+                      className={cn(
+                        "shrink-0",
+                        "max-md:w-full max-md:border-t max-md:border-white/[0.08] max-md:pt-3",
+                        "md:mt-1 md:w-full md:border-t md:border-white/[0.08] md:pt-3.5",
+                      )}
+                    >
+                      <SectionHeader>Skin Color</SectionHeader>
+                      <ColorPicker inline />
+                    </div>
+                  )}
 
-                <div className="md:w-full md:border-t md:border-white/[0.08] md:pt-3.5">
-                  <SectionHeader
-                    onReset={() => resetMorphSet(CHARACTER_GLOBAL_MORPHS)}
-                    resetLabel="Reset body shape"
-                  >
-                    Body Shape
-                  </SectionHeader>
-                  <div className="flex flex-col gap-2 max-md:w-44">
-                    {CHARACTER_GLOBAL_MORPHS.map((key) => (
-                      <MorphSlider
-                        key={key}
-                        label={key}
-                        value={morphValues[key]}
-                        onChange={(v) => setMorphValue(key, v)}
-                      />
-                    ))}
+                  <div className="md:w-full md:border-t md:border-white/[0.08] md:pt-3.5">
+                    <SectionHeader
+                      onReset={() => resetMorphSet(CHARACTER_GLOBAL_MORPHS)}
+                      resetLabel="Reset body shape"
+                    >
+                      Body Shape
+                    </SectionHeader>
+                    <div className="flex flex-col gap-2 max-md:w-44">
+                      {CHARACTER_GLOBAL_MORPHS.map((key) => (
+                        <MorphSlider
+                          key={key}
+                          label={key}
+                          value={morphValues[key]}
+                          onChange={(v) => setMorphValue(key, v)}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {lockedGroups[currentCategory?.name] && (
-              <p className="px-2 py-2 text-xs text-amber-300/90 max-md:shrink-0">
-                Hidden by{" "}
-                {lockedGroups[currentCategory.name]
-                  .map((asset) => `${asset.name} (${asset.categoryName})`)
-                  .join(", ")}
-              </p>
-            )}
+              {lockedGroups[currentCategory?.name] && (
+                <p className="px-2 py-2 text-xs text-amber-300/90 max-md:shrink-0">
+                  Hidden by{" "}
+                  {lockedGroups[currentCategory.name]
+                    .map((asset) => `${asset.name} (${asset.categoryName})`)
+                    .join(", ")}
+                </p>
+              )}
 
-            {isCurrentCategoryVisible && !isSkinCategory && !hasNoChoice && (
-              <div
-                className={cn(
-                  "flex flex-row flex-nowrap items-center gap-2.5 max-md:w-max",
-                  "md:grid md:w-full md:grid-cols-[repeat(auto-fill,minmax(60px,1fr))] md:gap-2 md:items-stretch",
-                  isCharacterSectionActive && "md:mt-3",
-                )}
-              >
-                {currentCategory?.optional && (
-                  <AssetButton
-                    onClick={() => changeAsset(currentCategory.name, null)}
-                    selected={!selectedAssetId}
-                    label="None"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="h-6 w-6"
+              {isCurrentCategoryVisible && !isSkinCategory && !hasNoChoice && (
+                <div
+                  className={cn(
+                    "flex flex-row flex-nowrap items-center gap-2.5 max-md:w-max",
+                    "md:grid md:w-full md:grid-cols-[repeat(auto-fill,minmax(60px,1fr))] md:gap-2 md:items-stretch",
+                    isCharacterSectionActive && "md:mt-3",
+                  )}
+                >
+                  {currentCategory?.optional && (
+                    <AssetButton
+                      onClick={() => changeAsset(currentCategory.name, null)}
+                      selected={!selectedAssetId}
+                      label="None"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18 18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </AssetButton>
-                )}
+                      <svg
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="h-6 w-6"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 18 18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </AssetButton>
+                  )}
 
-                {currentCategory?.assets.map((asset) => (
-                  <AssetButton
-                    key={asset.id}
-                    onClick={() => changeAsset(currentCategory.name, asset)}
-                    selected={asset.id === selectedAssetId}
-                    loading={asset.id === selectedAssetId && isCurrentCategoryLoading}
-                    label={asset.name}
-                    backgroundColor={asset.thumbnailBg}
-                  >
-                    <img
-                      src={
-                        asset.r2ThumbnailUrl ||
-                        pb.files.getURL(asset, asset.thumbnail)
+                  {currentCategory?.assets.map((asset) => (
+                    <AssetButton
+                      key={asset.id}
+                      onClick={() => changeAsset(currentCategory.name, asset)}
+                      selected={asset.id === selectedAssetId}
+                      loading={
+                        asset.id === selectedAssetId && isCurrentCategoryLoading
                       }
-                      alt={asset.name || "asset"}
-                      className="h-full w-full object-contain"
-                    />
-                  </AssetButton>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+                      label={asset.name}
+                      backgroundColor={asset.thumbnailBg}
+                    >
+                      <img
+                        src={
+                          asset.r2ThumbnailUrl ||
+                          pb.files.getURL(asset, asset.thumbnail)
+                        }
+                        alt={asset.name || "asset"}
+                        className="h-full w-full object-contain"
+                      />
+                    </AssetButton>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -456,7 +459,10 @@ const AssetButton = ({
           : "border-white/[0.08] hover:border-white/25",
         // Only fall back to the glass tint when no per-asset color is set,
         // otherwise it muddies bright/light backgrounds.
-        !backgroundColor && (selected ? "bg-white/[0.10]" : "bg-white/[0.03] hover:bg-white/[0.06]"),
+        !backgroundColor &&
+          (selected
+            ? "bg-white/[0.10]"
+            : "bg-white/[0.03] hover:bg-white/[0.06]"),
       )}
     >
       <MotionButton
@@ -480,6 +486,7 @@ const AssetButton = ({
 
 const RandomizeIcon = () => (
   <svg
+    aria-hidden="true"
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
@@ -497,6 +504,7 @@ const RandomizeIcon = () => (
 
 const ResetIcon = () => (
   <svg
+    aria-hidden="true"
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
