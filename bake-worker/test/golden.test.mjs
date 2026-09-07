@@ -11,6 +11,7 @@ import {
   createNodeIO,
   remapJointAccessors,
 } from "../src/assemble.js";
+import { applyLockedGroups } from "../src/recipes.js";
 
 const REPOSITORY_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -276,3 +277,27 @@ for (const { quality, compression } of REGRESSION_VARIANTS) {
     );
   });
 }
+
+test("assets in categories locked by a worn asset are dropped from the bake", () => {
+  const entry = (categoryName, group, lockedGroups = []) => ({
+    categoryName,
+    assetId: `${categoryName}-asset`,
+    asset: { id: `${categoryName}-asset`, group, lockedGroups },
+    fileUrl: `https://cdn.example/${categoryName}.glb`,
+  });
+  const top = entry("Top", "cat-top");
+  const bottom = entry("Bottom", "cat-bottom");
+  const shoes = entry("Footwear", "cat-shoes");
+  const dress = entry("Uniform", "cat-uniform", ["cat-top", "cat-bottom"]);
+
+  const kept = applyLockedGroups([top, bottom, shoes, dress]).map(
+    (e) => e.categoryName,
+  );
+  assert.deepEqual(kept, ["Footwear", "Uniform"]);
+
+  // Nothing locked: untouched, same order.
+  assert.deepEqual(
+    applyLockedGroups([top, bottom, shoes]).map((e) => e.categoryName),
+    ["Top", "Bottom", "Footwear"],
+  );
+});

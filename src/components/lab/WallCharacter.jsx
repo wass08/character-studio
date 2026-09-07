@@ -220,12 +220,23 @@ export default function WallCharacter({
   }, [assetsById, character.customization, isHero, usingBake]);
   const renderEntries = useMemo(() => {
     if (usingBake) return [];
+    // Same rule as the editor (store.applyLockedAssets + Asset.tsx) and the
+    // bake worker: a worn asset's `lockedGroups` hides every asset in those
+    // categories (a dress hides Top and Bottom). The recipe keeps the hidden
+    // selections, so they must be skipped at render time.
+    const lockedGroupIds = new Set();
+    Object.values(character.customization || {}).forEach((picked) => {
+      const asset = resolvePickedAsset(picked, assetsById);
+      for (const groupId of asset?.lockedGroups || [])
+        lockedGroupIds.add(groupId);
+    });
     const entries = [];
     Object.entries(character.customization || {}).forEach(
       ([category, picked]) => {
         const asset = resolvePickedAsset(picked, assetsById);
         const url = assetUrl(asset);
         if (!asset || !url || isImageUrl(url)) return;
+        if (lockedGroupIds.has(asset.group)) return;
         entries.push({
           key: `${category}:${asset.id || url}`,
           category,
