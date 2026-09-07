@@ -13,6 +13,7 @@ import {
 import * as THREE from "three";
 import { Vector3 } from "three";
 import { SkeletonUtils } from "three-stdlib";
+import { SKIN_FALLBACK_TEXTURE } from "@/components/scene/CharacterContext";
 import { EngineErrorBoundary } from "@/components/scene/EngineErrorBoundary";
 import { useCombinedTexture } from "@/hooks/useCombinedTexture";
 import { bakedCharacterUrl, sharedAnimationsUrl } from "@/lib/modelAssets";
@@ -219,12 +220,23 @@ export default function WallCharacter({
   }, [assetsById, character.customization, isHero, usingBake]);
   const renderEntries = useMemo(() => {
     if (usingBake) return [];
+    // Same rule as the editor (store.applyLockedAssets + Asset.tsx) and the
+    // bake worker: a worn asset's `lockedGroups` hides every asset in those
+    // categories (a dress hides Top and Bottom). The recipe keeps the hidden
+    // selections, so they must be skipped at render time.
+    const lockedGroupIds = new Set();
+    Object.values(character.customization || {}).forEach((picked) => {
+      const asset = resolvePickedAsset(picked, assetsById);
+      for (const groupId of asset?.lockedGroups || [])
+        lockedGroupIds.add(groupId);
+    });
     const entries = [];
     Object.entries(character.customization || {}).forEach(
       ([category, picked]) => {
         const asset = resolvePickedAsset(picked, assetsById);
         const url = assetUrl(asset);
         if (!asset || !url || isImageUrl(url)) return;
+        if (lockedGroupIds.has(asset.group)) return;
         entries.push({
           key: `${category}:${asset.id || url}`,
           category,
@@ -253,15 +265,19 @@ export default function WallCharacter({
       new THREE.MeshStandardMaterial({
         color: DEFAULT_SKIN_COLOR,
         roughness: 1,
+        // Never null: see SKIN_FALLBACK_TEXTURE (WebGPU shadow-pass crash).
+        map: SKIN_FALLBACK_TEXTURE,
       }),
     [],
   );
 
   useEffect(() => {
     if (makeupUrls.length === 0) {
-      skinMaterial.map = null;
+      if (skinMaterial.map !== SKIN_FALLBACK_TEXTURE) {
+        skinMaterial.map = SKIN_FALLBACK_TEXTURE;
+        skinMaterial.needsUpdate = true;
+      }
       skinMaterial.color.set(skinColor);
-      skinMaterial.needsUpdate = true;
       return;
     }
     if (!makeupTexture) return;

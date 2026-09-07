@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, type ReactNode, useContext } from "react";
-import { MeshStandardMaterial } from "three";
+import { DataTexture, MeshStandardMaterial, SRGBColorSpace } from "three";
 import { useShallow } from "zustand/react/shallow";
 import {
   DEFAULT_SKIN_COLOR,
@@ -15,11 +15,29 @@ import {
 // SkinManager) and evaluates before any of them render, so `skin` is
 // populated before it's read. updateSkin/SkinManager re-apply the actual
 // character colour + texture afterward, so the placeholder colour is fine.
+// 1×1 white texture that stands in for "no makeup". three's WebGPU node
+// materials reference `material.map` through a live reference node; setting
+// the map to null at runtime leaves that node pointing at nothing and the
+// next shadow pass throws ("Cannot read properties of null (reading
+// 'matrix')"). Keeping a white map in place means the material's shader
+// variant never changes and the tint colour multiplies through unchanged.
+// `userData.isFallback` lets store code (which must not import three) tell
+// it apart from a real makeup composite.
+export const SKIN_FALLBACK_TEXTURE = new DataTexture(
+  new Uint8Array([255, 255, 255, 255]),
+  1,
+  1,
+);
+SKIN_FALLBACK_TEXTURE.colorSpace = SRGBColorSpace;
+SKIN_FALLBACK_TEXTURE.userData.isFallback = true;
+SKIN_FALLBACK_TEXTURE.needsUpdate = true;
+
 if (!useConfiguratorStore.getState().skin) {
   useConfiguratorStore.setState({
     skin: new MeshStandardMaterial({
       color: DEFAULT_SKIN_COLOR,
       roughness: 1,
+      map: SKIN_FALLBACK_TEXTURE,
     }),
   });
 }

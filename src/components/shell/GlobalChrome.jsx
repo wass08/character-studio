@@ -20,7 +20,7 @@ import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
  * opt into `body.fullscreen-app` so the document doesn't scroll behind
  * their canvas.
  */
-const FULLSCREEN_PREFIXES = ["/editor"];
+const FULLSCREEN_PREFIXES = ["/editor", "/embed"];
 // Per-character experiments — render in their own viewport. Match
 // /c/<id>/try/<experiment> via a starts-with check on `/c/` plus a
 // substring scan, since usePathname can't parse params here.

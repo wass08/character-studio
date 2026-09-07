@@ -1,18 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "motion/react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
+import { randomCharacterName } from "@/lib/characterNames";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useConfiguratorStore } from "@/stores/useConfiguratorStore";
+import { toast } from "../primitives/Toast";
 import { Tooltip } from "../primitives/Tooltip";
 import SaveDialog from "../SaveDialog/SaveDialog";
-import { toast } from "../primitives/Toast";
 
 const MotionButton = motion.button;
 
 const SaveIcon = () => (
   <svg
+    aria-hidden="true"
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
     fill="currentColor"
@@ -24,6 +26,7 @@ const SaveIcon = () => (
 
 const Spinner = () => (
   <svg
+    aria-hidden="true"
     className="h-5 w-5 animate-spin"
     viewBox="0 0 24 24"
     fill="none"
@@ -61,6 +64,7 @@ const TopActions = () => {
   const setLoginDialogOpen = useAuthStore((s) => s.setLoginDialogOpen);
 
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
+  const [suggestedName, setSuggestedName] = useState("");
 
   const onSave = async () => {
     if (!isLoggedIn) {
@@ -72,6 +76,7 @@ const TopActions = () => {
       // straight away; otherwise fall back to the name prompt.
       const typed = (currentCharacterName || "").trim();
       if (!typed) {
+        setSuggestedName(randomCharacterName());
         setNameDialogOpen(true);
         return;
       }
@@ -129,9 +134,11 @@ const TopActions = () => {
       </Tooltip>
 
       <SaveDialog
+        key={suggestedName}
         open={nameDialogOpen}
         onOpenChange={setNameDialogOpen}
         onSubmit={onNameSubmit}
+        defaultName={suggestedName}
       />
     </>
   );

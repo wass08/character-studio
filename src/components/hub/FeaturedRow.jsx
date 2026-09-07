@@ -25,7 +25,8 @@ const FeaturedRow = () => {
     pb.collection("CharacterStudioCharacters")
       .getList(1, 8, {
         sort: "-updated",
-        filter: 'featured = true && hidden != true && thumbnail != ""',
+        filter:
+          'featured = true && hidden != true && guest != true && thumbnail != ""',
         skipTotal: true,
         expand: "user",
       })

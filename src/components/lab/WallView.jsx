@@ -45,7 +45,7 @@ export default function WallView() {
     Promise.all([
       pb.collection("CharacterStudioCharacters").getList(1, WALL_LIMIT, {
         sort: "@random",
-        filter: "hidden != true",
+        filter: "hidden != true && guest != true",
         skipTotal: true,
         expand: "user",
         requestKey: null,

@@ -24,7 +24,7 @@ const LivingWall = () => {
     pb.collection("CharacterStudioCharacters")
       .getList(1, 50, {
         sort: "-created",
-        filter: 'hidden != true && thumbnail != ""',
+        filter: 'hidden != true && guest != true && thumbnail != ""',
         skipTotal: true,
         expand: "user",
       })

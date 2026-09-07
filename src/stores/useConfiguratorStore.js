@@ -2,6 +2,7 @@ import PocketBase from "pocketbase";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { enqueueCharacterBake } from "@/lib/bakeJobs";
+import { GUEST_TOKEN_HEADER } from "@/lib/embed/contract";
 
 const pocketBaseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL;
 
@@ -363,6 +364,11 @@ export const useConfiguratorStore = create(
         get().applyLockedAssets();
       },
       saving: false,
+      // /embed session: while set, saves go through /api/embed/* with the
+      // guest token instead of PocketBase directly (guests have no account).
+      // { hostOrigin, guestToken } — session-only, never persisted.
+      embed: null,
+      setEmbedSession: (embed) => set({ embed }),
       // Bumped after every successful character save — components can subscribe
       // to refresh listings.
       charactersChangedAt: 0,
@@ -459,8 +465,9 @@ export const useConfiguratorStore = create(
         if (get().saving) return null;
         set({ saving: true });
         try {
+          const embed = get().embed;
           const userId = pb.authStore.record?.id;
-          if (!userId) throw new Error("Not signed in");
+          if (!userId && !embed) throw new Error("Not signed in");
 
           const captureFaceThumbnail = get().captureFaceThumbnail;
           const thumbBlob = captureFaceThumbnail
@@ -470,7 +477,9 @@ export const useConfiguratorStore = create(
           const serialized = get().serializeCustomization();
 
           const formData = new FormData();
-          formData.append("user", userId);
+          // Guest records have no owner until claimed; the embed route sets
+          // guest ownership server-side from the token.
+          if (!embed) formData.append("user", userId);
           formData.append(
             "name",
             name || get().currentCharacterName || "Untitled",
@@ -506,15 +515,41 @@ export const useConfiguratorStore = create(
             );
           }
 
-          const record = id
-            ? await pb
-                .collection("CharacterStudioCharacters")
-                .update(id, formData)
-            : await pb.collection("CharacterStudioCharacters").create(formData);
+          let record;
+          if (embed) {
+            // Guests can't write to PocketBase; the embed routes validate the
+            // payload, enforce token ownership and enqueue the bake.
+            const response = await fetch(
+              id ? `/api/embed/characters/${id}` : "/api/embed/characters",
+              {
+                method: id ? "PATCH" : "POST",
+                headers: { [GUEST_TOKEN_HEADER]: embed.guestToken },
+                body: formData,
+              },
+            );
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+              const error = new Error(payload?.error || "Couldn't save");
+              error.code =
+                payload?.code ||
+                (response.status === 429 ? "rate_limited" : "save_failed");
+              error.status = response.status;
+              throw error;
+            }
+            record = payload;
+          } else {
+            record = id
+              ? await pb
+                  .collection("CharacterStudioCharacters")
+                  .update(id, formData)
+              : await pb
+                  .collection("CharacterStudioCharacters")
+                  .create(formData);
 
-          // Eager default-variant bake so first-party surfaces never hit the
-          // cold path. Best-effort: a failed enqueue never fails the save.
-          enqueueCharacterBake(pb, record.id);
+            // Eager default-variant bake so first-party surfaces never hit the
+            // cold path. Best-effort: a failed enqueue never fails the save.
+            enqueueCharacterBake(pb, record.id);
+          }
 
           set({
             currentCharacterId: record.id,
@@ -602,7 +637,8 @@ export const useConfiguratorStore = create(
         // With makeup, SkinManager rebakes the selected colour underneath the
         // overlay. Tinting that existing composite here would briefly apply
         // the colour twice before the new map arrives.
-        if (skinMaterial && !skinMaterial.map) {
+        const map = skinMaterial?.map;
+        if (skinMaterial && (!map || map.userData?.isFallback)) {
           skinMaterial.color.set(color);
         }
       },

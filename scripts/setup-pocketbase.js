@@ -360,4 +360,47 @@ const ensureTimestamps = async (name) => {
   }
 }
 
+// --- Embed: guest-owned characters + claim codes ------------------------------
+//
+// /embed visitors have no account. Their characters are created through the
+// server routes under /api/embed with a self-issued guest token; the server
+// stores only a hash of it. `guest = true` records are excluded from public
+// listings until claimed (user set, guest cleared). Hidden fields never leave
+// PocketBase through the public API.
+{
+  const c = await pb.collections.getOne("CharacterStudioCharacters");
+  let changed = false;
+  changed =
+    ensureField(c, { name: "guest", type: "bool", required: false }) || changed;
+  changed =
+    ensureField(c, {
+      name: "guestTokenHash",
+      type: "text",
+      required: false,
+      hidden: true,
+    }) || changed;
+  changed =
+    ensureField(c, {
+      name: "claimCodeHash",
+      type: "text",
+      required: false,
+      hidden: true,
+    }) || changed;
+  changed =
+    ensureField(c, { name: "claimExpires", type: "date", required: false }) ||
+    changed;
+  // Guest characters have no owner until claimed.
+  const userField = c.fields.find((f) => f.name === "user");
+  if (userField?.required) {
+    userField.required = false;
+    changed = true;
+  }
+  if (changed) {
+    await pb.collections.update(c.id, c);
+    console.log("Updated CharacterStudioCharacters embed fields.");
+  } else {
+    console.log("CharacterStudioCharacters embed fields already up to date.");
+  }
+}
+
 console.log("Done.");

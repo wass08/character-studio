@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Character Studio · Embed demo</title>
+    <style>
+      :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #0d1017; color: #e8ebf4; }
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      main { max-width: 1500px; margin: auto; padding: 32px 20px; }
+      h1 { margin: 0 0 8px; font-size: clamp(1.6rem, 3vw, 2.4rem); }
+      h2 { margin: 0; font-size: 1rem; }
+      p { color: #a9b3c9; line-height: 1.6; }
+      a { color: #a8baff; }
+      .panels { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: 18px; margin-top: 24px; }
+      .panel { min-width: 0; border: 1px solid #293044; border-radius: 14px; overflow: hidden; background: #151a25; }
+      .heading { padding: 16px; border-bottom: 1px solid #293044; }
+      iframe { display: block; width: 100%; min-height: 640px; aspect-ratio: 16 / 10; border: 0; }
+      #preview { width: 100%; height: 420px; }
+      #preview canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+      #preview-status { margin: 0; padding: 16px; font-size: .875rem; }
+      #urls { padding: 0 16px 16px; display: grid; gap: 12px; }
+      label { display: grid; gap: 6px; color: #a9b3c9; font-size: .8rem; }
+      input { width: 100%; padding: 9px; border: 1px solid #35405a; border-radius: 6px; background: #0d1017; color: #e8ebf4; font: .8rem ui-monospace, monospace; }
+      input:focus { outline: 2px solid #a8baff; }
+      .events { margin-top: 18px; }
+      #event-log { max-height: 360px; overflow: auto; padding: 16px; }
+      #event-log:empty::before { content: "Waiting for cs.v1 events…"; color: #a9b3c9; }
+      pre { margin: 0 0 12px; padding: 12px; border-radius: 8px; background: #0d1017; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .8rem; }
+      pre.error { border-left: 3px solid #ff8496; }
+      @media (max-width: 950px) { .panels { grid-template-columns: 1fr; } main { padding: 24px 12px; } }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.182.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.182.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main>
+      <h1>Character Studio embed</h1>
+      <p>Create a character, click Done, and see the exported model in your host page.
+        <a href="https://characterstudio.wawasensei.dev/llms.txt">GLB integration guide</a></p>
+      <div class="panels">
+        <section class="panel" aria-labelledby="creator-title">
+          <div class="heading"><h2 id="creator-title">1. Create your character</h2></div>
+          <iframe id="creator" title="Character Studio creator" allow="clipboard-write" loading="eager"></iframe>
+        </section>
+        <section class="panel" aria-labelledby="preview-title">
+          <div class="heading"><h2 id="preview-title">2. Exported character</h2></div>
+          <div id="preview"></div>
+          <p id="preview-status" role="status">Your exported character will appear here. Drag to orbit and scroll to zoom.</p>
+          <div id="urls"></div>
+        </section>
+      </div>
+      <section class="panel events" aria-labelledby="events-title">
+        <div class="heading"><h2 id="events-title">Event log</h2></div>
+        <div id="event-log" role="log" aria-live="polite"></div>
+      </section>
+    </main>
+    <script>
+      const iframe = document.getElementById("creator");
+      const eventLog = document.getElementById("event-log");
+      const status = document.getElementById("preview-status");
+      const urls = document.getElementById("urls");
+      let latestExport = 0;
+      let viewerPromise;
+
+      function log(value, error = false) {
+        const entry = document.createElement("pre");
+        entry.textContent = JSON.stringify(value, null, 2);
+        if (error) entry.className = "error";
+        eventLog.append(entry);
+        eventLog.scrollTop = eventLog.scrollHeight;
+      }
+
+      function showUrls(data) {
+        urls.replaceChildren();
+        for (const key of ["glbUrl", "characterUrl", "animationsUrl", "manifestUrl"]) {
+          const label = document.createElement("label");
+          label.textContent = key;
+          const input = document.createElement("input");
+          input.readOnly = true;
+          input.value = typeof data[key] === "string" ? data[key] : "";
+          input.title = "Select and copy this URL";
+          input.addEventListener("focus", () => input.select());
+          label.append(input);
+          urls.append(label);
+        }
+      }
+
+      async function createViewer() {
+        // Load the viewer lazily so CDN failures cannot prevent embed events.
+        const [THREE, { GLTFLoader }, { MeshoptDecoder }, SkeletonUtils, { OrbitControls }] = await Promise.all([
+          import("three"),
+          import("three/addons/loaders/GLTFLoader.js"),
+          import("three/addons/libs/meshopt_decoder.module.js"),
+          import("three/addons/utils/SkeletonUtils.js"),
+          import("three/addons/controls/OrbitControls.js"),
+        ]);
+        const container = document.getElementById("preview");
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.domElement.setAttribute("aria-label", "Interactive exported character preview");
+        container.append(renderer.domElement);
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color("#101520");
+        scene.add(new THREE.HemisphereLight(0xc5d9ff, 0x645343, 2.5));
+        const light = new THREE.DirectionalLight(0xffffff, 3);
+        light.position.set(-3, 5, -4);
+        scene.add(light);
+        const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 100);
+        camera.position.set(0, 1, -3);
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+        let current;
+
+        function resize() {
+          const width = Math.max(container.clientWidth, 1);
+          const height = Math.max(container.clientHeight, 1);
+          renderer.setSize(width, height, false);
+          camera.aspect = width / height;
+          camera.updateProjectionMatrix();
+        }
+        window.addEventListener("resize", resize);
+        resize();
+        let lastTime;
+        renderer.setAnimationLoop((time) => {
+          const delta = lastTime === undefined ? 0 : Math.min((time - lastTime) / 1000, 0.1);
+          lastTime = time;
+          current?.mixer.update(delta);
+          controls.update();
+          renderer.render(scene, camera);
+        });
+
+        function dispose(roots) {
+          const resources = new Set();
+          for (const root of roots) {
+            root.traverse((object) => {
+              if (object.geometry) resources.add(object.geometry);
+              if (object.skeleton) resources.add(object.skeleton);
+              const materials = Array.isArray(object.material) ? object.material : [object.material];
+              for (const material of materials) {
+                if (!material) continue;
+                resources.add(material);
+                for (const value of Object.values(material)) {
+                  if (value?.isTexture) resources.add(value);
+                }
+              }
+            });
+          }
+          for (const resource of resources) resource.dispose();
+        }
+
+        return {
+          async load(manifest, exportNumber) {
+            const assets = await Promise.allSettled([
+              loader.loadAsync(manifest.urls.model),
+              loader.loadAsync(manifest.urls.animations),
+            ]);
+            const roots = assets.filter((asset) => asset.status === "fulfilled").map((asset) => asset.value.scene);
+            const failure = assets.find((asset) => asset.status === "rejected");
+            if (failure || exportNumber !== latestExport) {
+              dispose(roots);
+              if (failure) throw failure.reason;
+              return;
+            }
+            const [model, library] = assets.map((asset) => asset.value);
+            const character = SkeletonUtils.clone(model.scene);
+            roots.push(character);
+            // Height and orientation belong to Rig; move only a parent group.
+            const root = new THREE.Group();
+            root.add(character);
+            const clips = library.animations.map((clip) => {
+              const copy = clip.clone();
+              copy.tracks = copy.tracks.filter((track) => !track.name.endsWith(".scale"));
+              return copy;
+            });
+            const mixer = new THREE.AnimationMixer(character);
+            const idle = clips.find((clip) => clip.name === "Rig|Idle_Loop") || clips[0];
+            if (idle) mixer.clipAction(idle).play();
+            mixer.update(0);
+            if (current) {
+              current.mixer.stopAllAction();
+              current.mixer.uncacheRoot(current.character);
+              scene.remove(current.root);
+              dispose(current.roots);
+            }
+            current = { root, character, mixer, roots };
+            scene.add(root);
+            const box = new THREE.Box3().setFromObject(root);
+            const center = box.isEmpty() ? new THREE.Vector3(0, 0.9, 0) : box.getCenter(new THREE.Vector3());
+            const size = box.isEmpty() ? new THREE.Vector3(1, 1.8, 1) : box.getSize(new THREE.Vector3());
+            const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
+            const distance = Math.max(size.y, size.x / camera.aspect, 0.5) / (2 * Math.tan(halfFov)) * 1.3 + size.z / 2;
+            // The character faces -Z, so the front-facing camera sits at -Z.
+            camera.position.set(center.x, center.y, center.z - distance);
+            camera.far = Math.max(100, distance * 10);
+            camera.updateProjectionMatrix();
+            controls.target.copy(center);
+            camera.lookAt(center);
+            controls.update();
+          },
+        };
+      }
+
+      async function showExport(data) {
+        const exportNumber = ++latestExport;
+        showUrls(data);
+        status.textContent = "Loading manifest and character…";
+        try {
+          const response = await fetch(data.manifestUrl);
+          if (!response.ok) throw new Error(`Manifest HTTP ${response.status}`);
+          const manifest = await response.json();
+          if (!manifest.urls?.model || !manifest.urls?.animations) {
+            throw new Error("Manifest is missing urls.model or urls.animations.");
+          }
+          if (exportNumber !== latestExport) return;
+          viewerPromise ||= createViewer().catch((error) => {
+            viewerPromise = undefined;
+            throw error;
+          });
+          const viewer = await viewerPromise;
+          if (exportNumber !== latestExport) return;
+          await viewer.load(manifest, exportNumber);
+          if (exportNumber === latestExport) status.textContent = `${data.name || "Character"} is ready. Drag to orbit and scroll to zoom.`;
+        } catch (error) {
+          log({ source: "host-demo", error: "preview_failed", message: error.message || String(error) }, true);
+          if (exportNumber === latestExport) status.textContent = "Preview could not load. See the event log; exported URLs are still available.";
+        }
+      }
+
+      try {
+        const requestedStudio = new URLSearchParams(window.location.search).get("studio");
+        const studioUrl = new URL(requestedStudio || window.location.origin);
+        if (!["https:", "http:"].includes(studioUrl.protocol)) throw new Error("Studio must be an HTTP(S) origin.");
+        const studio = studioUrl.origin;
+        window.addEventListener("message", (event) => {
+          // Required trust boundary. In production studio is the studio origin.
+          if (event.origin !== studio) return;
+          if (event.source !== iframe.contentWindow) return;
+          const data = event.data;
+          if (!data || typeof data !== "object" || typeof data.type !== "string" || !data.type.startsWith("cs.v1.")) return;
+          log(data);
+          if (data.type === "cs.v1.character.exported") void showExport(data);
+        });
+        iframe.src = `${studio}/embed?origin=${encodeURIComponent(window.location.origin)}`;
+      } catch (error) {
+        status.textContent = "Could not configure the studio. See the event log.";
+        log({ source: "host-demo", error: "configuration_failed", message: error.message || String(error) }, true);
+      }
+    </script>
+  </body>
+</html>

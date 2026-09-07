@@ -32,7 +32,10 @@ const AuthBootstrapper = () => {
   // bootstrapping here would race the route load with a persisted/main
   // character and make the last network response win.
   const routeOwnsCharacter =
-    pathname?.startsWith("/c/") || pathname?.startsWith("/editor");
+    pathname?.startsWith("/c/") ||
+    pathname?.startsWith("/editor") ||
+    pathname?.startsWith("/embed") ||
+    pathname?.startsWith("/claim");
 
   // Rehydrate a persisted character once on first mount (anonymous flow).
   useEffect(() => {
