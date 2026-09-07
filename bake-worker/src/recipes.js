@@ -4,7 +4,9 @@ import { createHash } from "node:crypto";
 // their old bakeId and consumers re-bake lazily (or via scripts/rebake-characters.mjs).
 //   1.1.0 — scene-wide quantization volume (fixes scattered skinned meshes),
 //           separate vertex layout, collapsed placeholder plane.
-export const PIPELINE_VERSION = "1.1.0";
+//   1.2.0 — honour asset `lockedGroups` (a dress hides Top/Bottom) like the
+//           editor does.
+export const PIPELINE_VERSION = "1.2.0";
 
 export function buildRecipe(character) {
   return {
@@ -57,12 +59,29 @@ export function resolveAssetFileUrl(asset, pocketBaseUrl) {
   return `${baseUrl}/api/files/${asset.collectionId}/${asset.id}/${asset.url}`;
 }
 
+/**
+ * Mirror of the editor's rule (store.applyLockedAssets + Asset.tsx): a
+ * selected asset may carry `lockedGroups`, a list of category ids whose
+ * assets are hidden while it is worn — a full dress hides Top and Bottom.
+ * The recipe keeps those hidden selections (so removing the dress restores
+ * them), so the bake must drop them here. An asset's category id is its
+ * `group` field.
+ */
+export function applyLockedGroups(resolvedAssets) {
+  const locked = new Set();
+  for (const entry of resolvedAssets) {
+    for (const groupId of entry.asset?.lockedGroups || []) locked.add(groupId);
+  }
+  if (locked.size === 0) return resolvedAssets;
+  return resolvedAssets.filter((entry) => !locked.has(entry.asset?.group));
+}
+
 export async function resolveRecipeAssets(pb, recipe, pocketBaseUrl) {
   const entries = Object.entries(recipe.customization || {}).filter(
     ([, selection]) => selection?.assetId,
   );
 
-  return Promise.all(
+  const resolved = await Promise.all(
     entries.map(async ([categoryName, selection]) => {
       const asset = await pb
         .collection("CharacterStudioAssets")
@@ -83,4 +102,5 @@ export async function resolveRecipeAssets(pb, recipe, pocketBaseUrl) {
       };
     }),
   );
+  return applyLockedGroups(resolved);
 }
